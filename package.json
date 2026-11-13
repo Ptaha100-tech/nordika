@@ -1,0 +1,9 @@
+{
+  "name": "nordika",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Nordika: стратегия про викингов",
+  "main": "server.js",
+  "scripts": { "start": "node server.js", "dev": "TIME_MUL=0.05 node server.js" },
+  "engines": { "node": ">=18" }
+}
