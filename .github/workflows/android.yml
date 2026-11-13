@@ -25,13 +25,21 @@ jobs:
       - name: Иконка
         working-directory: android-app
         run: |
-          for d in mdpi:48 hdpi:72 xhdpi:96 xxhdpi:144 xxxhdpi:192; do
-            n=${d%%:*}; s=${d##*:}
-            for f in ic_launcher ic_launcher_round ic_launcher_foreground; do
-              convert ../public/icon-512.png -resize ${s}x${s} android/app/src/main/res/mipmap-$n/$f.png
-            done
-          done
-          rm -f android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
+          python3 -m pip install --quiet --break-system-packages pillow || python3 -m pip install --quiet pillow
+          python3 - <<'PY'
+          import os
+          from PIL import Image
+          src = Image.open('../public/icon-512.png').convert('RGBA')
+          res = 'android/app/src/main/res'
+          for n, s in [('mdpi',48),('hdpi',72),('xhdpi',96),('xxhdpi',144),('xxxhdpi',192)]:
+              d = f'{res}/mipmap-{n}'
+              os.makedirs(d, exist_ok=True)
+              for f in ('ic_launcher','ic_launcher_round','ic_launcher_foreground'):
+                  src.resize((s, s), Image.LANCZOS).save(f'{d}/{f}.png')
+          for f in ('ic_launcher.xml','ic_launcher_round.xml'):
+              p = f'{res}/mipmap-anydpi-v26/{f}'
+              if os.path.exists(p): os.remove(p)
+          PY
       - name: Подпись и сборка
         working-directory: android-app/android
         run: |
