@@ -7,7 +7,9 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="icon" href="/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/icon-192.png">
-<title>Nordika: сердце фьерда</title>
+<title>Играть в Nordika: сердце фьерда онлайн</title>
+<meta name="description" content="Nordika: сердце фьерда — браузерная стратегия про викингов. Вход и регистрация, играйте бесплатно с телефона.">
+<link rel="canonical" href="https://nordika-mobile.ru/play">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Runic&display=swap">
 <style>
 :root{
@@ -36,7 +38,13 @@ p{margin:0}
 .muted{color:var(--muted)}.sm{font-size:14px}
 
 /* вход */
-#auth{height:100%;max-width:420px;margin:0 auto;display:flex;flex-direction:column;justify-content:center;gap:14px;padding-block:16px;overflow-y:auto}
+#authbg{position:fixed;inset:0;z-index:0;background:radial-gradient(120% 70% at 50% 0,#16263a,#0a1018 70%)}
+#authbg video{width:min(100%,100vh);height:auto;aspect-ratio:1/1;object-fit:cover;display:block;margin:0 auto;-webkit-mask-image:linear-gradient(#000 55%,transparent 100%);mask-image:linear-gradient(#000 55%,transparent 100%)}
+#auth .lgs{display:none}
+#auth>p.sub:not(.sm){display:none}
+#auth{position:relative;z-index:1;height:100%;max-width:420px;margin:0 auto;display:flex;flex-direction:column;justify-content:flex-end;gap:12px;padding-block:16px;overflow-y:auto}
+#auth .field input{background:rgba(13,17,20,.72);backdrop-filter:blur(4px)}
+#auth .sub{text-shadow:0 1px 6px #000}
 #auth h1{font-size:32px;text-align:center}
 #auth .sub{text-align:center;color:var(--muted)}
 .field{display:flex;flex-direction:column;gap:4px}
@@ -204,6 +212,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--frost);outline-
 </style>
 </head>
 <body>
+<div id="authbg" hidden><video id="authV" muted loop playsinline preload="auto" poster="/login-poster.jpg" disablepictureinpicture><source src="/login.mp4" type="video/mp4"></video></div>
 <div id="auth" hidden>
   <div class="lg lgs"><img data-l="logo" alt="Nordika: сердце фьерда"></div>
   <h1 class="vh">Nordika: сердце фьерда</h1>
@@ -224,7 +233,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--frost);outline-
     <div class="res" id="res"></div>
     <div id="net" hidden>Нет связи с сервером</div>
   </header>
-  <main id="view" class="scroll"><div id="hero" hidden><video id="heroV" muted loop autoplay playsinline preload="auto" poster="/city-poster.jpg" disablepictureinpicture><source src="/city.mp4" type="video/mp4"></video></div><div id="list"></div></main>
+  <main id="view" class="scroll"><div id="hero" hidden><video id="heroV" muted loop autoplay playsinline preload="auto" poster="/city-poster.jpg" disablepictureinpicture><source src="/city.mp4" type="video/mp4"></video><video id="heroB" muted loop playsinline preload="none" poster="/barracks-poster.jpg" disablepictureinpicture hidden><source src="/barracks.mp4" type="video/mp4"></video></div><div id="list"></div></main>
   <nav id="nav"></nav>
 </div>
 <div id="modal" hidden></div>
@@ -283,7 +292,8 @@ async function act(a,arg){
 }
 
 /* ---------- вход ---------- */
-function showAuth(){ $('app').hidden=true;$('auth').hidden=false;setMode(ui.authMode); }
+function authBg(on){const b=$('authbg'),v=$('authV');if(!b||!v)return;b.hidden=!on;if(on&&!calm()){v.play().catch(()=>{});}else if(v.pause)v.pause();}
+function showAuth(){ $('app').hidden=true;$('auth').hidden=false;authBg(true);setMode(ui.authMode); }
 function setMode(m){
   ui.authMode=m;
   $('tabLogin').className='btn '+(m==='login'?'on':'ghost');$('tabReg').className='btn '+(m==='reg'?'on':'ghost');
@@ -310,7 +320,7 @@ function logout(silent){
 async function startGame(){
   try{apply(await call('GET','/api/state'));}
   catch(e){if(e.status===401){logout(true);return;}$('auth').hidden=false;$('auth-err').textContent=e.message;return;}
-  $('auth').hidden=true;$('app').hidden=false;
+  $('auth').hidden=true;authBg(false);$('app').hidden=false;
   $('who').textContent='Ярл '+S.name;
   render();
 }
@@ -558,7 +568,7 @@ function render(){
   for(const id in keep){const el=document.getElementById(id);if(el)el.value=keep[id];}
   if(ui.tab==='clan'){const b=$('cbox');if(b)b.scrollTop=b.scrollHeight;}
   try{window.Art&&Art.paintIn(list,id=>lvl(id));}catch(e){}
-  showHero(ui.tab==='city');showLogo(ui.tab==='city');
+  showHero(ui.tab);showLogo(ui.tab==='city');
   v.scrollTop=top;
   NAV.forEach(n=>$('n-'+n[0]).classList.toggle('on',n[0]===ui.tab));
   live();
@@ -601,12 +611,16 @@ function showLogo(on){
   $('h1').classList.toggle('off',on);
   hd.classList.remove('mini');
 }
-function showHero(on){
-  const hero=$('hero'),vid=$('heroV');
-  hero.hidden=!(on&&heroOK);
-  if(!vid)return;
-  if(on&&heroOK&&!calm()){if(vid.play)vid.play().catch(()=>{});}
-  else if(vid.pause)vid.pause();
+function showHero(tab){
+  const hero=$('hero'),vc=$('heroV'),vb=$('heroB');
+  const on=(tab==='city'||tab==='troops')&&heroOK;
+  hero.hidden=!on;
+  const cur=tab==='troops'?vb:vc,other=tab==='troops'?vc:vb;
+  if(!vc||!vb)return;
+  other.hidden=true;if(other.pause)other.pause();
+  cur.hidden=false;
+  if(on&&!calm()){if(cur.preload!=='auto')cur.preload='auto';if(cur.play)cur.play().catch(()=>{});}
+  else if(cur.pause)cur.pause();
 }
 function dueSoon(){
   const tn=Core.now();
@@ -716,7 +730,7 @@ function boot(){
   if(!window.DEMO&&'serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});
   const hs=document.querySelector('#heroV source');
   if(hs)hs.addEventListener('error',()=>{heroOK=false;$('hero').hidden=true;});
-  document.addEventListener('visibilitychange',()=>{const v=$('heroV');if(!v||!heroOK)return;if(document.hidden)v.pause();else if(ui.tab==='city'&&!calm())v.play().catch(()=>{});});
+  document.addEventListener('visibilitychange',()=>{if(!heroOK)return;const v=ui.tab==='troops'?$('heroB'):$('heroV');if(!v)return;if(document.hidden)v.pause();else if((ui.tab==='city'||ui.tab==='troops')&&!calm())v.play().catch(()=>{});});
   if(TOKEN)startGame();else showAuth();
 }
 boot();
