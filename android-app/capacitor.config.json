@@ -1,0 +1,12 @@
+{
+  "appId": "ru.nordika.game",
+  "appName": "Nordika",
+  "webDir": "www",
+  "backgroundColor": "#0d1114",
+  "server": {
+    "url": "https://nordika-mobile.ru/play",
+    "cleartext": false,
+    "allowNavigation": ["nordika-mobile.ru"]
+  },
+  "android": { "allowMixedContent": false }
+}

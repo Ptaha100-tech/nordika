@@ -107,7 +107,7 @@ function limited(key, max, windowMs) {
 setInterval(() => { const now = Date.now(); for (const [k, b] of buckets) if (now > b.until) buckets.delete(k); }, 60000).unref();
 
 /* ---------- http ---------- */
-const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.webmanifest': 'application/manifest+json', '.css': 'text/css; charset=utf-8', '.ico': 'image/x-icon', '.mp4': 'video/mp4', '.webp': 'image/webp', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg' };
+const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.webmanifest': 'application/manifest+json', '.css': 'text/css; charset=utf-8', '.ico': 'image/x-icon', '.mp4': 'video/mp4', '.webp': 'image/webp', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.apk': 'application/vnd.android.package-archive' };
 const SEC = {
   'X-Content-Type-Options': 'nosniff',
   'Referrer-Policy': 'no-referrer',
@@ -225,7 +225,9 @@ async function api(req, res, url) {
 
 function serveStatic(req, res, url) {
   let p; try { p = decodeURIComponent(url.split('?')[0]); } catch (e) { return send(res, 400, 'Плохой адрес'); }
-  if (p === '/') p = '/index.html';
+  if (p === '/') p = '/site.html';
+  else if (p === '/play') p = '/index.html';
+  else if (p === '/play/') { res.writeHead(301, { Location: '/play' }); return res.end(); }
   const full = path.normalize(path.join(PUB, p));
   if (!full.startsWith(PUB + path.sep)) return send(res, 403, 'Нельзя');
   fs.stat(full, (err, st) => {
@@ -241,6 +243,7 @@ function serveStatic(req, res, url) {
       if (req.method === 'HEAD') return res.end();
       return fs.createReadStream(full, { start: a, end: b }).pipe(res);
     }
+    if (ext === '.apk') base['Content-Disposition'] = 'attachment; filename="Nordika.apk"';
     res.writeHead(200, Object.assign({}, SEC, base, { 'Content-Length': st.size }));
     if (req.method === 'HEAD') return res.end();
     fs.createReadStream(full).pipe(res);

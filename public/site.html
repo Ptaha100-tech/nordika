@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Nordika: сердце фьерда — стратегия про викингов</title>
+<meta name="description" content="Стройте свой фьерд, собирайте дружину, вступайте в кланы и ходите в походы. Играйте в браузере или скачайте приложение для Android.">
+<meta name="theme-color" content="#0d1114">
+<meta property="og:title" content="Nordika: сердце фьерда">
+<meta property="og:description" content="Стратегия про викингов. Играйте в браузере или скачайте приложение для Android.">
+<meta property="og:image" content="/img/cover.webp">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<style>
+:root{--bg:#0d1114;--panel:#151b20;--line:#26313a;--fg:#e9e4d6;--dim:#9aa5ad;--gold:#d9a441;--gold2:#f0c868;--rune:#58d6ff}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:calc(32px + env(safe-area-inset-bottom,0px))}
+.wrap{max-width:760px;margin:0 auto}
+header{text-align:center;padding:20px 0 8px}
+.cover{display:block;width:100%;max-width:560px;height:auto;margin:0 auto;border-radius:18px;border:1px solid var(--line);box-shadow:0 10px 40px rgba(0,0,0,.5)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.tag{margin:6px auto 0;max-width:30em;color:var(--dim);font-size:17px;text-wrap:balance}
+.cta{display:flex;flex-direction:column;gap:12px;max-width:420px;margin:26px auto 0}
+.btn{display:flex;align-items:center;justify-content:center;gap:10px;min-height:56px;padding:12px 20px;border-radius:14px;text-decoration:none;font-weight:700;font-size:18px;
+  border:1px solid var(--gold);color:#1a1205;background:linear-gradient(180deg,var(--gold2),var(--gold));box-shadow:0 6px 24px rgba(217,164,65,.25)}
+.btn.alt{background:transparent;color:var(--gold2);box-shadow:none}
+.btn:active{transform:translateY(1px)}
+.note{text-align:center;color:var(--dim);font-size:13px;margin:10px 0 0}
+.shot{margin:30px 0 0;border-radius:16px;overflow:hidden;border:1px solid var(--line);background:var(--panel)}
+.shot img{display:block;width:100%;height:auto}
+h2{font-size:22px;margin:40px 0 14px;text-wrap:balance}
+h2 .r{color:var(--rune);margin-right:8px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;min-width:0}
+.card b{display:block;margin-bottom:4px;color:var(--gold2)}
+.card span{color:var(--dim);font-size:15px}
+ol{padding-left:22px;margin:0}
+ol li{margin:0 0 10px}
+details{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin:10px 0}
+summary{cursor:pointer;font-weight:600}
+details p,details ol{color:var(--dim);margin:10px 0 0;font-size:15px}
+footer{margin-top:44px;text-align:center;color:var(--dim);font-size:13px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1 class="sr">Nordika: сердце фьерда</h1>
+    <img class="cover" src="/img/cover.webp" srcset="/img/cover-s.webp 600w, /img/cover.webp 1100w" sizes="(max-width:600px) 100vw, 560px" alt="Nordika: сердце фьерда. Викинг с волком над заснеженным фьердом" width="1100" height="1100">
+    <p class="tag">Стратегия про викингов: стройте фьерд, собирайте дружину, объединяйтесь в кланы и ходите в походы.</p>
+    <div class="cta">
+      <a class="btn" href="/nordika.apk" id="dl" download>⬇ Скачать для Android</a>
+      <a class="btn alt" href="/play">▶ Играть в браузере</a>
+    </div>
+    <p class="note" id="apknote">Файл .apk, около 5 МБ. Версия для iPhone ниже.</p>
+  </header>
+
+  <h2><span class="r">ᚠ</span>Что вас ждёт</h2>
+  <div class="grid">
+    <div class="card"><b>Ваш фьерд</b><span>10 зданий и 30 уровней развития. Палата ярла растёт вместе с вами и меняет облик.</span></div>
+    <div class="card"><b>Дружина и герой</b><span>Копейщики, лучники и конница семи ступеней. Герой с навыками ведёт отряд в бой.</span></div>
+    <div class="card"><b>Кланы</b><span>Общий чат, помощь в стройке и исследованиях. Каждый соклановец может ускорить ваше дело.</span></div>
+    <div class="card"><b>Игра идёт и без вас</b><span>Стройки и походы продолжаются, пока вы заняты своими делами.</span></div>
+  </div>
+
+  <h2><span class="r">ᚢ</span>Как установить</h2>
+  <details open>
+    <summary>Android</summary>
+    <ol>
+      <li>Нажмите «Скачать для Android» и дождитесь загрузки файла.</li>
+      <li>Откройте файл. Если телефон спросит про установку из неизвестных источников, разрешите её для вашего браузера.</li>
+      <li>Нажмите «Установить» и запустите игру с рабочего стола.</li>
+    </ol>
+  </details>
+  <details>
+    <summary>iPhone</summary>
+    <ol>
+      <li>Откройте эту страницу в Safari и нажмите «Играть в браузере».</li>
+      <li>Нажмите «Поделиться» и выберите «На экран Домой».</li>
+      <li>Игра появится на рабочем столе как обычное приложение.</li>
+    </ol>
+  </details>
+  <details>
+    <summary>Компьютер</summary>
+    <p>Нажмите «Играть в браузере». Игра работает в любом современном браузере.</p>
+  </details>
+
+  <footer>Nordika: сердце фьерда</footer>
+</div>
+<script>
+/* Если файла приложения на сервере ещё нет, кнопка не ведёт в пустоту. */
+fetch('/nordika.apk',{method:'HEAD'}).then(function(r){
+  if(!r.ok) throw 0;
+  var n=r.headers.get('content-length');
+  if(n) document.getElementById('apknote').textContent='Файл .apk, около '+Math.max(1,Math.round(n/1048576))+' МБ. Версия для iPhone ниже.';
+}).catch(function(){
+  var b=document.getElementById('dl');
+  b.removeAttribute('href'); b.removeAttribute('download');
+  b.style.opacity='.55';
+  b.textContent='Приложение скоро появится';
+  document.getElementById('apknote').textContent='Пока играйте в браузере: игра работает на телефоне так же.';
+});
+</script>
+</body>
+</html>

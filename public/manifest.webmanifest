@@ -2,7 +2,7 @@
   "name": "Nordika: сердце фьерда",
   "short_name": "Nordika",
   "description": "Стратегия про викингов",
-  "start_url": "/",
+  "start_url": "/play",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
