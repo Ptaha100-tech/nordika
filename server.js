@@ -77,7 +77,8 @@ const sctx = {
   hallOf: pid => { const u = users.get(pid); return u ? u.state.b.hall : 0; },
   scoreOf: pid => { const u = users.get(pid); return u ? Core.score(u.state) : 0; },
   online: pid => { const u = users.get(pid); return !!(u && u.seen && Date.now() - u.seen < ONLINE_MS); },
-  tagOf: pid => { const c = Clan.clanOf(cstore, pid); return c ? c.tag : ''; }
+  tagOf: pid => { const c = Clan.clanOf(cstore, pid); return c ? c.tag : ''; },
+  isVip: pid => { const u = users.get(pid); return !!(u && (u.state.vip || 0) > Date.now()); }
 };
 const cctx = {
   now: () => Date.now(),
@@ -126,6 +127,20 @@ function limited(key, max, windowMs) {
 }
 setInterval(() => { const now = Date.now(); for (const [k, b] of buckets) if (now > b.until) buckets.delete(k); }, 60000).unref();
 
+/* ---------- админ-панель ---------- */
+const adminApi = require('./admin.js')({ users, byName, byToken, DATA_DIR, Core, Clan, Social, sstore, cstore, sctx, cctx, json, readBody, limited, ipOf, markDirty, touchState, ranking, flush,
+  setSdirty: () => { sdirty = true; }, setCdirty: () => { cdirty = true; }, hashPw });
+
+/* ---------- магазин: пополнение за деньги подключается файлом payments.json ---------- */
+const PACKS = [
+  { id: 'g100', gems: 100, bonus: 0, rub: 99 }, { id: 'g500', gems: 500, bonus: 50, rub: 490 }, { id: 'g1000', gems: 1000, bonus: 200, rub: 990 },
+  { id: 'g2000', gems: 2000, bonus: 600, rub: 1990 }, { id: 'g5000', gems: 5000, bonus: 2000, rub: 4990 }
+];
+function payInfo() {
+  let c = null; try { c = JSON.parse(fs.readFileSync(path.join(DATA_DIR, 'payments.json'), 'utf8')); } catch (e) { /* оплата не подключена */ }
+  return { enabled: !!(c && c.enabled), packs: PACKS };
+}
+
 /* ---------- http ---------- */
 const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.webmanifest': 'application/manifest+json', '.css': 'text/css; charset=utf-8', '.ico': 'image/x-icon', '.mp4': 'video/mp4', '.webp': 'image/webp', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.apk': 'application/vnd.android.package-archive', '.txt': 'text/plain; charset=utf-8', '.xml': 'application/xml; charset=utf-8' };
 const SEC = {
@@ -151,7 +166,7 @@ function authUser(req) {
   const h = req.headers['authorization'] || '';
   const m = /^Bearer ([0-9a-f]{64})$/.exec(h); if (!m) return null;
   const id = byToken.get(sha(m[1])); const u = id ? users.get(id) : null;
-  if (u) u.seen = Date.now();
+  if (u) { const n = Date.now(); u.seen = n; if (!u.seenSaved || n - u.seenSaved > 600000) { u.seenSaved = n; markDirty(u); } }
   return u;
 }
 function hashPw(pw, salt) { return crypto.scryptSync(pw, salt, 32).toString('hex'); }
@@ -201,12 +216,16 @@ async function api(req, res, url) {
     const id = byName.get(name.toLowerCase()), u = id && users.get(id);
     const ok = u && crypto.timingSafeEqual(Buffer.from(hashPw(pw, u.salt), 'hex'), Buffer.from(u.hash, 'hex'));
     if (!ok) return json(res, 401, { error: 'Неверное имя или пароль.' });
+    if (u.banned) return json(res, 403, { error: 'Аккаунт заблокирован: ' + (u.banned.reason || 'нарушение правил') });
     const token = newToken(u); markDirty(u);
     return json(res, 200, { token });
   }
 
+  if (url.startsWith('/api/admin/')) return adminApi.handle(req, res, url);
+
   const u = authUser(req);
   if (!u) return json(res, 401, { error: 'Нужно войти.' });
+  if (u.banned) return json(res, 403, { error: 'Аккаунт заблокирован: ' + (u.banned.reason || 'нарушение правил') });
 
   if (req.method === 'GET' && url === '/api/state') {
     touchState(u);
@@ -237,6 +256,7 @@ async function api(req, res, url) {
     if (r.error) return json(res, 400, { error: r.error });
     return json(res, 200, Object.assign(Clan.view(cstore, cctx, u.id), { result: r }));
   }
+  if (req.method === 'GET' && url === '/api/shop') return json(res, 200, { pay: payInfo() });
   if (req.method === 'GET' && url === '/api/social') {
     const q = new URL(req.url, 'http://x').searchParams;
     return json(res, 200, Social.view(sstore, sctx, u.id, (q.get('peer') || '').slice(0, 16)));
@@ -269,6 +289,7 @@ async function api(req, res, url) {
 function serveStatic(req, res, url) {
   let p; try { p = decodeURIComponent(url.split('?')[0]); } catch (e) { return send(res, 400, 'Плохой адрес'); }
   if (p === '/') p = '/site.html';
+  else if (p === '/admin') p = '/admin.html';
   else if (p === '/play') p = '/index.html';
   else if (p === '/play/') { res.writeHead(301, { Location: '/play' }); return res.end(); }
   const full = path.normalize(path.join(PUB, p));

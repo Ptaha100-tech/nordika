@@ -80,7 +80,7 @@ function act(st, ctx, pid, a, p) {
   switch (a) {
     case 'wsay': {
       const r = checkText(st, ctx, pid, p.text, 2000); if (r.error != null) return r;
-      st.world.push({ t: n, pid, name: ctx.nameOf(pid), tag: ctx.tagOf(pid) || '', text: r.text });
+      st.world.push({ t: n, pid, name: ctx.nameOf(pid), tag: ctx.tagOf(pid) || '', vip: !!(ctx.isVip && ctx.isVip(pid)), text: r.text });
       if (st.world.length > MAXW) st.world.splice(0, st.world.length - MAXW);
       return { ok: true };
     }

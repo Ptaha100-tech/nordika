@@ -78,21 +78,21 @@ const toast = txt => { if (!quiet) toastFn(txt); };
 
 const QUESTS = [
   { id: 'q1',  t: 'Подними Лесопилку до 3 уровня',      cur: () => lvl('sawmill'), max: 3,  rw: { wood: 300, stone: 150 } },
-  { id: 'q2',  t: 'Подними Палату ярла до 3 уровня',    cur: () => lvl('hall'),    max: 3,  rw: { food: 400, wood: 400, haste: 1 } },
+  { id: 'q2',  t: 'Подними Палату ярла до 3 уровня',    cur: () => lvl('hall'),    max: 3,  rw: { food: 400, wood: 400, haste: 1, gems: 3 } },
   { id: 'q3',  t: 'Обучи 20 воинов',                    cur: () => S.stat.trained, max: 20, rw: { food: 300, iron: 100 } },
   { id: 'q4',  t: 'Разгроми лагерь разбойников',        cur: () => S.stat.campWins, max: 1, rw: { silver: 200, haste: 1 } },
   { id: 'q5',  t: 'Построй Хранилище',                  cur: () => lvl('vault'),   max: 1,  rw: { stone: 400, iron: 150 } },
   { id: 'q6',  t: 'Изучи первое знание в Оракуле',      cur: () => S.stat.researched, max: 1, rw: { silver: 300, haste: 1 } },
-  { id: 'q7',  t: 'Одержи 5 побед в походах',           cur: () => S.stat.wins,    max: 5,  rw: { food: 600, wood: 600, iron: 300, haste: 2 } },
+  { id: 'q7',  t: 'Одержи 5 побед в походах',           cur: () => S.stat.wins,    max: 5,  rw: { food: 600, wood: 600, iron: 300, haste: 2, gems: 5 } },
   { id: 'q8',  t: 'Отбей набег врага',                  cur: () => S.stat.defWins, max: 1,  rw: { silver: 300, iron: 200, haste: 1 } },
   { id: 'q9',  t: 'Подними Казарму до 3 уровня',        cur: () => lvl('barracks'), max: 3, rw: { iron: 300, silver: 150 } },
   { id: 'q10', t: 'Собери ресурсы на точке карты',      cur: () => S.stat.gathered, max: 1, rw: { food: 300, wood: 300, haste: 1 } },
   { id: 'q12', t: 'Подними ярла до 3 уровня',            cur: () => heroOf(S).lv, max: 3, rw: { silver: 200, food: 300, haste: 1 } },
   { id: 'q13', t: 'Улучши воинов до 2 ступени',         cur: () => Object.keys(U).filter(k => tierOf(S, k) >= 2).length, max: 1, rw: { iron: 300, silver: 200, haste: 1 } },
-  { id: 'q14', t: 'Подними Палату ярла до 10 уровня',   cur: () => lvl('hall'),    max: 10, rw: { food: 3000, wood: 3000, stone: 2000, haste: 3 } },
-  { id: 'q15', t: 'Подними ярла до 10 уровня',          cur: () => heroOf(S).lv,   max: 10, rw: { silver: 1500, iron: 1500, haste: 3 } },
-  { id: 'q16', t: 'Подними Палату ярла до 20 уровня',   cur: () => lvl('hall'),    max: 20, rw: { food: 12000, wood: 12000, stone: 8000, iron: 5000, haste: 6 } },
-  { id: 'q17', t: 'Одержи 25 побед в походах',          cur: () => S.stat.wins,    max: 25, rw: { silver: 2000, iron: 2000, haste: 4 } },
+  { id: 'q14', t: 'Подними Палату ярла до 10 уровня',   cur: () => lvl('hall'),    max: 10, rw: { food: 3000, wood: 3000, stone: 2000, haste: 3, gems: 10 } },
+  { id: 'q15', t: 'Подними ярла до 10 уровня',          cur: () => heroOf(S).lv,   max: 10, rw: { silver: 1500, iron: 1500, haste: 3, gems: 8 } },
+  { id: 'q16', t: 'Подними Палату ярла до 20 уровня',   cur: () => lvl('hall'),    max: 20, rw: { food: 12000, wood: 12000, stone: 8000, iron: 5000, haste: 6, gems: 20 } },
+  { id: 'q17', t: 'Одержи 25 побед в походах',          cur: () => S.stat.wins,    max: 25, rw: { silver: 2000, iron: 2000, haste: 4, gems: 12 } },
   { id: 'q11', t: 'Разграбь город другого игрока',      cur: () => S.stat.pvpWins, max: 1,  rw: { silver: 400, iron: 300, haste: 2 } }
 ];
 
@@ -108,7 +108,8 @@ function newState(name, pid) {
     shield: t + 90 * 60000, nextRaid: t + 120 * 60000, haste: 2,
     stat: { trained: 0, wins: 0, campWins: 0, researched: 0, defWins: 0, built: 0, gathered: 0, pvpWins: 0 },
     tier: { spear: 1, archer: 1, cav: 1 }, upg: null, hero: { lv: 1, xp: 0, sp: 0, sk: { atk: 0, def: 0, loot: 0 } },
-    claimed: {}, log: [], mid: 1, introDone: false
+    claimed: {}, log: [], mid: 1, introDone: false,
+    gems: 0, vip: 0, daily: 0, bought: {}
   };
 }
 function use(st) { S = st; }
@@ -117,6 +118,7 @@ function ensure(st) {
   if (!st.tier) st.tier = { spear: 1, archer: 1, cav: 1 };
   if (!st.hero) st.hero = { lv: 1, xp: 0, sp: 0, sk: { atk: 0, def: 0, loot: 0 } };
   if (st.upg === undefined) st.upg = null;
+  if (st.gems === undefined) { st.gems = 0; st.vip = 0; st.daily = 0; st.bought = {}; }
 }
 const tierOf = (st, k) => (st.tier && st.tier[k]) || 1;
 const heroOf = st => st.hero || { lv: 1, xp: 0, sp: 0, sk: { atk: 0, def: 0, loot: 0 } };
@@ -139,8 +141,9 @@ function gainXp(n) {
 const lvl = id => S.b[id] || 0;
 const slots = h => 1 + (h >= 4 ? 1 : 0) + (h >= 8 ? 1 : 0) + (h >= 14 ? 1 : 0) + (h >= 20 ? 1 : 0);
 const capAt = (st, h) => 2000 + 1500 * (st - 1) + 250 * (h - 1);
-const cap = () => capAt(lvl('storehouse'), lvl('hall'));
-const ecoMul = () => 1 + 0.05 * S.tech.eco;
+const isVip = () => (S.vip || 0) > nowMs();
+const cap = () => Math.round(capAt(lvl('storehouse'), lvl('hall')) * (isVip() ? 1.2 : 1));
+const ecoMul = () => (1 + 0.05 * S.tech.eco) * (isVip() ? 1.15 : 1);
 const prot = () => 300 * lvl('vault');
 function prodAt(id, L) { const b = B[id]; return L ? Math.round(b.base * L * (1 + 0.12 * (L - 1)) * ecoMul()) : 0; }
 function rate(rid) { const id = BORDER.find(k => B[k].res === rid); return prodAt(id, lvl(id)); }
@@ -305,7 +308,7 @@ function finishStudy() {
   const s = S.study; S.tech[s.key] = s.to; S.stat.researched++; S.study = null;
   addLog(`Оракул открыл знание «${TECH[s.key].n}», уровень ${s.to}.`, 'good', s.end); toast(`Знание: ${TECH[s.key].n} ${s.to}`);
 }
-function fmtRes(o) { return Object.keys(o).filter(k => o[k] > 0).map(k => `${RI[k].n} ${fmt(o[k])}`).join(' · ') || 'ничего'; }
+function fmtRes(o) { return Object.keys(o).filter(k => o[k] > 0 && RI[k]).map(k => `${RI[k].n} ${fmt(o[k])}`).join(' · ') || 'ничего'; }
 function fmtComp(c) { return Object.keys(U).filter(k => (c[k] || 0) > 0).map(k => `${U[k].pl} ${c[k]}`).join(' · '); }
 const carryOf = (s, st) => { st = st || S; return Math.round(Object.keys(U).reduce((a, k) => a + (s[k] || 0) * U[k].carry * tmul(tierOf(st, k)), 0) * lootB(st)); };
 
@@ -481,8 +484,46 @@ function claim(id) {
   const q = QUESTS.find(x => x.id === id);
   if (!q || S.claimed[id] || q.cur() < q.max) return;
   S.claimed[id] = true;
-  for (const k in q.rw) { if (k === 'haste') S.haste += q.rw[k]; else S.res[k] += q.rw[k]; }
+  for (const k in q.rw) { if (k === 'haste') S.haste += q.rw[k]; else if (k === 'gems') S.gems += q.rw[k]; else S.res[k] += q.rw[k]; }
   addLog(`Награда за дело «${q.t}».`, 'good'); toast('Награда получена');
+}
+
+/* ============ Магазин ============ */
+/* Все покупки идут за рунные камни и проверяются на сервере. */
+const SHOP = [
+  { id: 'haste5',   g: 'haste',  t: 'Ускорение ×5',    d: 'Пять ускорений. Каждое сокращает дело на 5 минут.',          gems: 15,  haste: 5 },
+  { id: 'haste25',  g: 'haste',  t: 'Ускорение ×25',   d: 'Двадцать пять ускорений. Выгоднее на 20%.',                  gems: 60,  haste: 25 },
+  { id: 'haste100', g: 'haste',  t: 'Ускорение ×100',  d: 'Сто ускорений. Выгоднее на 33%.',                            gems: 200, haste: 100 },
+  { id: 'shield8',  g: 'shield', t: 'Щит на 8 часов',  d: 'Никто не сможет напасть на ваш город.',                      gems: 20,  shieldH: 8 },
+  { id: 'shield24', g: 'shield', t: 'Щит на 24 часа',  d: 'Сутки покоя для вашего города.',                             gems: 50,  shieldH: 24 },
+  { id: 'shield72', g: 'shield', t: 'Щит на 3 дня',    d: 'Три дня без набегов.',                                       gems: 120, shieldH: 72 },
+  { id: 'res4',     g: 'res',    t: 'Мешок припасов',  d: 'Четыре часа добычи всех ресурсов сразу.',                    gems: 25,  resH: 4 },
+  { id: 'res24',    g: 'res',    t: 'Сундук припасов', d: 'Сутки добычи всех ресурсов сразу (не больше места на складе).', gems: 120, resH: 24 },
+  { id: 'vip7',     g: 'vip',    t: 'VIP на 7 дней',   d: 'Добыча +15%, склад +20%, ежедневный дар больше, звезда в чате.',   gems: 80,  vipD: 7 },
+  { id: 'vip30',    g: 'vip',    t: 'VIP на 30 дней',  d: 'То же самое на месяц. Выгоднее на 25%.',                     gems: 250, vipD: 30 }
+];
+const DAILY_MS = 20 * 3600 * 1000;
+function dailyLeft() { return Math.max(0, (S.daily || 0) + DAILY_MS - nowMs()); }
+function claimDaily() {
+  if (dailyLeft() > 0) return false;
+  const v = isVip();
+  S.daily = nowMs(); S.haste += v ? 3 : 1; S.gems += v ? 8 : 3;
+  addLog(`Ежедневный дар: ${v ? 3 : 1} ускор., ${v ? 8 : 3} рунных камн.`, 'good'); toast('Ежедневный дар получен');
+  return true;
+}
+function buy(id) {
+  const it = SHOP.find(x => x.id === id);
+  if (!it) return false;
+  if (S.gems < it.gems) { toast('Не хватает рунных камней'); return false; }
+  const t = nowMs();
+  S.gems -= it.gems;
+  if (it.haste) S.haste += it.haste;
+  if (it.shieldH) S.shield = Math.max(S.shield, t) + it.shieldH * 3600000;
+  if (it.resH) { const c = cap(); for (const r of RES) { const id2 = r.id; if (id2 === 'silver' && !lvl('silvermine')) continue; S.res[id2] = Math.min(Math.max(c, S.res[id2]), S.res[id2] + rate(id2) * it.resH); } }
+  if (it.vipD) S.vip = Math.max(S.vip || 0, t) + it.vipD * 86400000;
+  S.bought[id] = (S.bought[id] || 0) + 1;
+  addLog(`Покупка: ${it.t}.`, 'good'); toast('Куплено: ' + it.t);
+  return true;
 }
 function act(a, arg) {
   switch (a) {
@@ -497,6 +538,8 @@ function act(a, arg) {
     case 'march': if (arg && typeof arg === 'object') sendMarch(String(arg.id), arg.send); break;
     case 'claim': if (typeof arg === 'string') claim(arg); break;
     case 'intro': S.introDone = true; break;
+    case 'buy': if (typeof arg === 'string') buy(arg); break;
+    case 'daily': claimDaily(); break;
   }
 }
 
@@ -523,6 +566,7 @@ const API = {
   get S() { return S; },
   use, newState, update, produce, settle, battle, act, score, verdict,
   lvl, slots, cap, capAt, rate, prodAt, upCost, upSecs, canUp, canAfford, trainRate, maxBatch, trainSecs, techCost, techSecs, gatherSecs, marchSecs,
+  SHOP, isVip, buy, claimDaily, dailyLeft,
   jobInfo, helpJob, chargeClan, CLAN_COST, CLAN_HALL, jobObj,
   tierOf, heroOf, tmul, tiersOf, botTiers, atkB, defB, lootB, unitName, xpNeed, tierCost, tierSecs,
   refreshTargets, topUpPlayers, addLogTo, fmt, fmtT, fmtRes, fmtComp, carryOf,

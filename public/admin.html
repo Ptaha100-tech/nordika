@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#0d1114">
+<title>Nordika: управление</title>
+<style>
+:root{--bg:#0d1114;--s:#161c22;--s2:#1e262d;--line:#33414c;--fg:#ece6d6;--dim:#9aa5ad;--gold:#d9a441;--good:#5fcf7a;--bad:#e5655f;--rune:#58d6ff}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding:0 max(14px,env(safe-area-inset-left,0px)) calc(40px + env(safe-area-inset-bottom,0px)) max(14px,env(safe-area-inset-right,0px))}
+.w{max-width:760px;margin:0 auto}
+h1{font:700 22px Georgia,serif;margin:18px 0 4px}
+h2{font:700 17px Georgia,serif;margin:0 0 10px;color:var(--gold)}
+.card{background:linear-gradient(180deg,var(--s2),var(--s));border:1px solid var(--line);border-radius:12px;padding:14px;margin:12px 0}
+.muted{color:var(--dim)}.sm{font-size:13px}
+input,select,textarea{width:100%;background:#0f1418;color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:10px 12px;font:inherit;font-size:16px}
+button{font:inherit;font-weight:600;border-radius:8px;border:1px solid var(--gold);background:var(--gold);color:#1b1204;padding:9px 14px;cursor:pointer}
+button.g{background:transparent;color:var(--gold)}
+button.r{background:transparent;color:var(--bad);border-color:var(--bad)}
+button.s{padding:6px 10px;font-size:13px}
+button:disabled{opacity:.5}
+.tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:12px 0;position:sticky;top:0;background:var(--bg);padding:8px 0;z-index:5}
+.tabs button{padding:9px 2px;font-size:14px}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.stat{background:var(--s);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.stat b{display:block;font-size:22px;font-family:Georgia,serif}
+.row{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line)}
+.row:last-child{border:0}
+.row>div{min-width:0}
+.row p{margin:0;overflow-wrap:anywhere}
+.pill{display:inline-block;font-size:11px;padding:1px 7px;border-radius:9px;border:1px solid var(--line);margin-left:4px;color:var(--dim)}
+.pill.bad{color:var(--bad);border-color:var(--bad)}.pill.good{color:var(--good);border-color:var(--good)}.pill.vip{color:var(--gold);border-color:var(--gold)}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#556;margin-right:6px}.dot.on{background:var(--good)}
+.f{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0}
+.f label{font-size:12px;color:var(--dim);display:block;margin-bottom:2px}
+.acts{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+#toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:#000c;border:1px solid var(--gold);border-radius:10px;padding:10px 16px;z-index:20;max-width:90vw}
+#toast.bad{border-color:var(--bad)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;font-size:14px}.kv span:nth-child(odd){color:var(--dim)}
+pre{white-space:pre-wrap;word-break:break-word;margin:0;font:13px/1.4 ui-monospace,monospace}
+</style>
+</head>
+<body>
+<div class="w" id="app"></div>
+<div id="toast" hidden></div>
+<script>
+'use strict';
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let tok='';try{tok=sessionStorage.getItem('adm')||''}catch(e){}
+let tab='over',data={},cur=null,pq='',ppage=0,psort='seen';
+const fmtD=t=>t?new Date(t).toLocaleString('ru-RU',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'—';
+const ago=t=>{if(!t)return 'давно';const m=Math.round((Date.now()-t)/60000);return m<2?'сейчас':m<60?m+' мин назад':m<1440?Math.round(m/60)+' ч назад':Math.round(m/1440)+' дн назад';};
+function toast(m,bad){const t=$('toast');t.textContent=m;t.className=bad?'bad':'';t.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(()=>t.hidden=true,2800);}
+async function api(method,path,body){
+  const r=await fetch(path,{method,headers:Object.assign({'Content-Type':'application/json'},tok?{Authorization:'Bearer '+tok}:{}),body:body?JSON.stringify(body):undefined});
+  let j={};try{j=await r.json()}catch(e){}
+  if(r.status===401&&tok){tok='';try{sessionStorage.removeItem('adm')}catch(e){}render();throw new Error(j.error||'Нужно войти')}
+  if(!r.ok)throw new Error(j.error||'Ошибка '+r.status);
+  return j;
+}
+function loginView(){
+  return `<h1>Nordika: управление</h1><p class="muted sm">Вход только для владельца.</p><div class="card"><label class="muted sm">Секретный ключ</label><input id="key" type="password" autocomplete="off" style="margin:6px 0 10px"><button id="go">Войти</button></div>`;
+}
+function shell(inner){
+  const T=[['over','Обзор'],['pl','Игроки'],['chat','Чат'],['say','Объявление']];
+  return `<h1>Nordika: управление</h1><div class="tabs">${T.map(t=>`<button class="${t[0]===tab?'':'g'}" data-t="${t[0]}">${t[1]}</button>`).join('')}</div>${inner}`;
+}
+function pRow(p){
+  return `<div class="row" data-p="${p.id}" style="cursor:pointer"><div><p><i class="dot ${p.online?'on':''}"></i><b>${esc(p.name)}</b>${p.clan?`<span class="pill">${esc(p.clan)}</span>`:''}${p.vip?'<span class="pill vip">VIP</span>':''}${p.banned?'<span class="pill bad">бан</span>':''}${p.muted?'<span class="pill bad">мут</span>':''}</p><p class="muted sm">Палата ${p.hall} · сила ${p.score} · ${p.gems} камн. · был ${ago(p.seen)}</p></div><span class="muted">›</span></div>`;
+}
+function overView(){
+  const d=data.over;if(!d)return '<p class="muted">Загрузка…</p>';
+  const S=(a,b)=>`<div class="stat"><span class="muted sm">${a}</span><b>${b}</b></div>`;
+  const bt=Object.keys(d.bought).map(k=>k+' × '+d.bought[k]).join(', ')||'пока нет';
+  return `<div class="grid">${S('Игроков всего',d.players)}${S('Сейчас в игре',d.online)}${S('Новых за сутки',d.new24)}${S('Новых за неделю',d.new7)}${S('Заходили за сутки',d.active24)}${S('Заходили за неделю',d.active7)}${S('Кланов',d.clans)}${S('Жалоб',d.reports)}${S('VIP сейчас',d.vip)}${S('Рунных камней у игроков',d.gems)}${S('Покупок в магазине',d.buys)}${S('Заблокировано',d.banned)}</div>
+  <div class="card"><h2>Что покупают</h2><p class="muted sm">${esc(bt)}</p></div>
+  <div class="card"><h2>Новые игроки</h2>${d.newest.map(pRow).join('')||'<p class="muted">Пока никого.</p>'}</div>
+  <div class="card"><h2>Журнал действий</h2>${d.log.length?d.log.map(l=>`<div class="row"><p class="sm">${esc(l.what)}</p><span class="muted sm">${fmtD(l.t)}</span></div>`).join(''):'<p class="muted sm">Пусто.</p>'}</div>
+  <p class="muted sm">Темп игры: ×${d.timeMul}. Обновить: нажмите «Обзор» ещё раз.</p>`;
+}
+function plView(){
+  if(cur)return curView();
+  const d=data.pl;
+  return `<div class="card"><input id="pq" placeholder="Поиск по имени" value="${esc(pq)}"><div class="acts"><button class="s g" data-sort="seen">По активности</button><button class="s g" data-sort="score">По силе</button><button class="s g" data-sort="new">Новые</button></div></div>
+  <div class="card">${d?d.rows.map(pRow).join('')||'<p class="muted">Никого не найдено.</p>':'<p class="muted">Загрузка…</p>'}${d&&d.total>25?`<div class="acts"><button class="s g" data-pg="-1" ${d.page<=0?'disabled':''}>Назад</button><span class="muted sm" style="padding:6px">${d.page+1} из ${Math.ceil(d.total/25)}</span><button class="s g" data-pg="1" ${(d.page+1)*25>=d.total?'disabled':''}>Дальше</button></div>`:''}</div>`;
+}
+function curView(){
+  const p=cur,R=p.res||{};
+  const F=(id,l)=>`<div><label for="g-${id}">${l}</label><input id="g-${id}" type="number" min="0" inputmode="numeric" placeholder="0"></div>`;
+  return `<button class="s g" id="back">‹ К списку</button>
+  <div class="card"><h2>${esc(p.name)} ${p.vip?'<span class="pill vip">VIP</span>':''}${p.banned?'<span class="pill bad">заблокирован</span>':''}</h2>
+    <div class="kv"><span>Номер</span><span>${p.id}</span><span>Палата</span><span>${p.hall} уровня</span><span>Сила</span><span>${p.score}</span><span>Клан</span><span>${esc(p.clanName||'нет')}</span><span>Друзей</span><span>${p.friends}</span>
+    <span>Регистрация</span><span>${fmtD(p.created)}</span><span>Заходил</span><span>${ago(p.seen)}</span><span>Рунные камни</span><span>${p.gems}</span><span>Ускорения</span><span>${p.haste}</span>
+    <span>Ресурсы</span><span>еда ${Math.floor(R.food)}, дерево ${Math.floor(R.wood)}, камень ${Math.floor(R.stone)}, железо ${Math.floor(R.iron)}, серебро ${Math.floor(R.silver)}</span>
+    <span>Войска</span><span>копейщ. ${p.troops.spear}, лучн. ${p.troops.archer}, всадн. ${p.troops.cav}</span><span>Ярл</span><span>уровень ${p.hero.lv}</span>
+    <span>Покупки</span><span>${esc(Object.keys(p.bought).map(k=>k+'×'+p.bought[k]).join(', ')||'нет')}</span>${p.banned?`<span>Причина бана</span><span>${esc(p.banned)}</span>`:''}</div></div>
+  <div class="card"><h2>Выдать</h2><div class="f">${F('gems','Рунные камни')}${F('haste','Ускорения')}${F('vipDays','VIP, дней')}${F('shieldH','Щит, часов')}${F('food','Еда')}${F('wood','Дерево')}${F('stone','Камень')}${F('iron','Железо')}${F('silver','Серебро')}</div><button id="grant">Выдать</button></div>
+  <div class="card"><h2>Чат</h2><div class="acts"><button class="s g" data-mute="10">Мут 10 мин</button><button class="s g" data-mute="60">1 час</button><button class="s g" data-mute="1440">1 день</button><button class="s g" data-mute="10080">7 дней</button><button class="s g" data-mute="0">Снять мут</button><button class="s r" id="clr">Удалить его сообщения</button></div></div>
+  <div class="card"><h2>Доступ</h2>${p.banned?'<button id="unban">Разблокировать</button>':'<input id="reason" placeholder="Причина бана" style="margin-bottom:8px"><button class="r" id="ban">Заблокировать</button>'}
+    <div style="margin-top:14px"><input id="npw" placeholder="Новый пароль игрока (от 6 символов)" style="margin-bottom:8px"><button class="g" id="setpw">Сменить пароль</button></div>
+    <div style="margin-top:14px"><input id="dconf" placeholder="Для удаления впишите имя игрока" style="margin-bottom:8px"><button class="r" id="del">Удалить аккаунт навсегда</button></div></div>
+  <div class="card"><h2>Последние события</h2>${p.log.map(l=>`<p class="sm muted">${esc(l.txt)}</p>`).join('')||'<p class="muted sm">Пусто.</p>'}</div>`;
+}
+function chatView(){
+  const d=data.chat;if(!d)return '<p class="muted">Загрузка…</p>';
+  const rp=d.reports.length?d.reports.map(r=>`<div class="row"><div><p><b>${esc(r.fromName)}</b> → <b data-p="${r.target}" style="cursor:pointer;color:var(--gold)">${esc(r.targetName)}</b></p><p class="muted sm">${esc(r.text||'без пояснения')} · ${fmtD(r.t)}</p></div><button class="s g" data-dis="${r.id}">Закрыть</button></div>`).join(''):'<p class="muted sm">Жалоб нет.</p>';
+  const w=d.world.length?d.world.slice().reverse().map(m=>`<div class="row"><div><p><b data-p="${m.pid}" style="cursor:pointer">${esc(m.name)}</b> <span class="muted sm">${fmtD(m.t)}</span></p><p>${esc(m.text)}</p></div><button class="s r" data-dm="${m.t}|${m.pid}">×</button></div>`).join(''):'<p class="muted sm">Пока тихо.</p>';
+  return `<div class="card"><h2>Жалобы</h2>${rp}</div><div class="card"><h2>Общий чат</h2>${w}</div>`;
+}
+function sayView(){
+  return `<div class="card"><h2>Объявление в общий чат</h2><p class="muted sm">Сообщение появится от имени «Вести фьерда» у всех игроков.</p><textarea id="say" rows="3" maxlength="300" style="margin:8px 0"></textarea><button id="saygo">Отправить всем</button></div>`;
+}
+function render(){
+  const a=$('app');
+  if(!tok){a.innerHTML=loginView();$('go').onclick=login;$('key').onkeydown=e=>{if(e.key==='Enter')login();};return;}
+  const ae=document.activeElement;if(ae&&ae.id==='pq')return;
+  a.innerHTML=shell(tab==='over'?overView():tab==='pl'?plView():tab==='chat'?chatView():sayView());
+  bind();
+}
+async function login(){
+  try{const j=await api('POST','/api/admin/login',{key:$('key').value.trim()});tok=j.token;try{sessionStorage.setItem('adm',tok)}catch(e){}load();}
+  catch(e){toast(e.message,1);}
+}
+async function load(){
+  try{
+    if(tab==='over')data.over=await api('GET','/api/admin/overview');
+    if(tab==='pl'&&!cur)data.pl=await api('GET','/api/admin/players?q='+encodeURIComponent(pq)+'&page='+ppage+'&sort='+psort);
+    if(tab==='chat')data.chat=await api('GET','/api/admin/chat');
+  }catch(e){toast(e.message,1);}
+  render();
+}
+async function openP(id){
+  try{cur=await api('GET','/api/admin/player?id='+id);tab='pl';render();window.scrollTo(0,0);}catch(e){toast(e.message,1);}
+}
+async function act(a,extra){
+  try{const j=await api('POST','/api/admin/act',Object.assign({a,id:cur&&cur.id},extra||{}));toast(j.msg||'Готово');
+    if(cur&&a!=='delete')cur=await api('GET','/api/admin/player?id='+cur.id);else if(a==='delete')cur=null;
+    if(tab==='chat'||a==='say'||a==='delmsg'||a==='dismiss')data.chat=await api('GET','/api/admin/chat');
+    render();return true;
+  }catch(e){toast(e.message,1);return false;}
+}
+function bind(){
+  document.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{tab=b.dataset.t;if(tab!=='pl')cur=null;load();});
+  document.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>openP(b.dataset.p));
+  document.querySelectorAll('[data-sort]').forEach(b=>b.onclick=()=>{psort=b.dataset.sort;ppage=0;load();});
+  document.querySelectorAll('[data-pg]').forEach(b=>b.onclick=()=>{ppage=Math.max(0,ppage+Number(b.dataset.pg));load();});
+  const pqi=$('pq');if(pqi){let h;pqi.oninput=()=>{pq=pqi.value;clearTimeout(h);h=setTimeout(async()=>{try{data.pl=await api('GET','/api/admin/players?q='+encodeURIComponent(pq)+'&page=0&sort='+psort);ppage=0;const keep=document.activeElement;render0();}catch(e){}},350);};}
+  const on=(id,f)=>{const e=$(id);if(e)e.onclick=f;};
+  on('back',()=>{cur=null;load();});
+  on('grant',()=>{const give={};['gems','haste','vipDays','shieldH','food','wood','stone','iron','silver'].forEach(k=>{const v=Number($('g-'+k).value);if(v>0)give[k]=v;});act('grant',{give});});
+  document.querySelectorAll('[data-mute]').forEach(b=>b.onclick=()=>act('mute',{minutes:Number(b.dataset.mute)}));
+  on('clr',()=>act('clearmsgs'));on('unban',()=>act('unban'));
+  on('ban',()=>act('ban',{reason:$('reason').value}));
+  on('setpw',()=>act('setpw',{password:$('npw').value}));
+  on('del',()=>act('delete',{confirm:$('dconf').value}));
+  on('saygo',async()=>{const t=$('say').value;if(await act('say',{text:t}))$('say').value='';});
+  document.querySelectorAll('[data-dis]').forEach(b=>b.onclick=()=>act('dismiss',{rid:b.dataset.dis}));
+  document.querySelectorAll('[data-dm]').forEach(b=>b.onclick=()=>{const[t,p]=b.dataset.dm.split('|');act('delmsg',{t:Number(t),pid:p});});
+}
+function render0(){const a=$('app'),v=$('pq'),pos=v?v.selectionStart:0;a.innerHTML=shell(plView());bind();const n=$('pq');if(n){n.focus();n.setSelectionRange(pos,pos);}}
+if(tok)load();else render();
+</script>
+</body>
+</html>

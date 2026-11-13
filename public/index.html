@@ -59,6 +59,15 @@ p{margin:0}
 .who{font-size:14px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .haste{font-size:15px;color:var(--frost);white-space:nowrap;display:flex;flex-direction:column;align-items:flex-end;line-height:1.15}
 .haste small{font-size:11px;color:var(--muted)}
+.trow{gap:14px}
+.gembtn{background:none;border:0;padding:0;margin-left:auto;margin-right:0;font:inherit;font-size:15px;color:#e6b3ff;white-space:nowrap;display:flex;flex-direction:column;align-items:flex-end;line-height:1.15;cursor:pointer}
+.gembtn small{font-size:11px;color:var(--muted)}
+.gembtn.vip small{color:var(--accent)}
+.shopg{display:grid;gap:8px}
+.item{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line)}
+.item:last-child{border:0}
+.item p{margin:2px 0 0}
+.price{white-space:nowrap}
 .res{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin-top:8px}
 .chip{background:var(--surface);border:1px solid var(--line);border-radius:5px;padding:6px 2px 9px;text-align:center;position:relative;min-width:0}
 .chip .rn{font-size:18px;display:block;line-height:1}
@@ -240,7 +249,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--frost);outline-
 <div id="app" hidden>
   <header id="head">
     <div id="logo" class="lg" hidden><img data-l="logo" alt="Nordika: сердце фьерда"><img class="ov a" data-l="logo-c1" alt=""><img class="ov b" data-l="logo-c2" alt=""><img class="ov c" data-l="logo-c3" alt=""><img class="ov b" data-l="logo-r1" alt=""><img class="ov c" data-l="logo-r2" alt=""><img class="ov a" data-l="logo-r3" alt=""><img class="ov d" data-l="logo-s1" alt=""><img class="ov e" data-l="logo-s2" alt=""><img class="ov f" data-l="logo-f" alt=""></div>
-    <div class="trow"><h1 id="h1">Nordika</h1><span class="haste" title="Руны времени: каждая сокращает любой таймер на 5 минут"><span><i class="rn glow d2">ᛞ</i> <b id="hasteN">0</b></span><small>Ускорение</small></span></div>
+    <div class="trow"><h1 id="h1">Nordika</h1><span class="haste" title="Руны времени: каждая сокращает любой таймер на 5 минут"><span><i class="rn glow d2">ᛞ</i> <b id="hasteN">0</b></span><small>Ускорение</small></span><button class="gembtn" data-act="tab" data-arg="shop" aria-label="Магазин"><span><i class="rn glow d1">ᛝ</i> <b id="gemN">0</b></span><small id="vipN">Магазин</small></button></div>
     <div class="who" id="who"></div>
     <div class="res" id="res"></div>
     <div id="net" hidden>Нет связи с сервером</div>
@@ -344,6 +353,7 @@ function toast(txt){
 }
 function cpHTML(k,val,attrs){
   if(k==='haste')return `<span class="cp"><i class="rn" style="color:var(--frost)">ᛞ</i><span class="cl">Ускорение</span> ${val}</span>`;
+  if(k==='gems')return `<span class="cp"><i class="rn" style="color:#e6b3ff">ᛝ</i><span class="cl">Рунные камни</span> ${val}</span>`;
   return `<span class="cp"${attrs||''}><i class="rn" style="color:var(--${k})">${RI[k].r}</i><span class="cl">${RI[k].n}</span> ${fmt(val)}</span>`;
 }
 function costHTML(c){
@@ -553,13 +563,33 @@ async function cact(a,p){
   finally{cbusy=false;}
 }
 
+/* ---------- магазин ---------- */
+const SHOPG={haste:'Ускорения',shield:'Щиты от набегов',res:'Припасы',vip:'VIP'};
+function viewShop(){
+  const vip=Core.isVip(),left=Math.max(0,(S.vip||0)-Core.now());
+  const dl=Core.dailyLeft();
+  let h=`<section class="card"><div class="trow2"><h2>Рунные камни</h2><span class="lv" style="color:#e6b3ff"><i class="rn">ᛝ</i> ${fmt(S.gems||0)}</span></div>
+    <p class="sm muted">${vip?`VIP активен ещё ${left>86400000?Math.ceil(left/86400000)+' дн.':fmtT(left/1000)}`:'VIP не активен'}</p>
+    <div style="margin-top:10px">${dl>0?`<button class="btn off" disabled>Ежедневный дар через ${fmtT(dl/1000)}</button>`:`<button class="btn" data-act="daily">Забрать ежедневный дар</button>`}</div>
+    <p class="note">Дар: ${vip?'3 ускорения и 8':'1 ускорение и 3'} рунных камня раз в сутки. Камни также дают за некоторые дела.</p></section>`;
+  const pk=ui.shop&&ui.shop.pay;
+  h+=`<section class="card"><h2>Пополнить рунные камни</h2>`+(pk&&pk.enabled&&pk.packs.length?pk.packs.map(x=>`<div class="item"><div><b><i class="rn" style="color:#e6b3ff">ᛝ</i> ${x.gems}${x.bonus?` <span class="muted sm">+${x.bonus} в подарок</span>`:''}</b></div><button class="btn small" data-act="pay" data-arg="${x.id}">${x.rub} ₽</button></div>`).join(''):'<p class="muted sm">Пополнение пока не открыто. Рунные камни можно получать каждый день и за дела.</p>')+`</section>`;
+  const groups={};Core.SHOP.forEach(i=>{(groups[i.g]||(groups[i.g]=[])).push(i);});
+  for(const g in groups){
+    h+=`<section class="card"><h2>${SHOPG[g]}</h2>${groups[g].map(i=>`<div class="item"><div><b>${esc(i.t)}</b><p class="sm muted">${esc(i.d)}</p></div><button class="btn small price ${S.gems>=i.gems?'':'off'}" data-act="buy" data-arg="${i.id}"><i class="rn">ᛝ</i> ${i.gems}</button></div>`).join('')}</section>`;
+  }
+  h+=`<p class="note" style="text-align:center">Нужна помощь по покупкам? Напишите администратору в чате.</p>`;
+  return h;
+}
+async function loadShop(){try{ui.shop=await call('GET','/api/shop');if(ui.tab==='shop')render();}catch(e){}}
+
 /* ---------- общение: мир, друзья, личные ---------- */
 ui.sub='world';ui.soc={d:null,peer:null,prof:null,at:0};
 let sbusy=false;
 const stick=b=>{if(b)b.scrollTop=b.scrollHeight;};
 function worldHTML(d){
   if(!d.world.length)return '<p class="cs">В общем чате пока тихо. Напишите первым.</p>';
-  return d.world.map(m=>m.sys?`<p class="cs">📜 ${esc(m.text)}</p>`:`<p class="${m.pid===d.me?'me':''}">${m.tag?`<span class="tag4">${esc(m.tag)}</span>`:''}<b class="nmb" data-act="prof" data-arg="${m.pid}">${esc(m.name)}</b><time>${hhmm(m.t)}</time><br>${esc(m.text)}</p>`).join('');
+  return d.world.map(m=>m.sys?`<p class="cs">📜 ${esc(m.text)}</p>`:`<p class="${m.pid===d.me?'me':''}">${m.tag?`<span class="tag4">${esc(m.tag)}</span>`:''}<b class="nmb" data-act="prof" data-arg="${m.pid}">${m.vip?'<span style="color:var(--accent)">★</span> ':''}${esc(m.name)}</b><time>${hhmm(m.t)}</time><br>${esc(m.text)}</p>`).join('');
 }
 function dmHTML(t,me){
   if(!t.msgs.length)return '<p class="cs">Переписка пуста. Напишите первым.</p>';
@@ -659,7 +689,7 @@ function viewLog(){
   return `<h2>Рейтинг ярлов</h2><section class="card">${rk}</section><h2>Хроника</h2>${sh}<section class="card">${rows}</section>
     ${window.DEMO?window.demoCard():'<section class="card"><button class="btn ghost" data-act="logout">Выйти из аккаунта</button></section>'}`;
 }
-const VIEWS={city:viewCity,troops:viewTroops,map:viewMap,quests:viewQuests,clan:viewSocial,log:viewLog};
+const VIEWS={city:viewCity,troops:viewTroops,map:viewMap,quests:viewQuests,clan:viewSocial,shop:viewShop,log:viewLog};
 const NAV=[['city','ᛟ','Город'],['troops','ᛏ','Войска'],['map','ᚱ','Карта'],['quests','ᚷ','Дела'],['clan','ᛉ','Общение'],['log','ᛗ','Хроника']];
 function buildStatic(){
   $('res').innerHTML=RES.map((r,i)=>`<div class="chip" id="c-${r.id}" style="color:var(--${r.id})"><i class="rn glow d${i%4}">${r.r}</i><span class="lb">${r.n}</span><b id="v-${r.id}" style="color:var(--fg)">0</b><small id="r-${r.id}">+0/ч</small><div class="cb"><i id="b-${r.id}"></i></div></div>`).join('');
@@ -678,6 +708,7 @@ function render(){
   showHero(ui.tab);showLogo(ui.tab==='city');
   v.scrollTop=top;
   NAV.forEach(n=>$('n-'+n[0]).classList.toggle('on',n[0]===ui.tab));
+  const gb=document.querySelector('.gembtn');if(gb)gb.classList.toggle('on',ui.tab==='shop');
   live();
 }
 function live(){
@@ -690,7 +721,8 @@ function live(){
     $('b-'+r.id).style.width=Math.min(100,S.res[r.id]/c*100)+'%';
     $('c-'+r.id).classList.toggle('full',S.res[r.id]>=c);
   });
-  $('hasteN').textContent=S.haste;
+  $('hasteN').textContent=S.haste;$('gemN').textContent=fmt(S.gems||0);
+  {const gb=document.querySelector('.gembtn');if(gb){const v=Core.isVip();gb.classList.toggle('vip',v);$('vipN').textContent=v?'VIP':'Магазин';}}
   document.querySelectorAll('.cd[data-end]').forEach(el=>{
     const end=+el.dataset.end,dur=+el.dataset.dur,rem=(end-tn)/1000;
     el.textContent=rem<=0?'готово':fmtT(rem);
@@ -784,7 +816,8 @@ async function loadRank(){
 }
 function onAct(act,arg){
   switch(act){
-    case 'tab':ui.tab=arg;if(arg==='log'&&Date.now()-ui.rankAt>20000)loadRank();if(arg==='clan'){loadClan();loadSoc();}render();return;
+    case 'tab':ui.tab=arg;if(arg==='shop')loadShop();if(arg==='log'&&Date.now()-ui.rankAt>20000)loadRank();if(arg==='clan'){loadClan();loadSoc();}render();return;
+    case 'pay':toast('Оплата пока не подключена');return;
     case 'sub':ui.sub=arg;ui.soc.peer=null;ui.soc.prof=null;render();if(arg!=='clan')loadSoc();return;
     case 'prof':openProf({id:arg});return;
     case 'profn':ui.tab='clan';ui.sub='world';ui.soc.peer=null;openProf({name:arg}).then(()=>{loadSoc();});return;
