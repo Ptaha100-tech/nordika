@@ -199,6 +199,18 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--frost);outline-
 .cbox .cs{color:var(--muted);font-style:italic;font-size:13px}
 .cbox time{color:var(--muted);font-size:11px;margin-left:6px}
 .cbox .me b{color:var(--accent)}
+.subtabs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:0 0 10px}
+.subtabs .btn{padding:9px 4px;font-size:14px}
+.pcard{border-color:var(--accent)}
+.pcard .acts{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.online{display:inline-block;width:8px;height:8px;border-radius:50%;background:#5fcf7a;margin-right:6px}
+.online.off{background:#556}
+.cbox .nmb{cursor:pointer}
+.cbox .own{opacity:.95}
+.bdg{display:inline-block;min-width:18px;padding:0 5px;margin-left:4px;border-radius:9px;background:var(--accent);color:#1a1205;font-size:12px;font-weight:700;line-height:18px}
+.dmrow{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line);cursor:pointer}
+.dmrow:last-child{border:0}
+.dmrow p{margin:2px 0 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:60vw}
 .crow{display:flex;gap:8px;margin-top:8px}
 .crow input{flex:1;min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:5px;padding:10px 12px;font-size:16px}
 .crow .btn{flex:none}
@@ -541,19 +553,114 @@ async function cact(a,p){
   finally{cbusy=false;}
 }
 
+/* ---------- общение: мир, друзья, личные ---------- */
+ui.sub='world';ui.soc={d:null,peer:null,prof:null,at:0};
+let sbusy=false;
+const stick=b=>{if(b)b.scrollTop=b.scrollHeight;};
+function worldHTML(d){
+  if(!d.world.length)return '<p class="cs">В общем чате пока тихо. Напишите первым.</p>';
+  return d.world.map(m=>m.sys?`<p class="cs">📜 ${esc(m.text)}</p>`:`<p class="${m.pid===d.me?'me':''}">${m.tag?`<span class="tag4">${esc(m.tag)}</span>`:''}<b class="nmb" data-act="prof" data-arg="${m.pid}">${esc(m.name)}</b><time>${hhmm(m.t)}</time><br>${esc(m.text)}</p>`).join('');
+}
+function dmHTML(t,me){
+  if(!t.msgs.length)return '<p class="cs">Переписка пуста. Напишите первым.</p>';
+  return t.msgs.map(m=>`<p class="${m.from===me?'me':''}"><b>${m.from===me?'Вы':esc(t.name)}</b><time>${hhmm(m.t)}</time><br>${esc(m.text)}</p>`).join('');
+}
+function profCard(){
+  const p=ui.soc.prof;if(!p)return '';
+  const d=ui.soc.d||{};
+  const b=[];
+  if(!p.me){
+    b.push(`<button class="btn small" data-act="dmopen" data-arg="${p.pid}">Написать</button>`);
+    b.push(p.friend?`<button class="btn small ghost" data-act="fremove" data-arg="${p.pid}">Удалить из друзей</button>`:`<button class="btn small ghost" data-act="fadd" data-arg="${p.pid}">В друзья</button>`);
+    b.push(p.blocked?`<button class="btn small ghost" data-act="unblock" data-arg="${p.pid}">Разблокировать</button>`:`<button class="btn small ghost" data-act="block" data-arg="${p.pid}">Заблокировать</button>`);
+    b.push(`<button class="btn small ghost" data-act="report" data-arg="${p.pid}">Пожаловаться</button>`);
+  }
+  b.push('<button class="btn small ghost" data-act="profx">Закрыть</button>');
+  return `<section class="card pcard"><div class="trow2"><h2>${p.clan?`<span class="tag4">${esc(p.clan.tag)}</span>`:''}${esc(p.name)}</h2><span class="lv"><i class="online ${p.online?'':'off'}"></i>${p.online?'в игре':'не в игре'}</span></div>
+    <p class="sm muted">Палата ярла ${p.hall} · сила ${fmt(p.score)} · место ${p.rank} из ${p.total}${p.clan?' · клан «'+esc(p.clan.name)+'»':''}</p><div class="acts">${b.join('')}</div></section>`;
+}
+function viewSocial(){
+  const d=ui.soc.d,sub=ui.sub;
+  const un=d?d.unread:0,fr=d?d.reqs.length:0;
+  const tabs=[['world','Мир'],['clan','Клан'],['friends','Друзья'+(fr?`<span class="bdg">${fr}</span>`:'')],['dm','Личные'+(d&&d.threads.some(x=>x.unread)?`<span class="bdg">${d.threads.reduce((s,x)=>s+x.unread,0)}</span>`:'')]];
+  let h=`<div class="subtabs">${tabs.map(t=>`<button class="btn ${t[0]===sub?'on':'ghost'}" data-act="sub" data-arg="${t[0]}">${t[1]}</button>`).join('')}</div>`+profCard();
+  if(sub==='clan')return h+viewClan();
+  if(!d)return h+'<p class="muted sm">Загрузка…</p>';
+  if(sub==='world'){
+    const mut=d.muted?`<p class="note" style="color:var(--bad,#e66)">Вам запрещено писать ещё ${fmtT(d.muted/1000)}.</p>`:'';
+    return h+`<section class="card"><h2>Общий чат</h2><div id="wbox" class="cbox" style="max-height:340px">${worldHTML(d)}</div>${mut}
+      <div class="crow"><input id="wmsg" data-keep maxlength="200" placeholder="Сообщение всем" autocomplete="off" enterkeyhint="send"><button class="btn small" data-act="wsay">Отправить</button></div>
+      <p class="note">Нажмите на имя, чтобы открыть профиль. Ссылки и брань запрещены.</p></section>`;
+  }
+  if(sub==='friends'){
+    const rq=d.reqs.map(r=>`<div class="hrow"><div><b>${esc(r.name)}</b><p class="sm muted">Палата ${r.hall} хочет дружить</p></div><div style="display:flex;gap:6px"><button class="btn small" data-act="faccept" data-arg="${r.pid}">Принять</button><button class="btn small ghost" data-act="fdecline" data-arg="${r.pid}">Нет</button></div></div>`).join('');
+    const fl=d.friends.length?d.friends.map(f=>`<div class="dmrow" data-act="prof" data-arg="${f.pid}"><div><i class="online ${f.online?'':'off'}"></i><b>${esc(f.name)}</b><p class="sm muted">Палата ${f.hall} · сила ${fmt(f.score)}</p></div><button class="btn small" data-act="dmopen" data-arg="${f.pid}">Написать${f.unread?`<span class="bdg">${f.unread}</span>`:''}</button></div>`).join(''):'<p class="muted sm">Друзей пока нет. Нажмите на имя в чате или найдите игрока по имени.</p>';
+    const bl=d.blocks.length?`<section class="card"><h2>Чёрный список</h2>${d.blocks.map(x=>`<div class="hrow"><b>${esc(x.name)}</b><button class="btn small ghost" data-act="unblock" data-arg="${x.pid}">Разблокировать</button></div>`).join('')}</section>`:'';
+    return h+(rq?`<section class="card"><h2>Заявки</h2>${rq}</section>`:'')+`<section class="card"><h2>Найти игрока</h2><div class="crow" style="margin-top:0"><input id="fname" data-keep maxlength="16" placeholder="Имя ярла" autocomplete="off" enterkeyhint="search"><button class="btn small" data-act="fsearch">Найти</button></div></section>
+      <section class="card"><h2>Друзья <span class="lv">${d.friends.length}</span></h2>${fl}</section>`+bl;
+  }
+  // личные
+  if(ui.soc.peer&&!d.thread)return h+'<p class="muted sm">Загрузка…</p>';
+  if(ui.soc.peer&&d.thread){
+    const t=d.thread;
+    return h+`<section class="card"><div class="trow2"><h2><i class="online ${t.online?'':'off'}"></i>${esc(t.name)}</h2><button class="btn small ghost" data-act="dmback">Назад</button></div>
+      <div id="dbox" class="cbox" style="max-height:320px">${dmHTML(t,d.me)}</div>
+      <div class="crow"><input id="dmsg" data-keep maxlength="200" placeholder="Личное сообщение" autocomplete="off" enterkeyhint="send"><button class="btn small" data-act="dsay">Отправить</button></div>
+      <div class="acts" style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap"><button class="btn small ghost" data-act="prof" data-arg="${t.pid}">Профиль</button></div></section>`;
+  }
+  const th=d.threads.length?d.threads.map(x=>`<div class="dmrow" data-act="dmopen" data-arg="${x.pid}"><div><i class="online ${x.online?'':'off'}"></i><b>${esc(x.name)}</b>${x.unread?`<span class="bdg">${x.unread}</span>`:''}<p class="sm muted">${x.mine?'Вы: ':''}${esc(x.text)}</p></div><time class="muted sm">${hhmm(x.t)}</time></div>`).join(''):'<p class="muted sm">Личных переписок пока нет. Откройте профиль игрока и нажмите «Написать».</p>';
+  return h+`<section class="card"><h2>Личные сообщения</h2>${th}</section>`;
+}
+async function loadSoc(){
+  try{
+    const j=await call('GET','/api/social'+(ui.soc.peer?'?peer='+encodeURIComponent(ui.soc.peer):''));
+    ui.soc.d=j;ui.soc.at=Date.now();
+    if(ui.tab==='clan'&&ui.sub==='dm'&&ui.soc.peer){const t=j.threads.find(x=>x.pid===ui.soc.peer);if(t&&t.unread)call('POST','/api/social/act',{a:'read',peer:ui.soc.peer}).catch(()=>{});}
+    if(ui.tab!=='clan'){live();return;}
+    const ae=document.activeElement;
+    if(ae&&ae.hasAttribute&&ae.hasAttribute('data-keep')){
+      const w=$('wbox'),b=$('dbox');
+      if(w&&ui.sub==='world'){const s=w.scrollTop+w.clientHeight>=w.scrollHeight-20;w.innerHTML=worldHTML(j);if(s)stick(w);}
+      if(b&&j.thread){const s=b.scrollTop+b.clientHeight>=b.scrollHeight-20;b.innerHTML=dmHTML(j.thread,j.me);if(s)stick(b);}
+    }else if(ui.sub!=='clan')render();
+  }catch(e){}
+}
+async function openProf(q){
+  try{const j=await call('GET','/api/profile?'+(q.name!==undefined?'name='+encodeURIComponent(q.name):'id='+encodeURIComponent(q.id)));ui.soc.prof=j;render();}
+  catch(e){toast(e.message||'Игрок не найден');}
+}
+async function sact(a,p){
+  if(sbusy)return;sbusy=true;
+  try{
+    const j=await call('POST','/api/social/act',Object.assign({a},p||{}));
+    ui.soc.d=j;ui.soc.at=Date.now();
+    const sent=j.result&&j.result.sent;
+    if(a==='fadd')toast(sent?'Заявка отправлена':'Вы теперь друзья');
+    else if(a==='faccept')toast('Теперь вы друзья');
+    else if(a==='report')toast('Жалоба отправлена');
+    else if(a==='block')toast('Игрок заблокирован');
+    if(ui.soc.prof&&['fadd','faccept','fremove','block','unblock'].includes(a)){
+      try{ui.soc.prof=await call('GET','/api/profile?id='+encodeURIComponent(ui.soc.prof.pid));}catch(e){}
+    }
+    render();
+    if(a==='wsay')stick($('wbox'));if(a==='dsay')stick($('dbox'));
+  }catch(e){if(e.message)toast(e.message);}
+  finally{sbusy=false;}
+}
+
 function viewLog(){
   const sh=S.shield>Core.now()?`<p class="note" style="margin:0 0 4px">Щит от набегов ещё ${fmtT((S.shield-Core.now())/1000)}</p>`:'';
   const rows=S.log.length?S.log.map(e=>`<div class="log ${e.k}"><time>${new Date(e.t).toLocaleString('ru-RU',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</time><p>${esc(e.txt)}</p></div>`).join(''):`<p class="muted">Пока тихо.</p>`;
   let rk='<p class="muted sm">Загрузка…</p>';
   if(ui.rank){
-    rk=ui.rank.top.map((x,i)=>`<div class="rk ${x.me?'me':''}"><span class="n">${i+1}</span><span class="nm">${esc(x.name)}</span><span>Палата ${x.hall}</span><span>${fmt(x.score)}</span></div>`).join('');
+    rk=ui.rank.top.map((x,i)=>`<div class="rk ${x.me?'me':''}"><span class="n">${i+1}</span><span class="nm" data-act="profn" data-arg="${esc(x.name)}" style="cursor:pointer">${esc(x.name)}</span><span>Палата ${x.hall}</span><span>${fmt(x.score)}</span></div>`).join('');
     if(ui.rank.me>30)rk+=`<div class="rk me"><span class="n">${ui.rank.me}</span><span class="nm">${esc(S.name)}</span><span></span><span>${fmt(ui.rank.my)}</span></div>`;
   }
   return `<h2>Рейтинг ярлов</h2><section class="card">${rk}</section><h2>Хроника</h2>${sh}<section class="card">${rows}</section>
     ${window.DEMO?window.demoCard():'<section class="card"><button class="btn ghost" data-act="logout">Выйти из аккаунта</button></section>'}`;
 }
-const VIEWS={city:viewCity,troops:viewTroops,map:viewMap,quests:viewQuests,clan:viewClan,log:viewLog};
-const NAV=[['city','ᛟ','Город'],['troops','ᛏ','Войска'],['map','ᚱ','Карта'],['quests','ᚷ','Дела'],['clan','ᛉ','Клан'],['log','ᛗ','Хроника']];
+const VIEWS={city:viewCity,troops:viewTroops,map:viewMap,quests:viewQuests,clan:viewSocial,log:viewLog};
+const NAV=[['city','ᛟ','Город'],['troops','ᛏ','Войска'],['map','ᚱ','Карта'],['quests','ᚷ','Дела'],['clan','ᛉ','Общение'],['log','ᛗ','Хроника']];
 function buildStatic(){
   $('res').innerHTML=RES.map((r,i)=>`<div class="chip" id="c-${r.id}" style="color:var(--${r.id})"><i class="rn glow d${i%4}">${r.r}</i><span class="lb">${r.n}</span><b id="v-${r.id}" style="color:var(--fg)">0</b><small id="r-${r.id}">+0/ч</small><div class="cb"><i id="b-${r.id}"></i></div></div>`).join('');
   $('nav').innerHTML=NAV.map((n,i)=>`<button data-act="tab" data-arg="${n[0]}" id="n-${n[0]}" aria-label="${n[2]}"><i class="rn glow d${i%4}">${n[1]}</i><span class="cap">${n[2]}</span></button>`).join('');
@@ -566,7 +673,7 @@ function render(){
   const keep={};list.querySelectorAll('[data-keep]').forEach(el=>{keep[el.id]=el.value;});
   list.innerHTML=VIEWS[ui.tab]();
   for(const id in keep){const el=document.getElementById(id);if(el)el.value=keep[id];}
-  if(ui.tab==='clan'){const b=$('cbox');if(b)b.scrollTop=b.scrollHeight;}
+  if(ui.tab==='clan'){['cbox','wbox','dbox'].forEach(i=>stick($(i)));}
   try{window.Art&&Art.paintIn(list,id=>lvl(id));}catch(e){}
   showHero(ui.tab);showLogo(ui.tab==='city');
   v.scrollTop=top;
@@ -599,7 +706,7 @@ function live(){
   const nq=$('n-quests'),dot=nq.querySelector('.dot');
   if(claimable&&!dot){const d=document.createElement('span');d.className='dot';nq.appendChild(d);}
   if(!claimable&&dot)dot.remove();
-  const nc=$('n-clan'),needHelp=!!(ui.clan&&ui.clan.clan&&ui.clan.clan.reqs.some(r=>!r.mine&&!r.done)),cd=nc.querySelector('.dot');
+  const nc=$('n-clan'),needHelp=!!(ui.clan&&ui.clan.clan&&ui.clan.clan.reqs.some(r=>!r.mine&&!r.done))||!!(ui.soc.d&&ui.soc.d.unread&&!(ui.tab==='clan'&&ui.sub==='dm'&&ui.soc.peer)),cd=nc.querySelector('.dot');
   if(needHelp&&!cd){const d=document.createElement('span');d.className='dot';nc.appendChild(d);}
   if(!needHelp&&cd)cd.remove();
 }
@@ -677,7 +784,18 @@ async function loadRank(){
 }
 function onAct(act,arg){
   switch(act){
-    case 'tab':ui.tab=arg;if(arg==='log'&&Date.now()-ui.rankAt>20000)loadRank();if(arg==='clan')loadClan();render();return;
+    case 'tab':ui.tab=arg;if(arg==='log'&&Date.now()-ui.rankAt>20000)loadRank();if(arg==='clan'){loadClan();loadSoc();}render();return;
+    case 'sub':ui.sub=arg;ui.soc.peer=null;ui.soc.prof=null;render();if(arg!=='clan')loadSoc();return;
+    case 'prof':openProf({id:arg});return;
+    case 'profn':ui.tab='clan';ui.sub='world';ui.soc.peer=null;openProf({name:arg}).then(()=>{loadSoc();});return;
+    case 'profx':ui.soc.prof=null;render();return;
+    case 'fsearch':{const el=$('fname');const n=el?el.value.trim():'';if(n)openProf({name:n});return;}
+    case 'dmopen':ui.sub='dm';ui.soc.peer=arg;ui.soc.prof=null;ui.soc.d&&(ui.soc.d.thread=null);render();loadSoc().then(()=>stick($('dbox')));return;
+    case 'dmback':ui.soc.peer=null;render();loadSoc();return;
+    case 'wsay':{const el=$('wmsg');const t=el?el.value.trim():'';if(!t)return;el.value='';sact('wsay',{text:t});return;}
+    case 'dsay':{const el=$('dmsg');const t=el?el.value.trim():'';if(!t||!ui.soc.peer)return;el.value='';sact('dsay',{to:ui.soc.peer,text:t});return;}
+    case 'fadd':case 'faccept':case 'fdecline':case 'fremove':case 'block':case 'unblock':sact(act,{pid:arg});return;
+    case 'report':sact('report',{pid:arg});return;
     case 'ccreate':cact('create',{name:$('cn').value,tag:$('ct').value});return;
     case 'cjoin':cact('join',{id:arg});return;
     case 'cleave':if(!ui.leaveSure){ui.leaveSure=true;render();setTimeout(()=>{ui.leaveSure=false;if(ui.tab==='clan')render();},4000);return;}ui.leaveSure=false;cact('leave');return;
@@ -725,7 +843,8 @@ function boot(){
   },1000);
   setInterval(()=>{if(S&&!document.hidden&&!ui.modal)sync();},20000);
   setInterval(()=>{if(S&&!document.hidden&&!$('app').hidden&&!cbusy&&(ui.tab==='clan'||Date.now()-ui.clanAt>30000))loadClan();},5000);
-  document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target&&e.target.id==='cmsg'){e.preventDefault();onAct('csay');}});
+  setInterval(()=>{if(S&&!document.hidden&&!$('app').hidden&&(ui.tab==='clan'?ui.sub!=='clan':Date.now()-ui.soc.at>20000))loadSoc();},4000);
+  document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target){const m={cmsg:'csay',wmsg:'wsay',dmsg:'dsay',fname:'fsearch'}[e.target.id];if(m){e.preventDefault();onAct(m);}}});
   document.addEventListener('visibilitychange',()=>{if(!document.hidden&&S)sync();});
   if(!window.DEMO&&'serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});
   const hs=document.querySelector('#heroV source');

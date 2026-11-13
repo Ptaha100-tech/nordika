@@ -8,6 +8,7 @@ const path = require('path');
 const crypto = require('crypto');
 const Core = require('./public/core.js');
 const Clan = require('./public/clans.js');
+const Social = require('./public/social.js');
 
 const PORT = Number(process.env.PORT) || 3000;
 const HOST = process.env.HOST || '0.0.0.0';
@@ -40,7 +41,7 @@ function loadAll() {
 }
 function markDirty(u) { if (u) dirty.add(u.id); }
 function flush() {
-  flushClans();
+  flushClans(); flushSocial();
   for (const id of dirty) {
     const u = users.get(id); if (!u) continue;
     try {
@@ -59,6 +60,25 @@ function flushClans() {
   try { const tmp = CLAN_FILE + '.tmp'; fs.writeFileSync(tmp, JSON.stringify(cstore)); fs.renameSync(tmp, CLAN_FILE); cdirty = false; }
   catch (e) { console.error('Ошибка записи кланов', e.message); }
 }
+/* ---------- общение ---------- */
+const SOC_FILE = path.join(DATA_DIR, 'social.json');
+let sstore; try { sstore = Object.assign(Social.newStore(), JSON.parse(fs.readFileSync(SOC_FILE, 'utf8'))); } catch (e) { sstore = Social.newStore(); }
+let sdirty = false;
+function flushSocial() {
+  if (!sdirty) return;
+  try { const tmp = SOC_FILE + '.tmp'; fs.writeFileSync(tmp, JSON.stringify(sstore)); fs.renameSync(tmp, SOC_FILE); sdirty = false; }
+  catch (e) { console.error('Ошибка записи общения', e.message); }
+}
+const ONLINE_MS = 3 * 60 * 1000;
+const sctx = {
+  now: () => Date.now(),
+  exists: pid => users.has(pid),
+  nameOf: pid => (users.get(pid) || {}).name || '?',
+  hallOf: pid => { const u = users.get(pid); return u ? u.state.b.hall : 0; },
+  scoreOf: pid => { const u = users.get(pid); return u ? Core.score(u.state) : 0; },
+  online: pid => { const u = users.get(pid); return !!(u && u.seen && Date.now() - u.seen < ONLINE_MS); },
+  tagOf: pid => { const c = Clan.clanOf(cstore, pid); return c ? c.tag : ''; }
+};
 const cctx = {
   now: () => Date.now(),
   nameOf: pid => (users.get(pid) || {}).name || '?',
@@ -70,7 +90,7 @@ const cctx = {
   notify: (pid, text) => { const u = users.get(pid); if (u) { Core.addLogTo(u.state, text, 'good'); markDirty(u); } }
 };
 setInterval(flush, 2000).unref();
-function shutdown() { flush(); flushClans(); process.exit(0); }
+function shutdown() { flush(); flushClans(); flushSocial(); process.exit(0); }
 process.on('SIGINT', shutdown); process.on('SIGTERM', shutdown);
 
 /* ---------- связь ядра с игроками ---------- */
@@ -130,7 +150,9 @@ function readBody(req) {
 function authUser(req) {
   const h = req.headers['authorization'] || '';
   const m = /^Bearer ([0-9a-f]{64})$/.exec(h); if (!m) return null;
-  const id = byToken.get(sha(m[1])); return id ? users.get(id) : null;
+  const id = byToken.get(sha(m[1])); const u = id ? users.get(id) : null;
+  if (u) u.seen = Date.now();
+  return u;
 }
 function hashPw(pw, salt) { return crypto.scryptSync(pw, salt, 32).toString('hex'); }
 function newToken(u) {
@@ -214,6 +236,27 @@ async function api(req, res, url) {
     if (r.ok) cdirty = true;
     if (r.error) return json(res, 400, { error: r.error });
     return json(res, 200, Object.assign(Clan.view(cstore, cctx, u.id), { result: r }));
+  }
+  if (req.method === 'GET' && url === '/api/social') {
+    const q = new URL(req.url, 'http://x').searchParams;
+    return json(res, 200, Social.view(sstore, sctx, u.id, (q.get('peer') || '').slice(0, 16)));
+  }
+  if (req.method === 'POST' && url === '/api/social/act') {
+    let b; try { b = await readBody(req); } catch (e) { return json(res, 400, { error: 'Некорректный запрос' }); }
+    if (typeof b.a !== 'string' || b.a.length > 12) return json(res, 400, { error: 'Некорректное действие' });
+    if (limited('soc:' + u.id, 30, 10000)) return json(res, 429, { error: 'Слишком быстро.' });
+    const r = Social.act(sstore, sctx, u.id, b.a, b);
+    if (r.error !== undefined) return json(res, 400, { error: r.error });
+    sdirty = true;
+    return json(res, 200, Object.assign(Social.view(sstore, sctx, u.id, String(b.peer || b.to || b.pid || '').slice(0, 16)), { result: r }));
+  }
+  if (req.method === 'GET' && url === '/api/profile') {
+    const q = new URL(req.url, 'http://x').searchParams, nm = (q.get('name') || '').trim().toLowerCase().slice(0, 20), id = nm ? (byName.get(nm) || '') : (q.get('id') || '').slice(0, 16), t = users.get(id);
+    if (!t) return json(res, 404, { error: 'Нет такого игрока.' });
+    const list = ranking(), idx = list.findIndex(x => x.id === id), c = Clan.clanOf(cstore, id);
+    return json(res, 200, { pid: id, name: t.name, hall: t.state.b.hall, score: Core.score(t.state), rank: idx + 1, total: list.length,
+      clan: c ? { tag: c.tag, name: c.name } : null, online: sctx.online(id), me: id === u.id,
+      friend: (sstore.friends[u.id] || []).includes(id), blocked: (sstore.blocks[u.id] || []).includes(id) });
   }
   if (req.method === 'POST' && url === '/api/logout') {
     const h = (req.headers['authorization'] || '').slice(7);
