@@ -136,6 +136,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--frost);outline-
 .pill.good{color:var(--ok)}.pill.warn{color:var(--accent)}.pill.bad{color:var(--blood)}.pill.mute{color:var(--muted)}.pill.frost{color:var(--frost)}
 .kind{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--frost)}
 .tg.player .kind{color:var(--blood)}.tg.jarl .kind{color:var(--accent)}
+.tgbtn{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
 .tgb{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:6px}
 .qt{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
 .log{display:flex;gap:10px;padding:8px 0;border-top:1px solid var(--line);font-size:15px}
@@ -490,6 +491,10 @@ function viewMap(){
   if(ui.msub==='world')return h+worldMapHTML();
   const note={node:'Мирные места, где отряд собирает ресурсы. Чем дальше точка, тем дольше путь.',camp:'Разбойники грабят округу. Победите их и заберите добычу.',pvp:'Здесь можно напасть на других ярлов. Живые игроки идут первыми, при нехватке их заменяют отряды ярлов.'}[ui.msub];
   h+=`<p class="note" style="margin:0 0 8px">${note}</p>`;
+  if(ui.msub==='pvp'){
+    const rs=(S.raids||[]).filter(r=>Core.now()-r.t<48*3600000);
+    if(rs.length)h+=`<section class="card"><h3>Нападения на вас</h3>${rs.slice(0,6).map(r=>`<div class="item"><div><b>${esc(r.name)}</b> <span class="pill ${r.win?'bad':'good'}">${r.win?'ограбил вас':'отбит'}</span><p class="sm muted">${ago(r.t)}${r.win&&r.loot?' · унёс: '+esc(r.loot):''}${r.lost?' · ваши потери: '+esc(r.lost):''}</p></div><button class="btn small" data-act="revenge" data-arg="${r.pid}">Отомстить</button></div>`).join('')}</section>`;
+  }
   const list=S.targets.filter(t=>grp(t)===ui.msub).sort((a,b)=>(a.kind==='player'?0:1)-(b.kind==='player'?0:1)||a.dist-b.dist);
   if(!list.length)h+=`<p class="muted sm">Целей нет. Нажмите «Новые цели».</p>`;
   list.forEach(t=>{
@@ -498,8 +503,8 @@ function viewMap(){
     const loot=t.kind==='player'?'<p class="bd">Можно забрать до четверти запасов за вычетом того, что прячет Хранилище.</p>':`<div class="costs" style="margin-bottom:0">${Object.keys(t.loot).map(k=>cpHTML(k,t.loot[k])).join('')}</div>`;
     h+=`<article class="card tg ${t.kind}"><div class="trow2"><span class="kind">${KIND[t.kind]} · ур. ${t.level}</span><span class="pill ${sh?'mute':v.c}">${sh?'Под щитом':v.t}</span></div>
       <h3 style="margin-top:2px">${esc(t.name)}</h3>
-      ${t.kind==='node'?'':`<p class="bd">${t.kind==='player'?'Разведка: ':''}${fmtComp(t.comp)||'войск не видно'}</p>`}${loot}
-      <div class="tgb"><span class="muted sm">Расстояние ${t.dist} лиг · в пути ${fmtT(marchSecs(t.dist))} в одну сторону</span><button class="btn ${free>0&&sum(S.troops)?'':'off'}" data-act="atk" data-arg="${t.id}">${t.kind==='node'?'Собрать':'Напасть'}</button></div></article>`;
+      ${t.kind==='node'?'':`<p class="bd">${t.kind==='player'?'Разведка'+(t.seenAt?' ('+ago(t.seenAt)+'): ':': '):''}${fmtComp(t.comp)||'войск не видно'}</p>`}${loot}
+      <div class="tgb"><span class="muted sm">Расстояние ${t.dist} лиг · в пути ${fmtT(marchSecs(t.dist))} в одну сторону</span><span class="tgbtn">${t.kind==='player'?`<button class="btn ghost ${S.res.silver>=Core.SCOUT_COST?'':'off'}" data-act="scout" data-arg="${t.id}">Разведать · ${Core.SCOUT_COST}<i class="rn" style="color:var(--silver)">${RI.silver.r}</i></button>`:''}<button class="btn ${free>0&&sum(S.troops)?'':'off'}" data-act="atk" data-arg="${t.id}">${t.kind==='node'?'Собрать':'Напасть'}</button></span></div></article>`;
   });
   return h;
 }
@@ -833,6 +838,7 @@ function wmInit(){
   };
   wmInfo();wmList();wmDraw();wmLoop();loadWorld();
 }
+const ago=t=>{const m=Math.round((Core.now()-t)/60000);return m<2?'только что':m<60?m+' мин назад':m<1440?Math.round(m/60)+' ч назад':Math.round(m/1440)+' дн назад';};
 const NAV=[['city','ᛟ','Город'],['troops','ᛏ','Войска'],['map','ᚱ','Карта'],['quests','ᚷ','Задания'],['chat','ᛗ','Чат'],['clan','ᛉ','Клан']];
 function buildStatic(){
   $('res').innerHTML=RES.map((r,i)=>`<div class="chip" id="c-${r.id}" style="color:var(--${r.id})"><i class="rn glow d${i%4}">${r.r}</i><span class="lb">${r.n}</span><b id="v-${r.id}" style="color:var(--fg)">0</b><small id="r-${r.id}">+0/ч</small><div class="cb"><i id="b-${r.id}"></i></div></div>`).join('');

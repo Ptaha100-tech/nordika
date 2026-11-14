@@ -97,6 +97,7 @@ process.on('SIGINT', shutdown); process.on('SIGTERM', shutdown);
 /* ---------- связь ядра с игроками ---------- */
 Core.HOOK.getState = pid => { const u = users.get(pid); return u ? u.state : null; };
 Core.HOOK.touch = pid => markDirty(users.get(pid));
+Core.HOOK.dist = (a, b) => distTo(a, b);
 /* Каждому игроку по номеру достаётся своё место на карте 100 на 100. Путь к другому игроку зависит от расстояния между местами. */
 const posOf = pid => ({ x: parseInt(String(pid).slice(0, 4), 16) % 100, y: parseInt(String(pid).slice(4, 8), 16) % 100 });
 const distTo = (a, b) => { const p = posOf(a), q = posOf(b); return Math.max(6, Math.round(Math.hypot(p.x - q.x, p.y - q.y) / 2.6)); };

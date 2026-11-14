@@ -64,6 +64,7 @@ let S = null;
 let quiet = false;
 let toastFn = () => {};
 const HOOK = {
+  dist: () => 12,
   pickPlayers: () => [],
   getState: () => null,
   touch: () => {}
@@ -200,7 +201,7 @@ function randComp(n, keys) {
 
 /* ============ Цели на карте ============ */
 function playerTarget(p) {
-  return { id: 't' + (S.mid++), kind: 'player', pid: p.pid, name: p.name, level: p.level, comp: p.comp, loot: {}, defb: 1, res: null, dist: p.dist || ri(10, 35), shieldAt: p.shield };
+  return { id: 't' + (S.mid++), kind: 'player', pid: p.pid, name: p.name, level: p.level, comp: p.comp, loot: {}, defb: 1, res: null, dist: p.dist || ri(10, 35), shieldAt: p.shield, seenAt: nowMs() };
 }
 /* Если в списке нет живых игроков, а они появились, подменяем ими ботов-ярлов. */
 function topUpPlayers() {
@@ -350,12 +351,13 @@ function resolvePlayer(m) {
   const r = battle(m.send, D.troops, atkB(A), defB(D), tiersOf(A), tiersOf(D));
   D.troops = r.survD;
   const aName = A.name || 'Неизвестный ярл';
+  const raid = (win, loot) => { (D.raids || (D.raids = [])).unshift({ t, pid: A.pid, name: aName, win, lost: fmtComp(r.lostD) || '', loot: loot || '' }); if (D.raids.length > 20) D.raids.pop(); };
   if (r.win) {
     const pr = 300 * (D.b.vault || 0), take = {}; let tot = 0;
     RES.forEach(x => { const a = Math.floor(Math.max(0, D.res[x.id] - pr) * 0.25); take[x.id] = a; tot += a; });
     const f = tot > 0 ? Math.min(1, carryOf(r.survA) / tot) : 0;
     m.loot = {}; RES.forEach(x => { const g = Math.floor(take[x.id] * f); m.loot[x.id] = g; D.res[x.id] -= g; });
-    D.shield = t + 45 * 60000;
+    D.shield = t + 45 * 60000; raid(true, fmtRes(m.loot));
     addLogTo(D, `Ярл «${aName}» разграбил ваш город. Унесли: ${fmtRes(m.loot)}. Погибло: ${fmtComp(r.lostD) || 'никто'}. Щит на 45 минут.`, 'bad', t);
     m.send = r.survA; home();
     A.stat.wins++; A.stat.pvpWins++; gainXp(60 + 15 * (tg.level || 1));
@@ -363,7 +365,7 @@ function resolvePlayer(m) {
     toast(`Победа над «${tg.name}»`);
     S.targets = S.targets.filter(x => x.id !== tg.id); S.targets.push(genTarget('player'));
   } else {
-    D.stat.defWins++;
+    D.stat.defWins++; raid(false);
     addLogTo(D, `Вы отбили нападение ярла «${aName}». Павшие: ${fmtComp(r.lostD) || 'нет'}.`, 'good', t);
     m.loot = {}; m.send = r.survA;
     addLog(`Поражение у ярла «${tg.name}». Потери: ${fmtComp(r.lostA) || 'нет'}.`, 'bad', t);
@@ -512,6 +514,36 @@ function claimDaily() {
   addLog(`Ежедневный дар: ${v ? 3 : 1} ускор., ${v ? 8 : 3} рунных камн.`, 'good'); toast('Ежедневный дар получен');
   return true;
 }
+/* Разведка: обновляет данные о войске живого игрока. Стоит серебра. */
+const SCOUT_COST = 25;
+function scout(tid) {
+  const tg = S.targets.find(x => x.id === tid);
+  if (!tg || tg.kind !== 'player') return false;
+  const D = HOOK.getState(tg.pid);
+  if (!D) { toast('Ярл исчез'); return false; }
+  if (S.res.silver < SCOUT_COST) { toast('Не хватает серебра'); return false; }
+  S.res.silver -= SCOUT_COST;
+  settle(D, Math.max(nowMs(), D.t));
+  tg.comp = Object.assign({}, D.troops); tg.shieldAt = D.shield; tg.level = D.b.hall; tg.seenAt = nowMs();
+  toast('Разведка: данные обновлены');
+  return true;
+}
+/* Месть: добавляет напавшего игрока в список целей. */
+function revenge(pid) {
+  const r = (S.raids || []).find(x => x.pid === pid && nowMs() - x.t < 48 * 3600000);
+  if (!r) { toast('Этот набег уже забыт'); return false; }
+  const D = HOOK.getState(pid);
+  if (!D) { toast('Ярл исчез'); return false; }
+  const ex = S.targets.find(x => x.kind === 'player' && x.pid === pid);
+  if (ex) { toast('Этот ярл уже в списке ПВП'); return true; }
+  settle(D, Math.max(nowMs(), D.t));
+  const t = playerTarget({ pid, name: D.name, level: D.b.hall, comp: Object.assign({}, D.troops), shield: D.shield, dist: HOOK.dist(S.pid, pid) });
+  const i = S.targets.findIndex(x => x.kind === 'jarl' || x.kind === 'player');
+  if (i >= 0 && S.targets.filter(x => x.kind === 'player').length >= 6) S.targets.splice(i, 1);
+  S.targets.push(t); toast('Цель для мести добавлена в раздел ПВП');
+  return true;
+}
+
 /* ============ События: серия входов и недельное состязание ============ */
 const MSK = 3 * 3600000;
 const dayId = t => Math.floor((t + MSK) / 86400000);
@@ -585,6 +617,8 @@ function act(a, arg) {
     case 'buy': if (typeof arg === 'string') buy(arg); break;
     case 'daily': claimDaily(); break;
     case 'streak': claimStreak(); break;
+    case 'scout': if (typeof arg === 'string') scout(arg); break;
+    case 'revenge': if (typeof arg === 'string') revenge(arg); break;
   }
 }
 
@@ -611,7 +645,7 @@ const API = {
   get S() { return S; },
   use, newState, update, produce, settle, battle, act, score, verdict,
   lvl, slots, cap, capAt, rate, prodAt, upCost, upSecs, canUp, canAfford, trainRate, maxBatch, trainSecs, techCost, techSecs, gatherSecs, marchSecs,
-  SHOP, isVip, buy, claimDaily, dailyLeft, streakInfo, claimStreak, STREAK, CONTESTS, PRIZES, PRIZE_PART, weekId, weekEnd, contestOf, wkScoreOf, wkSync, dayId,
+  SHOP, SCOUT_COST, isVip, buy, claimDaily, dailyLeft, streakInfo, claimStreak, STREAK, CONTESTS, PRIZES, PRIZE_PART, weekId, weekEnd, contestOf, wkScoreOf, wkSync, dayId,
   jobInfo, helpJob, chargeClan, CLAN_COST, CLAN_HALL, jobObj,
   tierOf, heroOf, tmul, tiersOf, botTiers, atkB, defB, lootB, unitName, xpNeed, tierCost, tierSecs,
   refreshTargets, topUpPlayers, addLogTo, fmt, fmtT, fmtRes, fmtComp, carryOf,
