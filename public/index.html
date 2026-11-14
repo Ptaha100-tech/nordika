@@ -87,6 +87,7 @@ p{margin:0}
 #net{font-size:12px;color:var(--blood);text-align:center;height:0;overflow:visible;position:relative;top:2px}
 
 .scroll{flex:1;min-height:0;overflow-y:auto;padding:12px 0 16px;display:flex;flex-direction:column;gap:10px;overscroll-behavior:contain}
+.tut{border-color:var(--gold,#d9a441);display:grid;gap:6px}.tut .tr{display:flex;gap:8px;flex-wrap:wrap}.tut .tr .btn{flex:1 1 auto}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:12px;min-width:0}
 
 .btn{background:var(--accent);color:var(--accent-ink);border:0;border-radius:4px;padding:8px 14px;font-weight:700;font-size:15px;min-height:42px;cursor:pointer}
@@ -701,6 +702,23 @@ function viewTop(){
   return `<h2>Топ ярлов</h2><section class="card">${rk}</section>${window.DEMO?window.demoCard():''}`;
 }
 const VIEWS={city:viewCity,troops:viewTroops,map:viewMap,quests:viewQuests,chat:viewSocial,clan:viewClan,shop:viewShop,top:viewTop};
+/* ---------- обучение: шаги выводятся из состояния игры, поэтому ничего лишнего не хранится на сервере ---------- */
+const TUT=[
+ {t:'Улучши Лесопилку до 2 уровня',h:'Здания дают ресурсы и силу. Нажми «Улучшить» у Лесопилки. Пока идёт стройка, можно заняться другим.',tab:'city',ok:()=>lvl('sawmill')>=2},
+ {t:'Обучи 10 воинов',h:'Войска нужны для защиты и походов. Во вкладке «Войска» выбери копейщиков и нажми «Обучить».',tab:'troops',ok:()=>S.stat.trained>=10},
+ {t:'Разгроми лагерь разбойников',h:'Во вкладке «Карта», раздел «Охота», выбери слабый лагерь и отправь отряд. Лучше слать больше воинов, чем меньше.',tab:'map',ok:()=>S.stat.campWins>=1},
+ {t:'Забери награду за задание',h:'Во вкладке «Задания» горит точка, когда награда готова. Нажми «Забрать».',tab:'quests',ok:()=>Object.keys(S.claimed||{}).length>=1},
+ {t:'Забери подарок дня',h:'В магазине (кнопка с рунным камнем сверху) раз в 20 часов можно взять бесплатные ускорения и рунные камни.',tab:'shop',ok:()=>(S.daily||0)>0}
+];
+function tutKey(){return 'nd_tut_'+(S&&S.pid||'');}
+function tutSkipped(){try{return localStorage.getItem(tutKey())==='1';}catch(e){return false;}}
+function tutHTML(){
+  if(!S||!S.introDone||tutSkipped())return '';
+  const i=TUT.findIndex(x=>!x.ok());
+  if(i<0){try{localStorage.setItem(tutKey(),'1');}catch(e){}return `<section class="card tut"><h3>Обучение пройдено</h3><p class="sm">Дальше вы сами. Следите за заданиями: они ведут по всей игре.</p></section>`;}
+  const x=TUT[i];
+  return `<section class="card tut"><small class="muted">Обучение · шаг ${i+1} из ${TUT.length}</small><h3>${x.t}</h3><p class="sm">${x.h}</p><div class="tr">${ui.tab!==x.tab?`<button class="btn" data-act="tab" data-arg="${x.tab}">Перейти</button>`:''}<button class="btn ghost" data-act="tutskip">Пропустить обучение</button></div></section>`;
+}
 const NAV=[['city','ᛟ','Город'],['troops','ᛏ','Войска'],['map','ᚱ','Карта'],['quests','ᚷ','Задания'],['chat','ᛗ','Чат'],['clan','ᛉ','Клан']];
 function buildStatic(){
   $('res').innerHTML=RES.map((r,i)=>`<div class="chip" id="c-${r.id}" style="color:var(--${r.id})"><i class="rn glow d${i%4}">${r.r}</i><span class="lb">${r.n}</span><b id="v-${r.id}" style="color:var(--fg)">0</b><small id="r-${r.id}">+0/ч</small><div class="cb"><i id="b-${r.id}"></i></div></div>`).join('');
@@ -712,7 +730,7 @@ function render(){
   if((ui.tab==='clan'||ui.tab==='chat')&&ae&&ae.hasAttribute&&ae.hasAttribute('data-keep')){live();return;}   // не мешаем печатать
   const v=$('view'),top=v.scrollTop,list=$('list');
   const keep={};list.querySelectorAll('[data-keep]').forEach(el=>{keep[el.id]=el.value;});
-  list.innerHTML=VIEWS[ui.tab]();
+  list.innerHTML=(ui.tab==='top'||ui.tab==='chat'||ui.tab==='clan'?'':tutHTML())+VIEWS[ui.tab]();
   for(const id in keep){const el=document.getElementById(id);if(el)el.value=keep[id];}
   if(ui.tab==='clan'||ui.tab==='chat'){['cbox','wbox','dbox'].forEach(i=>stick($(i)));}
   try{window.Art&&Art.paintIn(list,id=>lvl(id));}catch(e){}
@@ -830,6 +848,7 @@ async function loadRank(){
 }
 function onAct(act,arg){
   switch(act){
+    case 'tutskip':try{localStorage.setItem(tutKey(),'1');}catch(e){}render();return;
     case 'tab':ui.tab=arg;if(arg==='shop')loadShop();if(arg==='top'&&Date.now()-ui.rankAt>20000)loadRank();if(arg==='clan')loadClan();if(arg==='chat')loadSoc();render();return;
     case 'pay':toast('Оплата пока не подключена');return;
     case 'msub':ui.msub=arg;render();return;
