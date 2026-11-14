@@ -514,6 +514,16 @@ function claimDaily() {
   addLog(`Ежедневный дар: ${v ? 3 : 1} ускор., ${v ? 8 : 3} рунных камн.`, 'good'); toast('Ежедневный дар получен');
   return true;
 }
+/* Место города на карте 100 на 100 и место цели (лагеря, точки сбора). Считается одинаково на сервере и в игре. */
+const posOf = pid => ({ x: parseInt(String(pid).slice(0, 4), 16) % 100, y: parseInt(String(pid).slice(4, 8), 16) % 100 });
+function tgtPos(pid, tg) {
+  if (tg.kind === 'player' && tg.pid) return posOf(tg.pid);
+  const key = String(pid) + String(tg.id); let h = 2166136261;
+  for (let i = 0; i < key.length; i++) { h ^= key.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+  const a = (h % 628) / 100, r = Math.min(45, Math.max(4, (tg.dist || 10) * 2.6)), p = posOf(pid);
+  return { x: Math.max(1, Math.min(98, p.x + r * Math.cos(a))), y: Math.max(1, Math.min(98, p.y + r * Math.sin(a))) };
+}
+
 /* Разведка: обновляет данные о войске живого игрока. Стоит серебра. */
 const SCOUT_COST = 25;
 function scout(tid) {
@@ -645,7 +655,7 @@ const API = {
   get S() { return S; },
   use, newState, update, produce, settle, battle, act, score, verdict,
   lvl, slots, cap, capAt, rate, prodAt, upCost, upSecs, canUp, canAfford, trainRate, maxBatch, trainSecs, techCost, techSecs, gatherSecs, marchSecs,
-  SHOP, SCOUT_COST, isVip, buy, claimDaily, dailyLeft, streakInfo, claimStreak, STREAK, CONTESTS, PRIZES, PRIZE_PART, weekId, weekEnd, contestOf, wkScoreOf, wkSync, dayId,
+  posOf, tgtPos, SHOP, SCOUT_COST, isVip, buy, claimDaily, dailyLeft, streakInfo, claimStreak, STREAK, CONTESTS, PRIZES, PRIZE_PART, weekId, weekEnd, contestOf, wkScoreOf, wkSync, dayId,
   jobInfo, helpJob, chargeClan, CLAN_COST, CLAN_HALL, jobObj,
   tierOf, heroOf, tmul, tiersOf, botTiers, atkB, defB, lootB, unitName, xpNeed, tierCost, tierSecs,
   refreshTargets, topUpPlayers, addLogTo, fmt, fmtT, fmtRes, fmtComp, carryOf,

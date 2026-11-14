@@ -67,7 +67,8 @@ p{margin:0}
 .gembtn.tpbtn b{font-size:15px}
 .whorow{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .swbtn{background:none;border:1px solid var(--line);color:var(--muted);border-radius:8px;font:inherit;font-size:12px;padding:3px 9px;cursor:pointer;white-space:nowrap}
-.whobtns{display:flex;gap:6px}
+.whobtns{display:flex;gap:5px;flex-wrap:nowrap;justify-content:flex-end;flex:none}.who{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.swbtn{position:relative}.swbtn .dot{position:absolute;top:-3px;right:-3px;width:9px;height:9px;border-radius:50%;background:#e5655f}
+.log{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;padding:6px 0;border-bottom:1px solid var(--line)}.log time{color:var(--muted);font-size:12px}.log p{margin:0}.log.good p{color:#9fd9a5}.log.bad p{color:#f0a49c}
 .swbtn.sure{color:#ffb3a8;border-color:#e5655f}
 .msub{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:0 0 10px}
 .msub .btn{padding:9px 4px;font-size:14px}
@@ -263,7 +264,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--frost);outline-
   <header id="head">
     <div id="logo" class="lg" hidden><img data-l="logo" alt="Nordika: сердце фьерда"><img class="ov a" data-l="logo-c1" alt=""><img class="ov b" data-l="logo-c2" alt=""><img class="ov c" data-l="logo-c3" alt=""><img class="ov b" data-l="logo-r1" alt=""><img class="ov c" data-l="logo-r2" alt=""><img class="ov a" data-l="logo-r3" alt=""><img class="ov d" data-l="logo-s1" alt=""><img class="ov e" data-l="logo-s2" alt=""><img class="ov f" data-l="logo-f" alt=""></div>
     <div class="trow"><h1 id="h1">Nordika</h1><span class="haste" title="Руны времени: каждая сокращает любой таймер на 5 минут"><span><i class="rn glow d2">ᛞ</i> <b id="hasteN">0</b></span><small>Ускорение</small></span><button class="gembtn" data-act="tab" data-arg="shop" aria-label="Магазин"><span><i class="rn glow d1">ᛝ</i> <b id="gemN">0</b></span><small id="vipN">Магазин</small></button><button class="gembtn tpbtn" data-act="tab" data-arg="top" aria-label="Топ ярлов"><span><i class="rn glow d3">ᚦ</i></span><small>Топ</small></button></div>
-    <div class="whorow"><div class="who" id="who"></div><span class="whobtns"><button class="swbtn" id="snd" data-act="snd" type="button" aria-label="Звук">♪ Звук</button><button class="swbtn" id="sw" data-act="switch" type="button">Сменить аккаунт</button></span></div>
+    <div class="whorow"><div class="who" id="who"></div><span class="whobtns"><button class="swbtn" id="lg" data-act="tab" data-arg="log" type="button">Хроника</button><button class="swbtn" id="snd" data-act="snd" type="button" aria-label="Звук и музыка">♪</button><button class="swbtn" id="sw" data-act="switch" type="button">Сменить аккаунт</button></span></div>
     <div class="res" id="res"></div>
     <div id="net" hidden>Нет связи с сервером</div>
   </header>
@@ -731,6 +732,12 @@ async function sact(a,p){
   finally{sbusy=false;}
 }
 
+function viewLog(){
+  const sh=S.shield>Core.now()?`<p class="note" style="margin:0 0 6px">Щит от набегов ещё ${fmtT((S.shield-Core.now())/1000)}</p>`:'';
+  const rows=S.log.length?S.log.map(e=>`<div class="log ${e.k}"><time>${new Date(e.t).toLocaleString('ru-RU',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</time><p>${esc(e.txt)}</p></div>`).join(''):`<p class="muted">Пока тихо.</p>`;
+  ui.logSeen=S.log.length?S.log[0].t:0;
+  return `<h2>Хроника</h2>${sh}<section class="card">${rows}</section>`;
+}
 function viewTop(){
   let rk='<p class="muted sm">Загрузка…</p>';
   if(ui.rank){
@@ -739,7 +746,7 @@ function viewTop(){
   }
   return `<h2>Топ ярлов</h2><section class="card">${rk}</section>${window.DEMO?window.demoCard():''}`;
 }
-const VIEWS={city:viewCity,troops:viewTroops,map:viewMap,quests:viewQuests,chat:viewSocial,clan:viewClan,shop:viewShop,top:viewTop};
+const VIEWS={log:viewLog,city:viewCity,troops:viewTroops,map:viewMap,quests:viewQuests,chat:viewSocial,clan:viewClan,shop:viewShop,top:viewTop};
 /* ---------- обучение: шаги выводятся из состояния игры, поэтому ничего лишнего не хранится на сервере ---------- */
 const TUT=[
  {t:'Улучши Лесопилку до 2 уровня',h:'Здания дают ресурсы и силу. Нажми «Улучшить» у Лесопилки. Пока идёт стройка, можно заняться другим.',tab:'city',ok:()=>lvl('sawmill')>=2},
@@ -758,7 +765,7 @@ function tutHTML(){
   return `<section class="card tut"><small class="muted">Обучение · шаг ${i+1} из ${TUT.length}</small><h3>${x.t}</h3><p class="sm">${x.h}</p><div class="tr">${ui.tab!==x.tab?`<button class="btn" data-act="tab" data-arg="${x.tab}">Перейти</button>`:''}<button class="btn ghost" data-act="tutskip">Пропустить обучение</button></div></section>`;
 }
 /* ---------- карта мира ---------- */
-ui.wm=null;ui.wsel='';
+ui.wm=null;ui.wsel='';ui.wtsel='';
 async function loadWorld(){
   if(!S||ui.tab!=='map'||ui.msub!=='world')return;
   try{const j=await call('GET','/api/worldmap');ui.wm={j,at:Date.now()};if(ui.tab==='map'&&ui.msub==='world'){wmInfo();wmDraw();wmList();}}catch(e){}
@@ -766,14 +773,17 @@ async function loadWorld(){
 function wmMe(){const j=ui.wm&&ui.wm.j;return j&&j.players.find(p=>p.me);}
 function worldMapHTML(){
   return `<section class="card"><canvas id="wm" class="wmap" aria-label="Карта мира"></canvas>
-  <p class="muted sm" style="margin:6px 0 0"><span style="color:#f2cd75">●</span> вы · <span style="color:#7fb4ff">●</span> ваш клан · <span style="color:#d97b6c">●</span> другие ярлы · линии это идущие отряды (красная: идут на вас)</p></section>
+  <p class="muted sm" style="margin:6px 0 0"><span style="color:#f2cd75">●</span> вы · <span style="color:#7fb4ff">●</span> ваш клан · <span style="color:#d97b6c">●</span> другие ярлы · <span style="color:#b8442f">▲</span> лагеря разбойников · <span style="color:#4fae7b">◆</span> добыча · линии это идущие отряды (красная: идут на вас)</p></section>
   <section class="card" id="wi"></section><section class="card" id="wl"></section>`;
 }
+function wmTargets(){const me=wmMe();return S.targets.filter(t=>t.kind==='node'||t.kind==='camp'||t.kind==='jarl').map(t=>Object.assign({t},Core.tgtPos(S.pid,t)));}
 function wmInfo(){
   const el=$('wi');if(!el)return;
-  const j=ui.wm&&ui.wm.j,me=wmMe(),p=j&&j.players.find(x=>x.pid===ui.wsel);
+  const j=ui.wm&&ui.wm.j,me=wmMe(),tsel=ui.wtsel&&S.targets.find(x=>x.id===ui.wtsel),p=j&&j.players.find(x=>x.pid===ui.wsel);
+  if(tsel){const t=tsel,v=verdict(t),free=slots(lvl('hall'))-S.marches.length;
+    el.innerHTML=`<div class="trow2"><h3>${esc(t.name)}</h3><span class="pill ${v.c}">${v.t}</span></div><p class="bd">${KIND[t.kind]} · ур. ${t.level} · расстояние ${t.dist} лиг, в пути ${fmtT(marchSecs(t.dist))}</p>${t.kind==='node'?'':`<p class="bd">Защита: ${fmtComp(t.comp)||'войск не видно'}</p>`}<div class="costs" style="margin:4px 0 8px">${Object.keys(t.loot||{}).map(k=>cpHTML(k,t.loot[k])).join('')}</div><button class="btn ${free>0&&sum(S.troops)?'':'off'}" data-act="atk" data-arg="${t.id}">${t.kind==='node'?'Собрать':'Напасть'}</button>`;return;}
   if(!j){el.innerHTML='<p class="muted sm">Загружаю карту…</p>';return;}
-  if(!p){el.innerHTML=`<p class="muted sm">Ярлов на карте: ${j.total}. Нажмите на город, чтобы увидеть его владельца.</p>`;return;}
+  if(!p){el.innerHTML=`<p class="muted sm">Ярлов на карте: ${j.total}. Нажмите на город, лагерь или точку добычи, чтобы узнать подробности.</p>`;return;}
   let dist=me&&!p.me?Math.max(6,Math.round(Math.hypot(p.x-me.x,p.y-me.y)/2.6)):0;
   el.innerHTML=`<div class="trow2"><h3>${p.clan?'['+esc(p.clan)+'] ':''}${esc(p.name)}</h3><span class="pill ${p.online?'good':'mute'}">${p.online?'в игре':'не в сети'}</span></div>
   <p class="bd">Палата ярла: ${p.hall} ур.${p.me?' (это вы)':` · расстояние ${dist} лиг, в пути ${fmtT(marchSecs(dist))}`}</p>
@@ -790,6 +800,7 @@ function wmList(){
   el.innerHTML=h;
 }
 let wmAnim=0;
+const wmImg=new Image();wmImg.onerror=()=>{wmImg.failed=1;};wmImg.src='/img/map.webp';
 function wmDraw(){
   const c=$('wm');if(!c)return;const j=ui.wm&&ui.wm.j;
   const W=c.clientWidth||340,dpr=Math.min(2,window.devicePixelRatio||1);
@@ -797,9 +808,11 @@ function wmDraw(){
   const g=c.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);
   const k=W/100,X=x=>x*k,tn=Core.now(),tt=Date.now()/1000;
   g.fillStyle='#0c161c';g.fillRect(0,0,W,W);
+  if(wmImg&&wmImg.complete&&wmImg.naturalWidth){g.drawImage(wmImg,0,0,W,W);g.fillStyle='rgba(8,12,16,.18)';g.fillRect(0,0,W,W);}else{
   // ландшафт: постоянные пятна «воды» и «лесов», чтобы карта не была пустой
   let sd=7;const rnd=()=>(sd=(sd*16807)%2147483647)/2147483647;
   for(let i=0;i<46;i++){const x=rnd()*100,y=rnd()*100,r=4+rnd()*11,wat=rnd()<.35;g.fillStyle=wat?'rgba(40,86,120,.30)':'rgba(46,92,64,.24)';g.beginPath();g.ellipse(X(x),X(y),X(r),X(r*(.55+rnd()*.5)),rnd()*3,0,7);g.fill();}
+  }
   g.strokeStyle='rgba(180,200,210,.07)';g.lineWidth=1;
   for(let i=10;i<100;i+=10){g.beginPath();g.moveTo(X(i),0);g.lineTo(X(i),W);g.moveTo(0,X(i));g.lineTo(W,X(i));g.stroke();}
   g.strokeStyle='rgba(217,164,65,.5)';g.strokeRect(.5,.5,W-1,W-1);
@@ -816,6 +829,15 @@ function wmDraw(){
     if(m.ph==='gather'){g.strokeStyle=col;g.beginPath();g.arc(x,y,5+Math.sin(tt*3)*1.5,0,7);g.stroke();}
   });
   g.globalAlpha=1;
+  // лагеря разбойников и точки добычи (видны только вам)
+  wmTargets().forEach(o=>{
+    const x=X(o.x),y=X(o.y),sel=o.t.id===ui.wtsel,camp=o.t.kind!=='node';
+    g.save();g.translate(x,y);
+    if(sel){g.strokeStyle='#fff';g.lineWidth=1.5;g.beginPath();g.arc(0,0,10,0,7);g.stroke();}
+    if(camp){g.fillStyle='#b8442f';g.beginPath();g.moveTo(0,-7);g.lineTo(6,5);g.lineTo(-6,5);g.closePath();g.fill();g.fillStyle='#1b0d0a';g.fillRect(-1,-2,2,5);}
+    else{g.fillStyle='#4fae7b';g.rotate(.785);g.fillRect(-4.5,-4.5,9,9);g.fillStyle='#10241a';g.fillRect(-1.5,-1.5,3,3);}
+    g.restore();
+  });
   // города
   j.players.forEach(p=>{
     const x=X(p.x),y=X(p.y),r=2.4+Math.min(5,p.hall*.22);
@@ -838,7 +860,9 @@ function wmInit(){
   c.onclick=e=>{
     const j=ui.wm&&ui.wm.j;if(!j)return;const r=c.getBoundingClientRect(),k=r.width/100,x=(e.clientX-r.left)/k,y=(e.clientY-r.top)/k;
     let best=null,bd=1e9;j.players.forEach(p=>{const d=Math.hypot(p.x-x,p.y-y);if(d<bd){bd=d;best=p;}});
-    ui.wsel=best&&bd*k<=18?best.pid:'';wmInfo();wmDraw();
+    let bt=null,bdt=1e9;wmTargets().forEach(o=>{const d=Math.hypot(o.x-x,o.y-y);if(d<bdt){bdt=d;bt=o;}});
+    if(bt&&bdt*k<=16&&bdt<=bd){ui.wtsel=bt.t.id;ui.wsel='';}else{ui.wtsel='';ui.wsel=best&&bd*k<=18?best.pid:'';}
+    wmInfo();wmDraw();
   };
   wmInfo();wmList();wmDraw();wmLoop();loadWorld();
 }
@@ -846,7 +870,7 @@ const ago=t=>{const m=Math.round((Core.now()-t)/60000);return m<2?'только 
 /* ---------- звук ---------- */
 const SND_ACT={march:'horn',claim:'reward',streak:'reward',daily:'reward',up:'build',train:'build',study:'build',tierup:'build',buy:'ok',scout:'ok',revenge:'horn',haste:'ok'};
 function sndFor(a){if(!window.Snd)return;Snd.sfx(SND_ACT[a]||'click');}
-function sndLabel(){const c=window.Snd?Snd.cfg:{};return c.music&&c.sfx?'♪ Звук':c.sfx?'♪ Эффекты':'♪ Тихо';}
+function sndLabel(){const c=window.Snd?Snd.cfg:{};return c.music&&c.sfx?'♪':c.sfx?'♪ эфф.':'♪ ✕';}
 function sndCycle(){const c=Snd.cfg;if(c.music&&c.sfx){Snd.set('music',false);}else if(c.sfx){Snd.set('sfx',false);}else{Snd.set('sfx',true);Snd.set('music',true);}const b=$('snd');if(b)b.textContent=sndLabel();}
 const NAV=[['city','ᛟ','Город'],['troops','ᛏ','Войска'],['map','ᚱ','Карта'],['quests','ᚷ','Задания'],['chat','ᛗ','Чат'],['clan','ᛉ','Клан']];
 function buildStatic(){
@@ -867,7 +891,7 @@ function render(){
   showHero(ui.tab);showLogo(ui.tab==='city');
   v.scrollTop=top;
   NAV.forEach(n=>$('n-'+n[0]).classList.toggle('on',n[0]===ui.tab));
-  const gb=document.querySelector('.gembtn');if(gb)gb.classList.toggle('on',ui.tab==='shop');
+  const gb=document.querySelector('.gembtn');if(gb)gb.classList.toggle('on',ui.tab==='shop');const lgb=$('lg');if(lgb)lgb.style.borderColor=ui.tab==='log'?'var(--accent)':'';
   live();
 }
 function live(){
@@ -893,6 +917,7 @@ function live(){
   document.querySelectorAll('[data-gate]').forEach(el=>{
     const card=el.closest('.card');el.classList.toggle('off',!!(card&&card.querySelector('.cp.lack')));
   });
+  {const lg=$('lg');if(lg){const nw=S.log.length&&S.log[0].t>(ui.logSeen==null?(ui.logSeen=S.log[0].t):ui.logSeen)&&ui.tab!=='log',d=lg.querySelector('.dot');if(nw&&!d){const x=document.createElement('span');x.className='dot';lg.appendChild(x);}if(!nw&&d)d.remove();}}
   const claimable=QUESTS.some(q=>!S.claimed[q.id]&&q.cur()>=q.max)||!Core.streakInfo().claimed;
   const nq=$('n-quests'),dot=nq.querySelector('.dot');
   if(claimable&&!dot){const d=document.createElement('span');d.className='dot';nq.appendChild(d);}

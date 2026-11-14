@@ -99,7 +99,7 @@ Core.HOOK.getState = pid => { const u = users.get(pid); return u ? u.state : nul
 Core.HOOK.touch = pid => markDirty(users.get(pid));
 Core.HOOK.dist = (a, b) => distTo(a, b);
 /* Каждому игроку по номеру достаётся своё место на карте 100 на 100. Путь к другому игроку зависит от расстояния между местами. */
-const posOf = pid => ({ x: parseInt(String(pid).slice(0, 4), 16) % 100, y: parseInt(String(pid).slice(4, 8), 16) % 100 });
+const posOf = Core.posOf;
 const distTo = (a, b) => { const p = posOf(a), q = posOf(b); return Math.max(6, Math.round(Math.hypot(p.x - q.x, p.y - q.y) / 2.6)); };
 Core.HOOK.pickPlayers = (st, n) => {
   const taken = new Set(st.targets.filter(t => t.pid).map(t => t.pid));
@@ -342,8 +342,7 @@ async function api(req, res, url) {
       players.push({ pid: t.id, name: t.name, x: p.x, y: p.y, hall: t.state.b.hall, clan: sctx.tagOf(t.id), online: sctx.online(t.id), me: t.id === u.id, d: Math.hypot(p.x - me.x, p.y - me.y) });
       for (const m of t.state.marches || []) {
         const tg = m.tgt || {}; let a = p, b;
-        if (tg.kind === 'player' && tg.pid && users.has(tg.pid)) b = posOf(tg.pid);
-        else { const h = parseInt(sha(t.id + String(tg.id)).slice(0, 8), 16), ang = (h % 628) / 100, r = Math.min(45, Math.max(4, (tg.dist || 10) * 2.6)); b = { x: clampP(p.x + r * Math.cos(ang)), y: clampP(p.y + r * Math.sin(ang)) }; }
+        b = tg.kind === 'player' && tg.pid && !users.has(tg.pid) ? a : Core.tgtPos(t.id, tg);
         let pr, eta;
         if (m.phase === 'out') { if (m.arrive <= now) continue; pr = Math.max(0, Math.min(1, 1 - (m.arrive - now) / (m.dur || 1))); eta = m.arrive; }
         else if (m.phase === 'back') { if (m.back <= now) continue; pr = Math.max(0, Math.min(1, (m.back - now) / (m.dur || 1))); eta = m.back; }
