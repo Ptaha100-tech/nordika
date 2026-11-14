@@ -63,10 +63,29 @@ function loop() {
   if (!cfg.music) return;
   note(); timer = setTimeout(loop, 2600 + Math.random() * 3800);
 }
+/* Свои треки: положите файлы music1.mp3, music2.mp3 ... (до 5) в папку public/audio. Если они есть, играют они, иначе синтезированная мелодия. */
+let tracks = null, el = null, ti = 0, mode = '';
+async function probe() {
+  if (tracks) return tracks; tracks = [];
+  for (let i = 1; i <= 5; i++) { const u = '/audio/music' + i + '.mp3'; try { const r = await fetch(u, { method: 'HEAD', cache: 'no-store' }); if (r.ok && /audio|mpeg|octet/i.test(r.headers.get('content-type') || '')) tracks.push(u); } catch (e) { /* нет сети */ } }
+  return tracks;
+}
+function playTrack() {
+  if (!cfg.music || !ctx) return;
+  if (!el) {
+    el = new Audio(); el.preload = 'auto'; el.crossOrigin = 'anonymous';
+    try { ctx.createMediaElementSource(el).connect(musicG); } catch (e) { /* без маршрута: громкость сам элемент */ el.volume = 0.5; }
+    el.onended = () => { ti = (ti + 1) % tracks.length; playTrack(); };
+    el.onerror = () => { mode = 'synth'; startSynth(); };
+  }
+  el.src = tracks[ti]; el.play().catch(() => { /* ждём следующего нажатия */ });
+}
+function startSynth() { if (!cfg.music || !ctx) return; startDrone(); musicG.gain.setTargetAtTime(0.5, ctx.currentTime, 1.2); loop(); }
 function applyMusic() {
   if (!ctx) return;
-  if (cfg.music) { startDrone(); musicG.gain.setTargetAtTime(0.5, ctx.currentTime, 1.2); loop(); }
-  else { musicG.gain.setTargetAtTime(0, ctx.currentTime, 0.3); clearTimeout(timer); stopDrone(); }
+  if (!cfg.music) { musicG.gain.setTargetAtTime(0, ctx.currentTime, 0.3); clearTimeout(timer); stopDrone(); if (el) el.pause(); return; }
+  musicG.gain.setTargetAtTime(0.5, ctx.currentTime, 1.2);
+  probe().then(t => { if (!cfg.music) return; if (t.length) { mode = 'files'; if (el && !el.paused) return; playTrack(); } else { mode = 'synth'; startSynth(); } });
 }
 
 /* ---------- короткие звуки ---------- */
@@ -98,5 +117,5 @@ function set(k, v) {
 }
 document.addEventListener('visibilitychange', () => { if (!ctx) return; if (document.hidden) { ctx.suspend(); } else { ctx.resume(); } });
 
-root.Snd = { sfx, unlock, set, get cfg() { return cfg; } };
+root.Snd = { sfx, unlock, set, get cfg() { return cfg; }, get mode() { return mode; }, get playing() { return !!el && !el.paused; } };
 })(typeof self !== 'undefined' ? self : globalThis);
