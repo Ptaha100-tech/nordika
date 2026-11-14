@@ -813,7 +813,7 @@ function wmDraw(){
   wmClamp();
   const z=ui.wz,s=W/100*z,X=x=>(x-ui.wcx)*s+W/2,Y=y=>(y-ui.wcy)*s+W/2,tn=Core.now(),tt=Date.now()/1000;
   g.fillStyle='#0c161c';g.fillRect(0,0,W,W);
-  if(wmImg&&wmImg.complete&&wmImg.naturalWidth){g.drawImage(wmImg,X(0),Y(0),100*s,100*s);g.fillStyle='rgba(8,12,16,.18)';g.fillRect(X(0),Y(0),100*s,100*s);}else{
+  if(wmImg&&wmImg.complete&&wmImg.naturalWidth){g.drawImage(wmImg,X(0),Y(0),100*s,100*s);g.fillStyle='rgba(8,12,16,.08)';g.fillRect(X(0),Y(0),100*s,100*s);}else{
     // ландшафт: постоянные пятна «воды» и «лесов», чтобы карта не была пустой
     let sd=7;const rnd=()=>(sd=(sd*16807)%2147483647)/2147483647;
     for(let i=0;i<46;i++){const x=rnd()*100,y=rnd()*100,r=4+rnd()*11,wat=rnd()<.35;g.fillStyle=wat?'rgba(40,86,120,.30)':'rgba(46,92,64,.24)';g.beginPath();g.ellipse(X(x),Y(y),r*s,r*s*(.55+rnd()*.5),rnd()*3,0,7);g.fill();}
