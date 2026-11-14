@@ -153,8 +153,36 @@ function publicInfo() {
 }
 
 /* ---------- админ-панель ---------- */
+/* ---------- недельное состязание: итоги и награды ---------- */
+const EV_FILE = path.join(DATA_DIR, 'events.json');
+let evs = { lastAwarded: null, last: null };
+try { evs = Object.assign(evs, JSON.parse(fs.readFileSync(EV_FILE, 'utf8'))); } catch (e) { /* первый запуск */ }
+function weekBoard(w) {
+  const rows = [];
+  for (const u of users.values()) { if (u.banned) continue; const v = Core.wkScoreOf(u.state, w); if (v > 0) rows.push({ pid: u.id, name: u.name, clan: sctx.tagOf(u.id), v }); }
+  rows.sort((a, b) => b.v - a.v || a.name.localeCompare(b.name));
+  return rows;
+}
+function eventsTick() {
+  const cur = Core.weekId(Date.now()), prev = cur - 1;
+  if (evs.lastAwarded === prev) return;
+  if (evs.lastAwarded === null) { evs.lastAwarded = prev; saveEvs(); return; }      // первый запуск: награждать пока не за что
+  const c = Core.contestOf(prev), rows = weekBoard(prev), winners = [];
+  rows.slice(0, 10).forEach((r, i) => {
+    const u = users.get(r.pid); if (!u) return;
+    const pz = Core.PRIZES[i] || Core.PRIZE_PART, st = u.state;
+    st.gems = (st.gems || 0) + (pz.gems || 0); st.haste += pz.haste || 0;
+    Core.addLogTo(st, `Итоги недели «${c.t}»: ${i + 1}-е место. Награда: ${pz.gems} рунных камн.${pz.haste ? ', ' + pz.haste + ' ускор.' : ''}`, 'good');
+    markDirty(u);
+    if (i < 3) winners.push({ name: r.name, clan: r.clan, v: r.v });
+  });
+  evs.last = { week: prev, t: c.t, winners, players: rows.length };
+  evs.lastAwarded = prev; saveEvs();
+}
+function saveEvs() { try { fs.writeFileSync(EV_FILE + '.tmp', JSON.stringify(evs)); fs.renameSync(EV_FILE + '.tmp', EV_FILE); } catch (e) { console.error('events.json', e.message); } }
 const backup = require('./backup.js')(DATA_DIR, () => flush());
 backup.start();
+setTimeout(eventsTick, 5000).unref(); setInterval(eventsTick, 60000).unref();
 const adminApi = require('./admin.js')({ users, byName, byToken, DATA_DIR, Core, Clan, Social, sstore, cstore, sctx, cctx, json, readBody, limited, ipOf, markDirty, touchState, ranking, flush, backup,
   setSdirty: () => { sdirty = true; }, setCdirty: () => { cdirty = true; }, hashPw,
   newsApi: { list: () => news, add: (title, text) => { news.push({ id: 'n' + Date.now().toString(36), t: Date.now(), title, text }); if (news.length > 60) news.shift(); saveNews(); pubCache.at = 0; }, del: id => { news = news.filter(x => x.id !== id); saveNews(); pubCache.at = 0; } } });
@@ -298,6 +326,11 @@ async function api(req, res, url) {
     if (r.error !== undefined) return json(res, 400, { error: r.error });
     sdirty = true;
     return json(res, 200, Object.assign(Social.view(sstore, sctx, u.id, String(b.peer || b.to || b.pid || '').slice(0, 16)), { result: r }));
+  }
+  if (req.method === 'GET' && url === '/api/events') {
+    Core.use(u.state); Core.wkSync(u.state);
+    const w = Core.weekId(Date.now()), c = Core.contestOf(w), rows = weekBoard(w), i = rows.findIndex(r => r.pid === u.id);
+    return json(res, 200, { now: Date.now(), week: w, end: Core.weekEnd(w), contest: c, top: rows.slice(0, 10), me: { v: Core.wkScoreOf(u.state, w), rank: i < 0 ? 0 : i + 1 }, participants: rows.length, last: evs.last, prizes: Core.PRIZES, part: Core.PRIZE_PART });
   }
   if (req.method === 'GET' && url === '/api/worldmap') {
     const now = Date.now(), me = posOf(u.id), players = [], marches = [];

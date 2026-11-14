@@ -269,6 +269,7 @@ function nextEvent(tn) {
 }
 function update() {
   ensure(S);
+  wkSync(S);
   const tn = nowMs();
   if (S.nextRaid < tn - 100 * 60000) S.nextRaid = tn - 100 * 60000;
   let g = 0, ev;
@@ -511,6 +512,49 @@ function claimDaily() {
   addLog(`Ежедневный дар: ${v ? 3 : 1} ускор., ${v ? 8 : 3} рунных камн.`, 'good'); toast('Ежедневный дар получен');
   return true;
 }
+/* ============ События: серия входов и недельное состязание ============ */
+const MSK = 3 * 3600000;
+const dayId = t => Math.floor((t + MSK) / 86400000);
+const weekId = t => Math.floor((t + MSK - 4 * 86400000) / (7 * 86400000));          // неделя начинается в понедельник 00:00 по Москве
+const weekEnd = w => w * 7 * 86400000 + 4 * 86400000 - MSK + 7 * 86400000;
+const CONTESTS = [
+  { k: 'camp',   f: 'campWins', t: 'Охотник на разбойников', d: 'Разгромите больше всех лагерей разбойников.' },
+  { k: 'gather', f: 'gathered', t: 'Добытчик',                d: 'Совершите больше всех сборов на ресурсных точках.' },
+  { k: 'pvp',    f: 'pvpWins',  t: 'Гроза ярлов',             d: 'Выиграйте больше всех боёв с живыми игроками.' }
+];
+const PRIZES = [{ gems: 50, haste: 5 }, { gems: 30, haste: 3 }, { gems: 15, haste: 2 }];
+const PRIZE_PART = { gems: 5 };           // остальные из первой десятки
+const contestOf = w => CONTESTS[((w % 3) + 3) % 3];
+function wkScoreOf(st, w) {
+  if (st.wk && st.wk.id === w) return Math.max(0, (st.stat[contestOf(w).f] || 0) - st.wk.base);
+  if (st.wkPrev && st.wkPrev.id === w) return st.wkPrev.v;
+  return 0;
+}
+function wkSync(st) {
+  const w = weekId(nowMs());
+  if (st.wk && st.wk.id === w) return;
+  if (st.wk) st.wkPrev = { id: st.wk.id, v: wkScoreOf(st, st.wk.id) };
+  st.wk = { id: w, base: st.stat[contestOf(w).f] || 0 };
+}
+const STREAK = [{ gems: 2 }, { gems: 3, haste: 1 }, { res: 2 }, { gems: 4, haste: 2 }, { gems: 5 }, { gems: 6, haste: 3 }, { gems: 15, haste: 5, res: 4 }];
+function streakInfo() {
+  const d = dayId(nowMs()), st = S.streak || { n: 0, day: -9 };
+  const claimed = st.day === d;
+  const n = claimed ? (st.n - 1) % 7 + 1 : (st.day === d - 1 ? st.n % 7 + 1 : 1);   // номер дня 1..7, который отмечается сегодня (или отмечен)
+  return { claimed, n, total: claimed || st.day === d - 1 ? st.n : 0 };
+}
+function claimStreak() {
+  const d = dayId(nowMs()), i = streakInfo();
+  if (i.claimed) return false;
+  const rw = STREAK[i.n - 1], parts = [];
+  const cont = (S.streak && S.streak.day === d - 1) ? S.streak.n : 0;
+  S.streak = { n: cont + 1, day: d };
+  if (rw.gems) { S.gems += rw.gems; parts.push(rw.gems + ' рунных камней'); }
+  if (rw.haste) { S.haste += rw.haste; parts.push(rw.haste + ' ускорений'); }
+  if (rw.res) { const c = cap(); for (const r of RES) { if (r.id === 'silver' && !lvl('silvermine')) continue; S.res[r.id] = Math.min(Math.max(c, S.res[r.id]), S.res[r.id] + rate(r.id) * rw.res); } parts.push(rw.res + ' ч добычи'); }
+  addLog(`Награда за ${i.n}-й день подряд: ${parts.join(', ')}.`, 'good'); toast('Награда за вход получена');
+  return true;
+}
 function buy(id) {
   const it = SHOP.find(x => x.id === id);
   if (!it) return false;
@@ -540,6 +584,7 @@ function act(a, arg) {
     case 'intro': S.introDone = true; break;
     case 'buy': if (typeof arg === 'string') buy(arg); break;
     case 'daily': claimDaily(); break;
+    case 'streak': claimStreak(); break;
   }
 }
 
@@ -566,7 +611,7 @@ const API = {
   get S() { return S; },
   use, newState, update, produce, settle, battle, act, score, verdict,
   lvl, slots, cap, capAt, rate, prodAt, upCost, upSecs, canUp, canAfford, trainRate, maxBatch, trainSecs, techCost, techSecs, gatherSecs, marchSecs,
-  SHOP, isVip, buy, claimDaily, dailyLeft,
+  SHOP, isVip, buy, claimDaily, dailyLeft, streakInfo, claimStreak, STREAK, CONTESTS, PRIZES, PRIZE_PART, weekId, weekEnd, contestOf, wkScoreOf, wkSync, dayId,
   jobInfo, helpJob, chargeClan, CLAN_COST, CLAN_HALL, jobObj,
   tierOf, heroOf, tmul, tiersOf, botTiers, atkB, defB, lootB, unitName, xpNeed, tierCost, tierSecs,
   refreshTargets, topUpPlayers, addLogTo, fmt, fmtT, fmtRes, fmtComp, carryOf,

@@ -88,6 +88,8 @@ p{margin:0}
 
 .scroll{flex:1;min-height:0;overflow-y:auto;padding:12px 0 16px;display:flex;flex-direction:column;gap:10px;overscroll-behavior:contain}
 .wmap{width:100%;aspect-ratio:1;display:block;border-radius:4px;touch-action:manipulation}.tr2{display:flex;gap:8px}.tr2 .btn{flex:1}
+.streak{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:8px}.sd{border:1px solid var(--line);border-radius:4px;padding:5px 1px;text-align:center;display:grid;gap:2px;min-width:0}.sd small{color:var(--muted,#8a969c)}.sd b{font-size:11px;font-weight:600;overflow-wrap:anywhere}.sd.done{opacity:.45}.sd.now{border-color:#d9a441;box-shadow:0 0 0 1px #d9a441 inset}
+.lb2{list-style:none;margin:0;padding:0;display:grid;gap:2px}.lb2 li{display:grid;grid-template-columns:24px 1fr auto;gap:6px;padding:4px 6px;border-radius:4px}.lb2 li.me{background:rgba(217,164,65,.15)}.lb2 em{font-style:normal;color:#f2cd75}
 .tut{border-color:var(--gold,#d9a441);display:grid;gap:6px}.tut .tr{display:flex;gap:8px;flex-wrap:wrap}.tut .tr .btn{flex:1 1 auto}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:12px;min-width:0}
 
@@ -502,7 +504,7 @@ function viewMap(){
   return h;
 }
 function viewQuests(){
-  return `<h2>Задания</h2>`+QUESTS.map(q=>{
+  return eventsHTML()+`<h2>Задания</h2>`+QUESTS.map(q=>{
     const cur=Math.min(q.cur(),q.max),done=cur>=q.max,got=S.claimed[q.id];
     const rw=Object.keys(q.rw).map(k=>cpHTML(k,q.rw[k])).join('');
     return `<article class="card" style="${got?'opacity:.5':''}"><div class="qt"><b>${q.t}</b><span class="cd">${cur}/${q.max}</span></div>
@@ -511,6 +513,31 @@ function viewQuests(){
   }).join('');
 }
 
+/* ---------- события ---------- */
+ui.ev=null;
+async function loadEvents(){try{const j=await call('GET','/api/events');ui.ev={j,at:Date.now()};if(ui.tab==='quests')render();}catch(e){}}
+function eventsHTML(){
+  const si=Core.streakInfo();
+  const cells=Core.STREAK.map((r,i)=>{
+    const done=si.claimed?i+1<=si.n:i+1<si.n,now=!si.claimed&&i+1===si.n;
+    const t=[r.gems?'ᛝ'+r.gems:'',r.haste?'ᛞ'+r.haste:'',r.res?r.res+'ч':''].filter(Boolean).join(' ');
+    return `<div class="sd ${done?'done':''} ${now?'now':''}"><small>${i+1}</small><b>${t}</b></div>`;
+  }).join('');
+  let h=`<section class="card"><div class="trow2"><h2>Вход каждый день</h2><span class="muted sm">серия: ${si.total}</span></div>
+    <div class="streak">${cells}</div>
+    <div style="margin-top:10px">${si.claimed?'<button class="btn off" disabled>Сегодняшняя награда получена</button>':`<button class="btn" data-act="streak">Забрать награду за день ${si.n}</button>`}</div>
+    <p class="note">Заходите каждый день, и награда растёт. Пропустите день: счёт начнётся заново.</p></section>`;
+  const e=ui.ev&&ui.ev.j;
+  if(!e)return h+`<section class="card"><h2>Состязание недели</h2><p class="muted sm">Загрузка…</p></section>`;
+  const left=Math.max(0,e.end-(Date.now()+off));
+  h+=`<section class="card"><div class="trow2"><h2>Состязание недели</h2><span class="muted sm">до конца ${left>86400000?Math.floor(left/86400000)+' д '+Math.floor(left%86400000/3600000)+' ч':fmtT(left/1000)}</span></div>
+    <h3 style="margin:4px 0">${esc(e.contest.t)}</h3><p class="sm muted">${esc(e.contest.d)} Результат считается с понедельника.</p>
+    <p class="sm" style="margin:8px 0"><b>Ваш результат: ${e.me.v}</b>${e.me.rank?` · место ${e.me.rank} из ${e.participants}`:' · вы пока не в списке'}</p>
+    ${e.top.length?`<ol class="lb2">${e.top.map((r,i)=>`<li class="${r.pid===S.pid?'me':''}"><span>${i+1}</span><b>${r.clan?'['+esc(r.clan)+'] ':''}${esc(r.name)}</b><em>${r.v}</em></li>`).join('')}</ol>`:'<p class="muted sm">Пока никто не набрал очков. Станьте первым.</p>'}
+    <p class="note">Призы: 1 место ${e.prizes[0].gems} камней и ${e.prizes[0].haste} ускорений, 2 место ${e.prizes[1].gems} и ${e.prizes[1].haste}, 3 место ${e.prizes[2].gems} и ${e.prizes[2].haste}, места с 4 по 10 по ${e.part.gems} камней. Награда приходит сама в понедельник.</p>
+    ${e.last&&e.last.winners.length?`<p class="sm muted" style="margin-top:8px">Прошлая неделя («${esc(e.last.t)}»): ${e.last.winners.map((w,i)=>`${i+1}. ${esc(w.name)} (${w.v})`).join(', ')}.</p>`:''}</section>`;
+  return h;
+}
 /* ---------- клан ---------- */
 let cbusy=false;
 const hhmm=t=>new Date(t).toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
@@ -851,7 +878,7 @@ function live(){
   document.querySelectorAll('[data-gate]').forEach(el=>{
     const card=el.closest('.card');el.classList.toggle('off',!!(card&&card.querySelector('.cp.lack')));
   });
-  const claimable=QUESTS.some(q=>!S.claimed[q.id]&&q.cur()>=q.max);
+  const claimable=QUESTS.some(q=>!S.claimed[q.id]&&q.cur()>=q.max)||!Core.streakInfo().claimed;
   const nq=$('n-quests'),dot=nq.querySelector('.dot');
   if(claimable&&!dot){const d=document.createElement('span');d.className='dot';nq.appendChild(d);}
   if(!claimable&&dot)dot.remove();
@@ -937,7 +964,7 @@ async function loadRank(){
 function onAct(act,arg){
   switch(act){
     case 'tutskip':try{localStorage.setItem(tutKey(),'1');}catch(e){}render();return;
-    case 'tab':ui.tab=arg;if(arg==='shop')loadShop();if(arg==='top'&&Date.now()-ui.rankAt>20000)loadRank();if(arg==='clan')loadClan();if(arg==='chat')loadSoc();render();return;
+    case 'tab':ui.tab=arg;if(arg==='shop')loadShop();if(arg==='top'&&Date.now()-ui.rankAt>20000)loadRank();if(arg==='clan')loadClan();if(arg==='quests')loadEvents();if(arg==='chat')loadSoc();render();return;
     case 'pay':toast('Оплата пока не подключена');return;
     case 'msub':ui.msub=arg;render();return;
     case 'wprof':ui.tab='chat';ui.sub='world';ui.soc.peer=null;render();loadSoc();openProf({id:arg});return;
