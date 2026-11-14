@@ -67,6 +67,7 @@ p{margin:0}
 .gembtn.tpbtn b{font-size:15px}
 .whorow{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .swbtn{background:none;border:1px solid var(--line);color:var(--muted);border-radius:8px;font:inherit;font-size:12px;padding:3px 9px;cursor:pointer;white-space:nowrap}
+.whobtns{display:flex;gap:6px}
 .swbtn.sure{color:#ffb3a8;border-color:#e5655f}
 .msub{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:0 0 10px}
 .msub .btn{padding:9px 4px;font-size:14px}
@@ -262,7 +263,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--frost);outline-
   <header id="head">
     <div id="logo" class="lg" hidden><img data-l="logo" alt="Nordika: сердце фьерда"><img class="ov a" data-l="logo-c1" alt=""><img class="ov b" data-l="logo-c2" alt=""><img class="ov c" data-l="logo-c3" alt=""><img class="ov b" data-l="logo-r1" alt=""><img class="ov c" data-l="logo-r2" alt=""><img class="ov a" data-l="logo-r3" alt=""><img class="ov d" data-l="logo-s1" alt=""><img class="ov e" data-l="logo-s2" alt=""><img class="ov f" data-l="logo-f" alt=""></div>
     <div class="trow"><h1 id="h1">Nordika</h1><span class="haste" title="Руны времени: каждая сокращает любой таймер на 5 минут"><span><i class="rn glow d2">ᛞ</i> <b id="hasteN">0</b></span><small>Ускорение</small></span><button class="gembtn" data-act="tab" data-arg="shop" aria-label="Магазин"><span><i class="rn glow d1">ᛝ</i> <b id="gemN">0</b></span><small id="vipN">Магазин</small></button><button class="gembtn tpbtn" data-act="tab" data-arg="top" aria-label="Топ ярлов"><span><i class="rn glow d3">ᚦ</i></span><small>Топ</small></button></div>
-    <div class="whorow"><div class="who" id="who"></div><button class="swbtn" id="sw" data-act="switch" type="button">Сменить аккаунт</button></div>
+    <div class="whorow"><div class="who" id="who"></div><span class="whobtns"><button class="swbtn" id="snd" data-act="snd" type="button" aria-label="Звук">♪ Звук</button><button class="swbtn" id="sw" data-act="switch" type="button">Сменить аккаунт</button></span></div>
     <div class="res" id="res"></div>
     <div id="net" hidden>Нет связи с сервером</div>
   </header>
@@ -273,6 +274,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--frost);outline-
 <div id="toast" hidden></div>
 
 <script src="/core.js"></script>
+<script src="/audio.js"></script>
 <script>/*PICS*/window.PIC={};[['hall',6],['farm',6],['sawmill',6],['quarry',6],['ironmine',6],['storehouse',6],['vault',6],['barracks',6],['oracle',6],['silvermine',6],['plot',1],['spear',7],['archer',7],['cav',7],['hero',7]].forEach(function(a){PIC[a[0]]=[];for(var i=1;i<=a[1];i++)PIC[a[0]].push('/img/'+a[0]+i+'.webp');});</script>
 <script src="/art.js"></script>
 <script>
@@ -306,6 +308,7 @@ function apply(j){
   const first=S===null;
   S=j.state;Core.use(S);
   const fresh=S.log.filter(e=>e.t>seenLog);
+  if(!first&&window.Snd&&fresh.some(e=>e.k==='bad'&&/разграбил|напал|набег/i.test(e.txt)))Snd.sfx('alarm');
   if(!first){fresh.slice(0,2).reverse().forEach(e=>toast(e.txt.length>70?e.txt.slice(0,67)+'…':e.txt));}
   if(S.log.length)seenLog=Math.max(seenLog,S.log[0].t);
   lastSync=Date.now();
@@ -354,12 +357,13 @@ async function startGame(){
   try{apply(await call('GET','/api/state'));}
   catch(e){if(e.status===401){logout(true);return;}$('auth').hidden=false;$('auth-err').textContent=e.message;return;}
   $('auth').hidden=true;authBg(false);$('app').hidden=false;
-  $('who').textContent='Ярл '+S.name;
+  $('who').textContent='Ярл '+S.name;{const b=$('snd');if(b)b.textContent=sndLabel();}
   render();
 }
 
 /* ---------- отрисовка ---------- */
 function toast(txt){
+  if(window.Snd){if(/^Победа/.test(txt))Snd.sfx('win');else if(/^Поражение/.test(txt))Snd.sfx('lose');}
   const el=$('toast');el.textContent=txt;el.hidden=false;
   clearTimeout(toast.h);toast.h=setTimeout(()=>{el.hidden=true;},3200);
 }
@@ -839,6 +843,11 @@ function wmInit(){
   wmInfo();wmList();wmDraw();wmLoop();loadWorld();
 }
 const ago=t=>{const m=Math.round((Core.now()-t)/60000);return m<2?'только что':m<60?m+' мин назад':m<1440?Math.round(m/60)+' ч назад':Math.round(m/1440)+' дн назад';};
+/* ---------- звук ---------- */
+const SND_ACT={march:'horn',claim:'reward',streak:'reward',daily:'reward',up:'build',train:'build',study:'build',tierup:'build',buy:'ok',scout:'ok',revenge:'horn',haste:'ok'};
+function sndFor(a){if(!window.Snd)return;Snd.sfx(SND_ACT[a]||'click');}
+function sndLabel(){const c=window.Snd?Snd.cfg:{};return c.music&&c.sfx?'♪ Звук':c.sfx?'♪ Эффекты':'♪ Тихо';}
+function sndCycle(){const c=Snd.cfg;if(c.music&&c.sfx){Snd.set('music',false);}else if(c.sfx){Snd.set('sfx',false);}else{Snd.set('sfx',true);Snd.set('music',true);}const b=$('snd');if(b)b.textContent=sndLabel();}
 const NAV=[['city','ᛟ','Город'],['troops','ᛏ','Войска'],['map','ᚱ','Карта'],['quests','ᚷ','Задания'],['chat','ᛗ','Чат'],['clan','ᛉ','Клан']];
 function buildStatic(){
   $('res').innerHTML=RES.map((r,i)=>`<div class="chip" id="c-${r.id}" style="color:var(--${r.id})"><i class="rn glow d${i%4}">${r.r}</i><span class="lb">${r.n}</span><b id="v-${r.id}" style="color:var(--fg)">0</b><small id="r-${r.id}">+0/ч</small><div class="cb"><i id="b-${r.id}"></i></div></div>`).join('');
@@ -1003,6 +1012,7 @@ function onAct(act,arg){
     case 'go':{const id=ui.modal,s=readSend();closeModal();ui.tab='map';act2('march',{id,send:s});return;}
     case 'train':act2('train',{k:arg,n:ui.tn[arg]});return;
     case 'logout':logout(false);return;
+    case 'snd':sndCycle();return;
     case 'switch':{const b=$('sw');if(!ui.swSure){ui.swSure=true;if(b){b.textContent='Точно выйти?';b.classList.add('sure');}setTimeout(()=>{ui.swSure=false;const c=$('sw');if(c){c.textContent='Сменить аккаунт';c.classList.remove('sure');}},4000);return;}ui.swSure=false;logout(false);return;}
     case 'demo':window.demoControl(arg);seenLog=0;lastNow=0;S=null;sync();return;
     default:act2(act,arg);
@@ -1020,7 +1030,10 @@ function boot(){
   },{passive:true});
   document.addEventListener('click',e=>{
     if(e.target.id==='modal'){closeModal();return;}
-    const el=e.target.closest('[data-act]');if(!el||el.classList.contains('off')||el.disabled)return;
+    window.Snd&&Snd.unlock();
+    const el=e.target.closest('[data-act]');if(!el)return;
+    if(el.classList.contains('off')||el.disabled){window.Snd&&Snd.sfx('err');return;}
+    sndFor(el.dataset.act);
     onAct(el.dataset.act,el.dataset.arg);
   });
   document.addEventListener('input',e=>{if(e.target.classList&&e.target.classList.contains('sn'))modalPreview();});
