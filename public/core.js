@@ -149,12 +149,13 @@ const prot = () => 300 * lvl('vault');
 function prodAt(id, L) { const b = B[id]; return L ? Math.round(b.base * L * (1 + 0.12 * (L - 1)) * ecoMul()) : 0; }
 function rate(rid) { const id = BORDER.find(k => B[k].res === rid); return prodAt(id, lvl(id)); }
 const upCost = (id, L) => { const o = {}; for (const k in B[id].cost) o[k] = Math.round(B[id].cost[k] * grow(L, 1.55, 1.10)); return o; };
-const upSecs = (id, L) => Math.round(B[id].t * grow(L, 1.5, 1.12) * CFG.t);
+/* Первые уровни строятся быстро, чтобы новичок за первые минуты увидел результат. */
+const upSecs = (id, L) => Math.round(B[id].t * grow(L, 1.5, 1.12) * CFG.t * (L < 3 ? 0.3 : L < 4 ? 0.6 : 1));
 const canAfford = c => Object.keys(c).every(k => S.res[k] >= c[k]);
 const pay = c => { for (const k in c) S.res[k] -= c[k]; };
 const trainRate = () => 1 + 0.15 * (lvl('barracks') - 1);
-const maxBatch = () => 10 * lvl('barracks');
-const trainSecs = (k, n) => Math.max(3, Math.round(n * U[k].t / trainRate() * CFG.t));
+const maxBatch = () => 10 * lvl('barracks') + 10;
+const trainSecs = (k, n) => Math.max(3, Math.round(n * U[k].t / trainRate() * CFG.t * (S && S.stat && S.stat.trained < 30 ? 0.4 : 1)));
 const techCost = L => ({ silver: Math.round(120 * grow(L, 1.6, 1.1)), food: Math.round(100 * grow(L, 1.5, 1.1)) });
 const techSecs = L => Math.round(40 * grow(L, 1.55, 1.1) * CFG.t);
 const gatherSecs = () => 25 * CFG.t;
@@ -272,7 +273,7 @@ function update() {
   ensure(S);
   wkSync(S);
   const tn = nowMs();
-  if (S.nextRaid < tn - 100 * 60000) S.nextRaid = tn - 100 * 60000;
+  if (S.nextRaid < tn - 50 * 60000) S.nextRaid = tn - 50 * 60000;      // за время отсутствия набегов копится не больше одного-двух
   let g = 0, ev;
   while (g++ < 300 && (ev = nextEvent(tn))) { produce(Math.max(ev.time, S.t)); ev.run(); }
   produce(tn);
@@ -397,7 +398,7 @@ function enemyRaid() {
   S.troops = r.survD;
   if (r.win) {
     const lost = {};
-    RES.forEach(x => { const l = Math.floor(Math.max(0, S.res[x.id] - prot()) * 0.25); S.res[x.id] -= l; lost[x.id] = l; });
+    RES.forEach(x => { const l = Math.floor(Math.max(0, S.res[x.id] - prot()) * (H <= 3 ? 0.1 : H <= 6 ? 0.18 : 0.25)); S.res[x.id] -= l; lost[x.id] = l; });
     S.shield = t + 45 * 60000;
     addLog(`Набег! ${n} врагов прорвались в город. Унесли: ${fmtRes(lost)}. Погибло: ${fmtComp(r.lostD) || 'никто'}. Щит на 45 минут.`, 'bad', t);
     toast('Враги разграбили город');
