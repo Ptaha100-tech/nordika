@@ -182,6 +182,7 @@ section[id]{scroll-margin-top:96px}
 </main>
 
 <script>
+try{var _r=new URLSearchParams(location.search).get('ref');if(_r&&/^[0-9a-f]{6,16}$/.test(_r))localStorage.setItem('nd_ref',_r);}catch(e){}
 /* Если файла приложения на сервере ещё нет, кнопка не ведёт в пустоту. */
 fetch('/nordika.apk',{method:'HEAD'}).then(function(r){
   if(!r.ok) throw 0;

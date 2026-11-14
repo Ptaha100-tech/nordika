@@ -197,7 +197,30 @@ function clanAward(prev) {
   });
   return res.slice(0, 5);
 }
+/* ---------- приглашения друзей ---------- */
+const REF_WELCOME = 5;                                                     // новичку сразу
+const REF_STEPS = [{ hall: 4, gems: 25, haste: 3 }, { hall: 8, gems: 40, haste: 5 }];   // пригласившему, когда друг дорос до уровня Палаты
+const REF_MAX = 20;                                                        // сколько приглашённых приносят награду
+function refTick() {
+  const paidBy = {};
+  for (const u of users.values()) if (u.ref && (u.refPaid || []).length) paidBy[u.ref] = (paidBy[u.ref] || 0) + 1;
+  for (const u of users.values()) {
+    if (!u.ref || u.banned) continue;
+    const inv = users.get(u.ref); if (!inv || inv.banned) continue;
+    if (inv.rip && inv.rip === u.rip) continue;                              // друг с того же адреса: не засчитывается
+    u.refPaid = u.refPaid || [];
+    for (const st of REF_STEPS) {
+      if (u.refPaid.includes(st.hall) || u.state.b.hall < st.hall) continue;
+      if (!u.refPaid.length && (paidBy[inv.id] || 0) >= REF_MAX) break;
+      if (!u.refPaid.length) paidBy[inv.id] = (paidBy[inv.id] || 0) + 1;
+      u.refPaid.push(st.hall); markDirty(u);
+      inv.state.gems = (inv.state.gems || 0) + st.gems; inv.state.haste += st.haste;
+      Core.addLogTo(inv.state, `Друг ${u.name} дорос до Палаты ${st.hall} уровня. Награда за приглашение: ${st.gems} рунных камн., ${st.haste} ускор.`, 'good'); markDirty(inv);
+    }
+  }
+}
 function eventsTick() {
+  try { refTick(); } catch (e) { console.error('refTick', e.message); }
   const cur = Core.weekId(Date.now()), prev = cur - 1;
   if (evs.lastAwarded === prev) return;
   if (evs.lastAwarded === null) { evs.lastAwarded = prev; saveEvs(); return; }      // первый запуск: награждать пока не за что
@@ -295,9 +318,12 @@ async function api(req, res, url) {
       const key = name.toLowerCase();
       if (byName.has(key)) return json(res, 409, { error: 'Это имя уже занято.' });
       const id = crypto.randomBytes(8).toString('hex'), salt = crypto.randomBytes(16).toString('hex');
-      const u = { id, name, nameKey: key, salt, hash: hashPw(pw, salt), tokens: [], state: null };
+      const u = { id, name, nameKey: key, salt, hash: hashPw(pw, salt), tokens: [], state: null, rip: crypto.createHash('sha256').update('nd' + ip).digest('hex').slice(0, 12) };
       Core.setNow(Date.now);
       u.state = Core.newState(name, id);
+      const rc = typeof b.ref === 'string' && /^[0-9a-f]{6,16}$/.test(b.ref) ? b.ref : '';
+      const inv = rc && [...users.values()].find(x => x.id.startsWith(rc) && !x.banned);
+      if (inv) { u.ref = inv.id; u.state.gems = (u.state.gems || 0) + REF_WELCOME; Core.use(u.state); Core.addLogTo(u.state, `Вас пригласил ярл ${inv.name}. Подарок: ${REF_WELCOME} рунных камней.`, 'good'); }
       indexUser(u);
       const token = newToken(u);
       Core.use(u.state); Core.refreshTargets();
@@ -375,6 +401,10 @@ async function api(req, res, url) {
     Core.use(u.state); Core.wkSync(u.state);
     const w = Core.weekId(Date.now()), c = Core.contestOf(w), rows = weekBoard(w), i = rows.findIndex(r => r.pid === u.id);
     return json(res, 200, { now: Date.now(), week: w, end: Core.weekEnd(w), contest: c, top: rows.slice(0, 10), me: { v: Core.wkScoreOf(u.state, w), rank: i < 0 ? 0 : i + 1 }, participants: rows.length, last: evs.last, prizes: Core.PRIZES, part: Core.PRIZE_PART });
+  }
+  if (req.method === 'GET' && url === '/api/invite') {
+    const mine = [...users.values()].filter(x => x.ref === u.id).map(x => ({ name: x.name, hall: x.state.b.hall, paid: (x.refPaid || []).length, same: !!(u.rip && u.rip === x.rip) })).sort((a, b) => b.hall - a.hall);
+    return json(res, 200, { code: u.id.slice(0, 8), welcome: REF_WELCOME, steps: REF_STEPS, max: REF_MAX, list: mine.slice(0, 30), total: mine.length });
   }
   if (req.method === 'GET' && url === '/api/worldmap') {
     const now = Date.now(), me = posOf(u.id), players = [], marches = [];

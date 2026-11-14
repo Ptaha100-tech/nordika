@@ -344,7 +344,7 @@ async function doAuth(){
   const name=$('in-name').value,password=$('in-pw').value;
   $('auth-err').textContent='';$('auth-go').classList.add('off');
   try{
-    const j=await call('POST',ui.authMode==='login'?'/api/login':'/api/register',{name,password});
+    const j=await call('POST',ui.authMode==='login'?'/api/login':'/api/register',{name,password,ref:refCode()});
     TOKEN=j.token;try{localStorage.setItem('sp_token',TOKEN);}catch(e){}
     $('in-pw').value='';S=null;seenLog=0;lastNow=0;
     await startGame();
@@ -522,9 +522,24 @@ function viewQuests(){
     return `<article class="card" style="${got?'opacity:.5':''}"><div class="qt"><b>${q.t}</b><span class="cd">${cur}/${q.max}</span></div>
       <div class="bar"><i style="width:${cur/q.max*100}%;transition:none"></i></div>
       <div class="tgb"><div class="costs" style="margin:0">${rw}</div>${got?'<span class="muted sm">Получено</span>':`<button class="btn small ${done?'':'off'}" data-act="claim" data-arg="${q.id}">Забрать</button>`}</div></article>`;
-  }).join('');
+  }).join('')+inviteHTML();
 }
 
+/* ---------- приглашение друзей ---------- */
+function refCode(){try{const q=new URLSearchParams(location.search).get('ref');if(q&&/^[0-9a-f]{6,16}$/.test(q))localStorage.setItem('nd_ref',q);return localStorage.getItem('nd_ref')||'';}catch(e){return '';}}
+refCode();
+ui.inv=null;
+async function loadInvite(){try{ui.inv=await call('GET','/api/invite');if(ui.tab==='quests')render();}catch(e){}}
+function inviteLink(){return ui.inv?location.origin+'/?ref='+ui.inv.code:'';}
+function inviteHTML(){
+  const v=ui.inv;if(!v)return '';
+  const rw=v.steps.map(s=>`Палата ${s.hall}: ᛝ${s.gems} ᛞ${s.haste}`).join(', ');
+  return `<section class="card"><h2>Пригласи друга</h2>
+  <p class="sm muted">Друг получит ${v.welcome} рунных камней сразу. Вы получите награду, когда он вырастит Палату ярла: ${rw}. Награда идёт за первых ${v.max} друзей.</p>
+  <div class="field" style="margin:8px 0"><input id="invl" readonly value="${esc(inviteLink())}" onclick="this.select()"></div>
+  <button class="btn" data-act="invshare">Поделиться ссылкой</button>
+  ${v.list.length?`<p class="sm" style="margin:10px 0 4px"><b>Приглашено: ${v.total}</b></p>${v.list.map(x=>`<p class="sm" style="display:flex;justify-content:space-between;margin:2px 0"><span>${esc(x.name)}${x.same?' <span class="muted">(тот же адрес, награда не идёт)</span>':''}</span><span class="muted">Палата ${x.hall}</span></p>`).join('')}`:'<p class="sm muted" style="margin-top:8px">Пока никого. Отправьте ссылку другу.</p>'}</section>`;
+}
 /* ---------- события ---------- */
 ui.ev=null;
 async function loadEvents(){try{const j=await call('GET','/api/events');ui.ev={j,at:Date.now()};if(ui.tab==='quests')render();}catch(e){}}
@@ -1054,7 +1069,7 @@ async function loadRank(){
 function onAct(act,arg){
   switch(act){
     case 'tutskip':try{localStorage.setItem(tutKey(),'1');}catch(e){}render();return;
-    case 'tab':ui.tab=arg;if(arg==='shop')loadShop();if(arg==='top'&&Date.now()-ui.rankAt>20000)loadRank();if(arg==='clan')loadClan();if(arg==='quests')loadEvents();if(arg==='chat')loadSoc();render();return;
+    case 'tab':ui.tab=arg;if(arg==='shop')loadShop();if(arg==='top'&&Date.now()-ui.rankAt>20000)loadRank();if(arg==='clan')loadClan();if(arg==='quests'){loadEvents();loadInvite();}if(arg==='chat')loadSoc();render();return;
     case 'pay':toast('Оплата пока не подключена');return;
     case 'msub':ui.msub=arg;render();return;
     case 'wprof':ui.tab='chat';ui.sub='world';ui.soc.peer=null;render();loadSoc();openProf({id:arg});return;
@@ -1087,6 +1102,9 @@ function onAct(act,arg){
     case 'go':{const id=ui.modal,s=readSend(),n=S.marches.length;closeModal();ui.tab='map';act2('march',{id,send:s}).then(()=>{if(S.marches.length>n&&window.Snd)Snd.sfx('march');});return;}
     case 'train':act2('train',{k:arg,n:ui.tn[arg]});return;
     case 'logout':logout(false);return;
+    case 'invshare':{const l=inviteLink(),txt='Играй со мной в Nordika: сердце фьерда, стратегию про викингов. Ссылка: '+l;
+      if(navigator.share){navigator.share({title:'Nordika',text:txt,url:l}).catch(()=>{});}
+      else{try{navigator.clipboard.writeText(l).then(()=>toast('Ссылка скопирована'),()=>{const i=$('invl');if(i){i.select();}toast('Выделите и скопируйте ссылку');});}catch(e){const i=$('invl');if(i)i.select();}}return;}
     case 'snd':sndCycle();return;
     case 'switch':{const b=$('sw');if(!ui.swSure){ui.swSure=true;if(b){b.textContent='Точно выйти?';b.classList.add('sure');}setTimeout(()=>{ui.swSure=false;const c=$('sw');if(c){c.textContent='Сменить аккаунт';c.classList.remove('sure');}},4000);return;}ui.swSure=false;logout(false);return;}
     case 'demo':window.demoControl(arg);seenLog=0;lastNow=0;S=null;sync();return;
