@@ -78,7 +78,7 @@ function playTrack() {
     el.onended = () => { ti = (ti + 1) % tracks.length; playTrack(); };
     el.onerror = () => { mode = 'synth'; startSynth(); };
   }
-  el.src = tracks[ti]; el.play().catch(() => { /* ждём следующего нажатия */ });
+  el.loop = tracks.length === 1; el.src = tracks[ti]; el.play().catch(() => { /* ждём следующего нажатия */ });
 }
 function startSynth() { if (!cfg.music || !ctx) return; startDrone(); musicG.gain.setTargetAtTime(0.5, ctx.currentTime, 1.2); loop(); }
 function applyMusic() {
