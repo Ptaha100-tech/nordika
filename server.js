@@ -153,7 +153,9 @@ function publicInfo() {
 }
 
 /* ---------- админ-панель ---------- */
-const adminApi = require('./admin.js')({ users, byName, byToken, DATA_DIR, Core, Clan, Social, sstore, cstore, sctx, cctx, json, readBody, limited, ipOf, markDirty, touchState, ranking, flush,
+const backup = require('./backup.js')(DATA_DIR, () => flush());
+backup.start();
+const adminApi = require('./admin.js')({ users, byName, byToken, DATA_DIR, Core, Clan, Social, sstore, cstore, sctx, cctx, json, readBody, limited, ipOf, markDirty, touchState, ranking, flush, backup,
   setSdirty: () => { sdirty = true; }, setCdirty: () => { cdirty = true; }, hashPw,
   newsApi: { list: () => news, add: (title, text) => { news.push({ id: 'n' + Date.now().toString(36), t: Date.now(), title, text }); if (news.length > 60) news.shift(); saveNews(); pubCache.at = 0; }, del: id => { news = news.filter(x => x.id !== id); saveNews(); pubCache.at = 0; } } });
 

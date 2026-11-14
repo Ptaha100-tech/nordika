@@ -6,7 +6,7 @@ const path = require('path');
 const crypto = require('crypto');
 
 module.exports = function makeAdmin(env) {
-  const { users, byName, byToken, DATA_DIR, Core, Clan, Social, sstore, cstore, sctx, cctx, json, readBody, limited, ipOf, markDirty, touchState, ranking, flush, setSdirty, setCdirty, hashPw, newsApi } = env;
+  const { users, byName, byToken, DATA_DIR, Core, Clan, Social, sstore, cstore, sctx, cctx, json, readBody, limited, ipOf, markDirty, touchState, ranking, flush, setSdirty, setCdirty, hashPw, newsApi, backup } = env;
   let cfg = null;
   try { cfg = JSON.parse(fs.readFileSync(path.join(__dirname, 'admin.json'), 'utf8')); } catch (e) { cfg = null; }
   const sessions = new Map();               // токен -> до какого времени действует
@@ -61,7 +61,7 @@ module.exports = function makeAdmin(env) {
         active24: all.filter(u => (u.seen || 0) > t - 86400000).length, active7: all.filter(u => (u.seen || 0) > t - 7 * 86400000).length,
         clans: Object.keys(cstore.clans).length, worldMsgs: sstore.world.length, reports: sstore.reports.length,
         banned: all.filter(u => u.banned).length, gems, vip, buys, bought, timeMul: Core.CFG.t,
-        newest: all.sort((a, b) => (b.state.created || 0) - (a.state.created || 0)).slice(0, 8).map(row), log: recent
+        newest: all.sort((a, b) => (b.state.created || 0) - (a.state.created || 0)).slice(0, 8).map(row), log: recent, backups: backup.list().slice(0, 5), backupErr: backup.err()
       });
     }
     if (req.method === 'GET' && url === '/api/admin/players') {
@@ -80,6 +80,12 @@ module.exports = function makeAdmin(env) {
         clanName: c ? c.name : '', friends: (sstore.friends[u.id] || []).length, log: (st.log || []).slice(0, 8), ban: u.banned || null
       }));
     }
+    if (req.method === 'GET' && url === '/api/admin/backup') {
+      const f = backup.file(q.get('name') || ''); if (!f || !fs.existsSync(f)) return json(res, 404, { error: 'Нет такой копии.' });
+      audit('Скачана копия ' + q.get('name'));
+      res.writeHead(200, { 'Content-Type': 'application/gzip', 'Content-Length': fs.statSync(f).size, 'Content-Disposition': 'attachment; filename="' + path.basename(f) + '"', 'Cache-Control': 'no-store' });
+      return fs.createReadStream(f).pipe(res);
+    }
     if (req.method === 'GET' && url === '/api/admin/news') return json(res, 200, { news: newsApi.list().slice().sort((a, b) => b.t - a.t) });
     if (req.method === 'GET' && url === '/api/admin/chat') {
       return json(res, 200, { world: sstore.world.slice(-80), reports: sstore.reports.slice(-60).reverse() });
@@ -90,6 +96,7 @@ module.exports = function makeAdmin(env) {
       const need = () => { if (!u) { json(res, 404, { error: 'Нет такого игрока.' }); return false; } return true; };
       const ok = (msg) => json(res, 200, { ok: true, msg });
       switch (a) {
+        case 'backup': return backup.make(err => err ? json(res, 500, { error: 'Не удалось: ' + err.message }) : (audit('Создана копия данных'), ok('Копия создана')));
         case 'say': { const t = String(b.text || '').trim(); if (!t) return json(res, 400, { error: 'Пустое сообщение.' }); Social.admin.say(sstore, sctx, t); setSdirty(); audit('Объявление в чат: ' + t.slice(0, 80)); return ok('Отправлено в общий чат'); }
         case 'newsadd': { const ti = String(b.title || '').trim().slice(0, 80), tx = String(b.text || '').trim().slice(0, 600); if (!ti || !tx) return json(res, 400, { error: 'Нужны заголовок и текст.' }); newsApi.add(ti, tx); audit('Новость: ' + ti); return ok('Новость опубликована на сайте'); }
         case 'newsdel': newsApi.del(String(b.nid || '')); audit('Удалена новость'); return ok('Новость удалена');

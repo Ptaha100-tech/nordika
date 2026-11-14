@@ -38,7 +38,7 @@ node -v
 echo "== 3/6 Файлы игры"
 id nordika >/dev/null 2>&1 || useradd --system --home "$APP" --shell /usr/sbin/nologin nordika
 mkdir -p "$APP" "$DATA"
-cp -r "$SRC/server.js" "$SRC/admin.js" "$SRC/admin.json" "$SRC/package.json" "$SRC/public" "$APP/"
+cp -r "$SRC/server.js" "$SRC/admin.js" "$SRC/backup.js" "$SRC/admin.json" "$SRC/package.json" "$SRC/public" "$APP/"
 chown -R nordika:nordika "$DATA"
 chown -R root:root "$APP"
 
