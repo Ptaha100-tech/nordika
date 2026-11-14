@@ -164,6 +164,39 @@ function weekBoard(w) {
   rows.sort((a, b) => b.v - a.v || a.name.localeCompare(b.name));
   return rows;
 }
+/* ---------- клановый поход недели: общий счёт клана ---------- */
+const CLAN_TIERS = [{ per: 5, gems: 5, haste: 0, n: 'Бронза' }, { per: 15, gems: 12, haste: 2, n: 'Серебро' }, { per: 30, gems: 25, haste: 4, n: 'Золото' }];   // нужно очков на каждого игрока клана (минимум 3)
+const CLAN_TOP = [40, 25, 15];          // дополнительные камни клану из тройки лучших
+const CLAN_MIN = 3;                     // личный вклад, с которого игрок получает награду
+function clanBoard(w) {
+  const out = [];
+  for (const c of Object.values(cstore.clans)) {
+    const ms = Object.keys(c.members).map(pid => ({ pid, name: c.members[pid].name, v: users.has(pid) ? Core.wkScoreOf(users.get(pid).state, w) : 0 }));
+    const total = ms.reduce((a, m) => a + m.v, 0), base = Math.max(3, ms.length);
+    let tier = 0; CLAN_TIERS.forEach((t, i) => { if (total >= t.per * base) tier = i + 1; });
+    ms.sort((a, b) => b.v - a.v);
+    out.push({ id: c.id, tag: c.tag, name: c.name, count: ms.length, total, tier, base, members: ms });
+  }
+  out.sort((a, b) => b.total - a.total || a.name.localeCompare(b.name));
+  return out;
+}
+function clanAward(prev) {
+  const board = clanBoard(prev).filter(c => c.total > 0), res = [];
+  board.forEach((c, i) => {
+    const rw = c.tier ? CLAN_TIERS[c.tier - 1] : null, top = i < 3 ? CLAN_TOP[i] : 0;
+    if (!rw && !top) return;
+    for (const m of c.members) {
+      if (m.v < CLAN_MIN) continue;
+      const u = users.get(m.pid); if (!u) continue;
+      const g = (rw ? rw.gems : 0) + top, h = rw ? rw.haste : 0;
+      u.state.gems = (u.state.gems || 0) + g; u.state.haste += h;
+      Core.addLogTo(u.state, `Итоги недели для клана [${c.tag}]${rw ? ': ' + rw.n : ''}${top ? ', ' + (i + 1) + '-е место среди кланов' : ''}. Награда: ${g} рунных камн.${h ? ', ' + h + ' ускор.' : ''}`, 'good');
+      markDirty(u);
+    }
+    res.push({ tag: c.tag, name: c.name, total: c.total, tier: c.tier, place: i + 1 });
+  });
+  return res.slice(0, 5);
+}
 function eventsTick() {
   const cur = Core.weekId(Date.now()), prev = cur - 1;
   if (evs.lastAwarded === prev) return;
@@ -178,6 +211,7 @@ function eventsTick() {
     if (i < 3) winners.push({ name: r.name, clan: r.clan, v: r.v });
   });
   evs.last = { week: prev, t: c.t, winners, players: rows.length };
+  evs.lastClan = { week: prev, top: clanAward(prev) };
   evs.lastAwarded = prev; saveEvs();
 }
 function saveEvs() { try { fs.writeFileSync(EV_FILE + '.tmp', JSON.stringify(evs)); fs.renameSync(EV_FILE + '.tmp', EV_FILE); } catch (e) { console.error('events.json', e.message); } }
@@ -304,7 +338,16 @@ async function api(req, res, url) {
     const idx = list.findIndex(x => x.id === u.id);
     return json(res, 200, { top: list.slice(0, 30).map(x => ({ name: x.name, hall: x.hall, score: x.score, me: x.id === u.id })), me: idx + 1, total: list.length, my: idx >= 0 ? list[idx].score : 0 });
   }
-  if (req.method === 'GET' && url === '/api/clan') return json(res, 200, Clan.view(cstore, cctx, u.id));
+  if (req.method === 'GET' && url === '/api/clan') {
+    const v = Clan.view(cstore, cctx, u.id);
+    if (v && v.clan) {
+      for (const pid of Object.keys((Clan.clanOf(cstore, u.id) || {}).members || {})) { const m = users.get(pid); if (m) { Core.use(m.state); Core.wkSync(m.state); } }
+      const w = Core.weekId(Date.now()), board = clanBoard(w), i = board.findIndex(c => c.id === v.clan.id), me = board[i];
+      if (me) v.goal = { contest: Core.contestOf(w), end: Core.weekEnd(w), total: me.total, base: me.base, tier: me.tier, tiers: CLAN_TIERS.map(t => ({ n: t.n, need: t.per * me.base, gems: t.gems, haste: t.haste })), min: CLAN_MIN, top: CLAN_TOP,
+        rank: me.total > 0 ? board.filter(c => c.total > me.total).length + 1 : 0, clans: board.filter(c => c.total > 0).length, members: me.members, last: evs.lastClan };
+    }
+    return json(res, 200, v);
+  }
   if (req.method === 'POST' && url === '/api/clan/act') {
     let b; try { b = await readBody(req); } catch (e) { return json(res, 400, { error: 'Некорректный запрос' }); }
     if (typeof b.a !== 'string' || b.a.length > 12) return json(res, 400, { error: 'Некорректное действие' });

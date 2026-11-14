@@ -92,6 +92,8 @@ p{margin:0}
 .wmap{width:100%;aspect-ratio:1;display:block;border-radius:4px;touch-action:none;cursor:grab}.wzb{display:flex;gap:6px;margin-top:8px}.wzb .btn{flex:1;min-height:38px;padding:6px 4px;font-size:14px}.tr2{display:flex;gap:8px}.tr2 .btn{flex:1}
 .streak{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:8px}.sd{border:1px solid var(--line);border-radius:4px;padding:5px 1px;text-align:center;display:grid;gap:2px;min-width:0}.sd small{color:var(--muted,#8a969c)}.sd b{font-size:11px;font-weight:600;overflow-wrap:anywhere}.sd.done{opacity:.45}.sd.now{border-color:#d9a441;box-shadow:0 0 0 1px #d9a441 inset}
 .lb2{list-style:none;margin:0;padding:0;display:grid;gap:2px}.lb2 li{display:grid;grid-template-columns:24px 1fr auto;gap:6px;padding:4px 6px;border-radius:4px}.lb2 li.me{background:rgba(217,164,65,.15)}.lb2 em{font-style:normal;color:#f2cd75}
+.gbar{position:relative;height:10px;border-radius:5px;background:var(--line);margin:6px 0 8px}.gbar span{position:absolute;inset:0 auto 0 0;border-radius:5px;background:linear-gradient(90deg,#8a6a2a,#f2cd75)}.gbar i{position:absolute;top:-3px;bottom:-3px;width:2px;background:#ece6d6;opacity:.7}
+.gt{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.gt div{border:1px solid var(--line);border-radius:4px;padding:6px;display:grid;gap:1px;text-align:center}.gt div.on{border-color:#d9a441;background:rgba(217,164,65,.12)}
 .tut{border-color:var(--gold,#d9a441);display:grid;gap:6px}.tut .tr{display:flex;gap:8px;flex-wrap:wrap}.tut .tr .btn{flex:1 1 auto}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:12px;min-width:0}
 
@@ -563,6 +565,19 @@ function myJobsForHelp(c){
   });
   return out;
 }
+function clanGoalHTML(d){
+  const g=d.goal;if(!g)return '';
+  const left=Math.max(0,g.end-(Date.now()+off)),top=g.tiers[g.tiers.length-1].need,pct=Math.min(100,Math.round(g.total/top*100));
+  const marks=g.tiers.map(t=>`<i style="left:${Math.min(100,Math.round(t.need/top*100))}%" title="${t.n}"></i>`).join('');
+  return `<section class="card"><div class="trow2"><h2>Поход клана</h2><span class="muted sm">до конца ${left>86400000?Math.floor(left/86400000)+' д '+Math.floor(left%86400000/3600000)+' ч':fmtT(left/1000)}</span></div>
+  <p class="sm muted">Очки всех участников в состязании недели («${esc(g.contest.t)}») складываются. Чем больше очков, тем выше награда каждому, кто внёс хотя бы ${g.min}.</p>
+  <p class="sm" style="margin:8px 0 4px"><b>Очков у клана: ${g.total}</b>${g.rank?` · место ${g.rank} из ${g.clans}`:''}</p>
+  <div class="gbar"><span style="width:${pct}%"></span>${marks}</div>
+  <div class="gt">${g.tiers.map((t,i)=>`<div class="${g.tier>i?'on':''}"><b>${t.n}</b><small>${t.need} оч.</small><small>ᛝ${t.gems}${t.haste?' ᛞ'+t.haste:''}</small></div>`).join('')}</div>
+  <p class="note">Тройка лучших кланов недели получает ещё ${g.top.join(', ')} рунных камней. Награда приходит в понедельник.</p>
+  <details style="margin-top:6px"><summary class="sm">Вклад участников</summary>${g.members.map(m=>`<p class="sm" style="display:flex;justify-content:space-between;margin:2px 0"><span>${esc(m.name)}</span><b>${m.v}</b></p>`).join('')}</details>
+  ${g.last&&g.last.top.length?`<p class="sm muted" style="margin-top:8px">Прошлая неделя: ${g.last.top.slice(0,3).map(c=>`${c.place}. [${esc(c.tag)}] ${c.total}`).join(', ')}.</p>`:''}</section>`;
+}
 function viewClan(){
   const d=ui.clan;
   if(!d)return '<p class="muted sm">Загрузка…</p>';
@@ -576,6 +591,7 @@ function viewClan(){
       <button class="btn" data-act="ccreate">Основать клан</button></section>
       <section class="card"><h2>Кланы</h2>${list}</section>`;
   }
+  const goalH=clanGoalHTML(d);
   const iAmLeader=c.leader===d.me;
   const mine=myJobsForHelp(c);
   const others=c.reqs.filter(r=>!r.mine);
@@ -587,6 +603,7 @@ function viewClan(){
   const members=c.members.map(m=>`<div class="cm"><span class="nm">${m.leader?'👑 ':''}<b>${esc(m.name)}</b>${m.pid===d.me?' <span class="muted sm">(вы)</span>':''}</span><span class="lv">Палата ${m.hall} · сила ${fmt(m.score)} · помог ${m.helps}</span>${iAmLeader&&m.pid!==d.me?`<button class="btn small ghost" data-act="ctrans" data-arg="${m.pid}">Передать власть</button><button class="btn small danger" data-act="ckick" data-arg="${m.pid}">Исключить</button>`:''}</div>`).join('');
   return `<section class="card"><div class="trow2"><h2><span class="tag4">${esc(c.tag)}</span>${esc(c.name)}</h2><span class="lv">${c.members.length} из ${d.max}</span></div>
       <p class="sm muted">Сила клана ${fmt(c.power)}</p></section>
+    ${goalH}
     <section class="card"><h2>Помощь соклановцев</h2>${help}${canAll?'<button class="btn" style="margin-top:10px" data-act="chelpall">Помочь всем</button>':''}
       <p class="note">Каждая помощь сокращает дело на 2% (не меньше 30 секунд), всего до ${d.helpMax} раз. Помогать можно один раз с каждым делом.</p></section>
     <section class="card"><h2>Чат клана</h2><div id="cbox" class="cbox">${chatHTML(c)}</div>
