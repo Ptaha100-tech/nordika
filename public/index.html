@@ -901,8 +901,8 @@ function wmInit(){
 }
 const ago=t=>{const m=Math.round((Core.now()-t)/60000);return m<2?'только что':m<60?m+' мин назад':m<1440?Math.round(m/60)+' ч назад':Math.round(m/1440)+' дн назад';};
 /* ---------- звук ---------- */
-const SND_ACT={march:'horn',claim:'reward',streak:'reward',daily:'reward',up:'build',train:'build',study:'build',tierup:'build',buy:'ok',scout:'ok',revenge:'horn',haste:'ok'};
-function sndFor(a){if(!window.Snd)return;Snd.sfx(SND_ACT[a]||'click');}
+const SND_ACT={go:'none',march:'horn',claim:'reward',streak:'reward',daily:'reward',up:'build',train:'build',study:'build',tierup:'build',buy:'ok',scout:'ok',revenge:'horn',haste:'ok'};
+function sndFor(a){if(!window.Snd||SND_ACT[a]==='none')return;Snd.sfx(SND_ACT[a]||'click');}
 function sndLabel(){const c=window.Snd?Snd.cfg:{};return c.music&&c.sfx?'♪':c.sfx?'♪ эфф.':'♪ ✕';}
 function sndCycle(){const c=Snd.cfg;if(c.music&&c.sfx){Snd.set('music',false);}else if(c.sfx){Snd.set('sfx',false);}else{Snd.set('sfx',true);Snd.set('music',true);}const b=$('snd');if(b)b.textContent=sndLabel();}
 const NAV=[['city','ᛟ','Город'],['troops','ᛏ','Войска'],['map','ᚱ','Карта'],['quests','ᚷ','Задания'],['chat','ᛗ','Чат'],['clan','ᛉ','Клан']];
@@ -1067,7 +1067,7 @@ function onAct(act,arg){
     case 'step':{const[k,d]=arg.split(':');const el=$('sn-'+k);if(el){el.value=Math.max(0,Math.min(S.troops[k],(parseInt(el.value,10)||0)+parseInt(d,10)));modalPreview();}return;}
     case 'all':for(const k in U){const el=$('sn-'+k);if(el)el.value=S.troops[k];}modalPreview();return;
     case 'cancel':closeModal();return;
-    case 'go':{const id=ui.modal,s=readSend();closeModal();ui.tab='map';act2('march',{id,send:s});return;}
+    case 'go':{const id=ui.modal,s=readSend(),n=S.marches.length;closeModal();ui.tab='map';act2('march',{id,send:s}).then(()=>{if(S.marches.length>n&&window.Snd)Snd.sfx('march');});return;}
     case 'train':act2('train',{k:arg,n:ui.tn[arg]});return;
     case 'logout':logout(false);return;
     case 'snd':sndCycle();return;
@@ -1076,7 +1076,7 @@ function onAct(act,arg){
     default:act2(act,arg);
   }
 }
-function act2(a,arg){act(a,arg);}
+function act2(a,arg){return act(a,arg);}
 function boot(){
   document.querySelectorAll('img[data-l]').forEach(i=>{i.src=(window.LOGO&&LOGO[i.dataset.l])||('/img/'+i.dataset.l+'.webp');});
   buildStatic();

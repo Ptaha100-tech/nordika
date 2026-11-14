@@ -100,15 +100,27 @@ const FX = {
   build: t => { for (let i = 0; i < 3; i++) tone(sfxG, 'square', 220 + i * 6, t + i * 0.13, 0.002, 0.06, 0.2, { to: 90 }); tone(sfxG, 'triangle', 523, t + 0.45, 0.01, 0.3, 0.22); },
   alarm: t => { [0, 0.22].forEach(d => tone(sfxG, 'square', 440, t + d, 0.01, 0.16, 0.14, { to: 330 })); }
 };
+/* Звуки из файлов: public/audio/<имя>.mp3. Если файла нет, играет синтезированный вариант. */
+const FILES = { march: '/audio/march.mp3' }, bufs = {};
+function loadFiles() {
+  Object.keys(FILES).forEach(n => {
+    if (bufs[n] !== undefined) return; bufs[n] = null;
+    fetch(FILES[n]).then(r => (r.ok ? r.arrayBuffer() : Promise.reject())).then(a => new Promise((ok, no) => ctx.decodeAudioData(a, ok, no))).then(b => { bufs[n] = b; }).catch(() => { bufs[n] = false; });
+  });
+}
 function sfx(name) {
-  if (!cfg.sfx || !init() || !FX[name]) return;
-  try { FX[name](ctx.currentTime + 0.01); } catch (e) { /* звук не критичен */ }
+  if (!cfg.sfx || !init()) return;
+  try {
+    if (FILES[name]) loadFiles();
+    if (bufs[name]) { const src = ctx.createBufferSource(), g = ctx.createGain(); g.gain.value = 1.4; src.buffer = bufs[name]; src.connect(g); g.connect(sfxG); src.start(); return; }
+    if (FX[name]) FX[name](ctx.currentTime + 0.01); else if (FX.horn && name === 'march') FX.horn(ctx.currentTime + 0.01);
+  } catch (e) { /* звук не критичен */ }
 }
 
 /* Включить звук можно только после нажатия: так требует браузер. */
 function unlock() {
   if (started) return; started = true;
-  if (init()) applyMusic();
+  if (init()) { applyMusic(); loadFiles(); }
 }
 function set(k, v) {
   cfg[k] = !!v; save();
