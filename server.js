@@ -299,6 +299,29 @@ async function api(req, res, url) {
     sdirty = true;
     return json(res, 200, Object.assign(Social.view(sstore, sctx, u.id, String(b.peer || b.to || b.pid || '').slice(0, 16)), { result: r }));
   }
+  if (req.method === 'GET' && url === '/api/worldmap') {
+    const now = Date.now(), me = posOf(u.id), players = [], marches = [];
+    const clampP = v => Math.max(1, Math.min(98, v));
+    for (const t of users.values()) {
+      if (t.banned) continue;
+      const p = posOf(t.id);
+      players.push({ pid: t.id, name: t.name, x: p.x, y: p.y, hall: t.state.b.hall, clan: sctx.tagOf(t.id), online: sctx.online(t.id), me: t.id === u.id, d: Math.hypot(p.x - me.x, p.y - me.y) });
+      for (const m of t.state.marches || []) {
+        const tg = m.tgt || {}; let a = p, b;
+        if (tg.kind === 'player' && tg.pid && users.has(tg.pid)) b = posOf(tg.pid);
+        else { const h = parseInt(sha(t.id + String(tg.id)).slice(0, 8), 16), ang = (h % 628) / 100, r = Math.min(45, Math.max(4, (tg.dist || 10) * 2.6)); b = { x: clampP(p.x + r * Math.cos(ang)), y: clampP(p.y + r * Math.sin(ang)) }; }
+        let pr, eta;
+        if (m.phase === 'out') { if (m.arrive <= now) continue; pr = Math.max(0, Math.min(1, 1 - (m.arrive - now) / (m.dur || 1))); eta = m.arrive; }
+        else if (m.phase === 'back') { if (m.back <= now) continue; pr = Math.max(0, Math.min(1, (m.back - now) / (m.dur || 1))); eta = m.back; }
+        else if (m.phase === 'gather') { pr = 1; eta = m.gEnd; }
+        else continue;
+        marches.push({ o: t.id, on: t.name, ax: a.x, ay: a.y, bx: b.x, by: b.y, p: pr, ph: m.phase, k: tg.kind, tn: tg.name || '', mine: t.id === u.id, inc: tg.kind === 'player' && tg.pid === u.id, eta, du: m.dur || 1 });
+      }
+    }
+    players.sort((a, b) => (b.me - a.me) || a.d - b.d);
+    marches.sort((a, b) => (b.mine - a.mine) || (b.inc - a.inc));
+    return json(res, 200, { now, players: players.slice(0, 300).map(p => (delete p.d, p)), marches: marches.slice(0, 120), total: players.length });
+  }
   if (req.method === 'GET' && url === '/api/profile') {
     const q = new URL(req.url, 'http://x').searchParams, nm = (q.get('name') || '').trim().toLowerCase().slice(0, 20), id = nm ? (byName.get(nm) || '') : (q.get('id') || '').slice(0, 16), t = users.get(id);
     if (!t) return json(res, 404, { error: 'Нет такого игрока.' });

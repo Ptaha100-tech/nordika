@@ -68,7 +68,7 @@ p{margin:0}
 .whorow{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .swbtn{background:none;border:1px solid var(--line);color:var(--muted);border-radius:8px;font:inherit;font-size:12px;padding:3px 9px;cursor:pointer;white-space:nowrap}
 .swbtn.sure{color:#ffb3a8;border-color:#e5655f}
-.msub{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:0 0 10px}
+.msub{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:0 0 10px}
 .msub .btn{padding:9px 4px;font-size:14px}
 .shopg{display:grid;gap:8px}
 .item{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line)}
@@ -87,6 +87,7 @@ p{margin:0}
 #net{font-size:12px;color:var(--blood);text-align:center;height:0;overflow:visible;position:relative;top:2px}
 
 .scroll{flex:1;min-height:0;overflow-y:auto;padding:12px 0 16px;display:flex;flex-direction:column;gap:10px;overscroll-behavior:contain}
+.wmap{width:100%;aspect-ratio:1;display:block;border-radius:4px;touch-action:manipulation}.tr2{display:flex;gap:8px}.tr2 .btn{flex:1}
 .tut{border-color:var(--gold,#d9a441);display:grid;gap:6px}.tut .tr{display:flex;gap:8px;flex-wrap:wrap}.tut .tr .btn{flex:1 1 auto}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:12px;min-width:0}
 
@@ -475,7 +476,7 @@ function heroHTML(){
 const TL={atk:'Атака',def:'Защита',eco:'Экономика'};
 const KIND={node:'Ресурсная точка',camp:'Разбойники',jarl:'Ярл',player:'Игрок'};
 ui.msub='node';
-const MSUB=[['node','Сбор'],['camp','Охота'],['pvp','ПВП']];
+const MSUB=[['node','Сбор'],['camp','Охота'],['pvp','ПВП'],['world','Мир']];
 function viewMap(){
   const free=slots(lvl('hall'))-S.marches.length;
   const cdl=Math.max(0,Math.ceil((S.tgtAt+30000-Core.now())/1000));
@@ -483,7 +484,8 @@ function viewMap(){
   const cnt={node:0,camp:0,pvp:0};S.targets.forEach(t=>cnt[grp(t)]++);
   let h=jobsHTML('map');
   h+=`<section class="card trow2"><span>Свободных отрядов: <b>${free}</b> из ${slots(lvl('hall'))}</span><button class="btn ghost small" data-act="refresh" ${cdl?'disabled':''}>Новые цели</button></section>`;
-  h+=`<div class="msub">${MSUB.map(m=>`<button class="btn ${ui.msub===m[0]?'on':'ghost'}" data-act="msub" data-arg="${m[0]}">${m[1]} <span class="muted sm">${cnt[m[0]]}</span></button>`).join('')}</div>`;
+  h+=`<div class="msub">${MSUB.map(m=>`<button class="btn ${ui.msub===m[0]?'on':'ghost'}" data-act="msub" data-arg="${m[0]}">${m[1]} <span class="muted sm">${m[0]==='world'?'':cnt[m[0]]}</span></button>`).join('')}</div>`;
+  if(ui.msub==='world')return h+worldMapHTML();
   const note={node:'Мирные места, где отряд собирает ресурсы. Чем дальше точка, тем дольше путь.',camp:'Разбойники грабят округу. Победите их и заберите добычу.',pvp:'Здесь можно напасть на других ярлов. Живые игроки идут первыми, при нехватке их заменяют отряды ярлов.'}[ui.msub];
   h+=`<p class="note" style="margin:0 0 8px">${note}</p>`;
   const list=S.targets.filter(t=>grp(t)===ui.msub).sort((a,b)=>(a.kind==='player'?0:1)-(b.kind==='player'?0:1)||a.dist-b.dist);
@@ -719,6 +721,91 @@ function tutHTML(){
   const x=TUT[i];
   return `<section class="card tut"><small class="muted">Обучение · шаг ${i+1} из ${TUT.length}</small><h3>${x.t}</h3><p class="sm">${x.h}</p><div class="tr">${ui.tab!==x.tab?`<button class="btn" data-act="tab" data-arg="${x.tab}">Перейти</button>`:''}<button class="btn ghost" data-act="tutskip">Пропустить обучение</button></div></section>`;
 }
+/* ---------- карта мира ---------- */
+ui.wm=null;ui.wsel='';
+async function loadWorld(){
+  if(!S||ui.tab!=='map'||ui.msub!=='world')return;
+  try{const j=await call('GET','/api/worldmap');ui.wm={j,at:Date.now()};if(ui.tab==='map'&&ui.msub==='world'){wmInfo();wmDraw();wmList();}}catch(e){}
+}
+function wmMe(){const j=ui.wm&&ui.wm.j;return j&&j.players.find(p=>p.me);}
+function worldMapHTML(){
+  return `<section class="card"><canvas id="wm" class="wmap" aria-label="Карта мира"></canvas>
+  <p class="muted sm" style="margin:6px 0 0"><span style="color:#f2cd75">●</span> вы · <span style="color:#7fb4ff">●</span> ваш клан · <span style="color:#d97b6c">●</span> другие ярлы · линии это идущие отряды (красная: идут на вас)</p></section>
+  <section class="card" id="wi"></section><section class="card" id="wl"></section>`;
+}
+function wmInfo(){
+  const el=$('wi');if(!el)return;
+  const j=ui.wm&&ui.wm.j,me=wmMe(),p=j&&j.players.find(x=>x.pid===ui.wsel);
+  if(!j){el.innerHTML='<p class="muted sm">Загружаю карту…</p>';return;}
+  if(!p){el.innerHTML=`<p class="muted sm">Ярлов на карте: ${j.total}. Нажмите на город, чтобы увидеть его владельца.</p>`;return;}
+  let dist=me&&!p.me?Math.max(6,Math.round(Math.hypot(p.x-me.x,p.y-me.y)/2.6)):0;
+  el.innerHTML=`<div class="trow2"><h3>${p.clan?'['+esc(p.clan)+'] ':''}${esc(p.name)}</h3><span class="pill ${p.online?'good':'mute'}">${p.online?'в игре':'не в сети'}</span></div>
+  <p class="bd">Палата ярла: ${p.hall} ур.${p.me?' (это вы)':` · расстояние ${dist} лиг, в пути ${fmtT(marchSecs(dist))}`}</p>
+  ${p.me?'':`<div class="tr2"><button class="btn ghost" data-act="wprof" data-arg="${p.pid}">Профиль</button><button class="btn" data-act="wpvp">Напасть (ПВП)</button></div>`}`;
+}
+function wmList(){
+  const el=$('wl');if(!el)return;const j=ui.wm&&ui.wm.j;if(!j){el.innerHTML='';return;}
+  const tn=Core.now(),ms=j.marches.filter(m=>m.eta>tn||m.ph==='gather');
+  const inc=ms.filter(m=>m.inc&&m.ph==='out');
+  let h='';
+  if(inc.length)h+=inc.map(m=>`<p class="bd" style="color:#e58a7c"><b>Внимание:</b> ярл ${esc(m.on)} идёт на вас. Прибудет через ${fmtT((m.eta-tn)/1000)}.</p>`).join('');
+  const rest=ms.filter(m=>!(m.inc&&m.ph==='out')).slice(0,8);
+  h+=`<h3>Отряды в пути</h3>`+(rest.length?rest.map(m=>`<p class="bd">${m.mine?'<b>Ваш отряд</b>':'Ярл '+esc(m.on)} ${m.ph==='back'?'возвращается домой':m.ph==='gather'?'собирает добычу':'идёт к цели'}${m.tn?': '+esc(m.tn):''} · ${fmtT(Math.max(0,m.eta-tn)/1000)}</p>`).join(''):'<p class="muted sm">Сейчас на карте тихо.</p>');
+  el.innerHTML=h;
+}
+let wmAnim=0;
+function wmDraw(){
+  const c=$('wm');if(!c)return;const j=ui.wm&&ui.wm.j;
+  const W=c.clientWidth||340,dpr=Math.min(2,window.devicePixelRatio||1);
+  if(c.width!==Math.round(W*dpr)){c.width=Math.round(W*dpr);c.height=Math.round(W*dpr);}
+  const g=c.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);
+  const k=W/100,X=x=>x*k,tn=Core.now(),tt=Date.now()/1000;
+  g.fillStyle='#0c161c';g.fillRect(0,0,W,W);
+  // ландшафт: постоянные пятна «воды» и «лесов», чтобы карта не была пустой
+  let sd=7;const rnd=()=>(sd=(sd*16807)%2147483647)/2147483647;
+  for(let i=0;i<46;i++){const x=rnd()*100,y=rnd()*100,r=4+rnd()*11,wat=rnd()<.35;g.fillStyle=wat?'rgba(40,86,120,.30)':'rgba(46,92,64,.24)';g.beginPath();g.ellipse(X(x),X(y),X(r),X(r*(.55+rnd()*.5)),rnd()*3,0,7);g.fill();}
+  g.strokeStyle='rgba(180,200,210,.07)';g.lineWidth=1;
+  for(let i=10;i<100;i+=10){g.beginPath();g.moveTo(X(i),0);g.lineTo(X(i),W);g.moveTo(0,X(i));g.lineTo(W,X(i));g.stroke();}
+  g.strokeStyle='rgba(217,164,65,.5)';g.strokeRect(.5,.5,W-1,W-1);
+  if(!j)return;
+  const me=wmMe(),myTag=me&&me.clan;
+  // отряды
+  j.marches.forEach(m=>{
+    const col=m.mine?'#f2cd75':m.inc?'#ff6a55':'#8fb0c4',pu=m.inc?.6+.4*Math.sin(tt*6):1;
+    g.globalAlpha=(m.mine||m.inc?.85:.5)*pu;g.strokeStyle=col;g.lineWidth=m.mine||m.inc?1.6:1;g.setLineDash(m.inc?[5,4]:[3,4]);
+    g.beginPath();g.moveTo(X(m.ax),X(m.ay));g.lineTo(X(m.bx),X(m.by));g.stroke();g.setLineDash([]);
+    let p=m.ph==='out'?1-(m.eta-tn)/m.du:m.ph==='back'?(m.eta-tn)/m.du:1;p=Math.max(0,Math.min(1,p));
+    const x=X(m.ax+(m.bx-m.ax)*p),y=X(m.ay+(m.by-m.ay)*p);
+    g.globalAlpha=1;g.fillStyle=col;g.beginPath();g.arc(x,y,m.mine||m.inc?3.4:2.4,0,7);g.fill();
+    if(m.ph==='gather'){g.strokeStyle=col;g.beginPath();g.arc(x,y,5+Math.sin(tt*3)*1.5,0,7);g.stroke();}
+  });
+  g.globalAlpha=1;
+  // города
+  j.players.forEach(p=>{
+    const x=X(p.x),y=X(p.y),r=2.4+Math.min(5,p.hall*.22);
+    const col=p.me?'#f2cd75':(myTag&&p.clan===myTag)?'#7fb4ff':'#d97b6c';
+    if(p.me){g.strokeStyle='rgba(242,205,117,.55)';g.lineWidth=1.5;g.beginPath();g.arc(x,y,r+3+Math.sin(tt*2.4)*1.6,0,7);g.stroke();}
+    if(p.pid===ui.wsel){g.strokeStyle='#fff';g.lineWidth=1.5;g.beginPath();g.arc(x,y,r+5,0,7);g.stroke();}
+    g.fillStyle=col;g.beginPath();g.arc(x,y,r,0,7);g.fill();
+    g.fillStyle='rgba(8,12,16,.55)';g.beginPath();g.arc(x,y,r*.45,0,7);g.fill();
+    if(p.online){g.fillStyle='#fff';g.beginPath();g.arc(x+r*.8,y-r*.8,1.5,0,7);g.fill();}
+    if(p.me||p.pid===ui.wsel){g.font='600 11px system-ui,sans-serif';g.textAlign='center';g.fillStyle='#ece6d6';g.strokeStyle='rgba(0,0,0,.7)';g.lineWidth=3;const ly=y-r-6<14?y+r+13:y-r-6;g.strokeText(p.name,x,ly);g.fillText(p.name,x,ly);}
+  });
+}
+function wmLoop(){
+  cancelAnimationFrame(wmAnim);
+  const f=()=>{if(!$('wm')||document.hidden||ui.tab!=='map'||ui.msub!=='world')return;wmDraw();wmAnim=requestAnimationFrame(f);};
+  wmAnim=requestAnimationFrame(f);
+}
+function wmInit(){
+  const c=$('wm');if(!c)return;
+  c.onclick=e=>{
+    const j=ui.wm&&ui.wm.j;if(!j)return;const r=c.getBoundingClientRect(),k=r.width/100,x=(e.clientX-r.left)/k,y=(e.clientY-r.top)/k;
+    let best=null,bd=1e9;j.players.forEach(p=>{const d=Math.hypot(p.x-x,p.y-y);if(d<bd){bd=d;best=p;}});
+    ui.wsel=best&&bd*k<=18?best.pid:'';wmInfo();wmDraw();
+  };
+  wmInfo();wmList();wmDraw();wmLoop();loadWorld();
+}
 const NAV=[['city','ᛟ','Город'],['troops','ᛏ','Войска'],['map','ᚱ','Карта'],['quests','ᚷ','Задания'],['chat','ᛗ','Чат'],['clan','ᛉ','Клан']];
 function buildStatic(){
   $('res').innerHTML=RES.map((r,i)=>`<div class="chip" id="c-${r.id}" style="color:var(--${r.id})"><i class="rn glow d${i%4}">${r.r}</i><span class="lb">${r.n}</span><b id="v-${r.id}" style="color:var(--fg)">0</b><small id="r-${r.id}">+0/ч</small><div class="cb"><i id="b-${r.id}"></i></div></div>`).join('');
@@ -734,6 +821,7 @@ function render(){
   for(const id in keep){const el=document.getElementById(id);if(el)el.value=keep[id];}
   if(ui.tab==='clan'||ui.tab==='chat'){['cbox','wbox','dbox'].forEach(i=>stick($(i)));}
   try{window.Art&&Art.paintIn(list,id=>lvl(id));}catch(e){}
+  if(ui.tab==='map'&&ui.msub==='world')wmInit();
   showHero(ui.tab);showLogo(ui.tab==='city');
   v.scrollTop=top;
   NAV.forEach(n=>$('n-'+n[0]).classList.toggle('on',n[0]===ui.tab));
@@ -852,6 +940,8 @@ function onAct(act,arg){
     case 'tab':ui.tab=arg;if(arg==='shop')loadShop();if(arg==='top'&&Date.now()-ui.rankAt>20000)loadRank();if(arg==='clan')loadClan();if(arg==='chat')loadSoc();render();return;
     case 'pay':toast('Оплата пока не подключена');return;
     case 'msub':ui.msub=arg;render();return;
+    case 'wprof':ui.tab='chat';ui.sub='world';ui.soc.peer=null;render();loadSoc();openProf({id:arg});return;
+    case 'wpvp':ui.msub='pvp';render();return;
     case 'sub':ui.sub=arg;ui.soc.peer=null;ui.soc.prof=null;render();loadSoc();return;
     case 'prof':openProf({id:arg});return;
     case 'profn':ui.tab='chat';ui.sub='world';ui.soc.peer=null;openProf({name:arg}).then(()=>{loadSoc();});return;
@@ -910,6 +1000,7 @@ function boot(){
     if(Date.now()-lastSync>2500&&dueSoon())sync();
   },1000);
   setInterval(()=>{if(S&&!document.hidden&&!ui.modal)sync();},20000);
+  setInterval(()=>{if(S&&!document.hidden&&ui.tab==='map'&&ui.msub==='world')loadWorld();},12000);
   setInterval(()=>{if(S&&!document.hidden&&!$('app').hidden&&!cbusy&&(ui.tab==='clan'||Date.now()-ui.clanAt>30000))loadClan();},5000);
   setInterval(()=>{if(S&&!document.hidden&&!$('app').hidden&&(ui.tab==='chat'||Date.now()-ui.soc.at>20000))loadSoc();},4000);
   document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target){const m={cmsg:'csay',wmsg:'wsay',dmsg:'dsay',fname:'fsearch'}[e.target.id];if(m){e.preventDefault();onAct(m);}}});
