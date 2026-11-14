@@ -317,6 +317,8 @@ function serveStatic(req, res, url) {
   let p; try { p = decodeURIComponent(url.split('?')[0]); } catch (e) { return send(res, 400, 'Плохой адрес'); }
   if (p === '/') p = '/site.html';
   else if (p === '/admin') p = '/admin.html';
+  else if (p === '/privacy') p = '/privacy.html';
+  else if (p === '/terms') p = '/terms.html';
   else if (p === '/play') p = '/index.html';
   else if (p === '/play/') { res.writeHead(301, { Location: '/play' }); return res.end(); }
   const full = path.normalize(path.join(PUB, p));
