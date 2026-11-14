@@ -6,7 +6,7 @@ const path = require('path');
 const crypto = require('crypto');
 
 module.exports = function makeAdmin(env) {
-  const { users, byName, byToken, DATA_DIR, Core, Clan, Social, sstore, cstore, sctx, cctx, json, readBody, limited, ipOf, markDirty, touchState, ranking, flush, setSdirty, setCdirty, hashPw } = env;
+  const { users, byName, byToken, DATA_DIR, Core, Clan, Social, sstore, cstore, sctx, cctx, json, readBody, limited, ipOf, markDirty, touchState, ranking, flush, setSdirty, setCdirty, hashPw, newsApi } = env;
   let cfg = null;
   try { cfg = JSON.parse(fs.readFileSync(path.join(__dirname, 'admin.json'), 'utf8')); } catch (e) { cfg = null; }
   const sessions = new Map();               // токен -> до какого времени действует
@@ -80,6 +80,7 @@ module.exports = function makeAdmin(env) {
         clanName: c ? c.name : '', friends: (sstore.friends[u.id] || []).length, log: (st.log || []).slice(0, 8), ban: u.banned || null
       }));
     }
+    if (req.method === 'GET' && url === '/api/admin/news') return json(res, 200, { news: newsApi.list().slice().sort((a, b) => b.t - a.t) });
     if (req.method === 'GET' && url === '/api/admin/chat') {
       return json(res, 200, { world: sstore.world.slice(-80), reports: sstore.reports.slice(-60).reverse() });
     }
@@ -90,6 +91,8 @@ module.exports = function makeAdmin(env) {
       const ok = (msg) => json(res, 200, { ok: true, msg });
       switch (a) {
         case 'say': { const t = String(b.text || '').trim(); if (!t) return json(res, 400, { error: 'Пустое сообщение.' }); Social.admin.say(sstore, sctx, t); setSdirty(); audit('Объявление в чат: ' + t.slice(0, 80)); return ok('Отправлено в общий чат'); }
+        case 'newsadd': { const ti = String(b.title || '').trim().slice(0, 80), tx = String(b.text || '').trim().slice(0, 600); if (!ti || !tx) return json(res, 400, { error: 'Нужны заголовок и текст.' }); newsApi.add(ti, tx); audit('Новость: ' + ti); return ok('Новость опубликована на сайте'); }
+        case 'newsdel': newsApi.del(String(b.nid || '')); audit('Удалена новость'); return ok('Новость удалена');
         case 'delmsg': Social.admin.deleteWorld(sstore, Number(b.t), String(b.pid || '')); setSdirty(); audit('Удалено сообщение'); return ok('Удалено');
         case 'dismiss': Social.admin.dismissReport(sstore, String(b.rid || '')); setSdirty(); return ok('Жалоба закрыта');
         case 'ban': { if (!need()) return; u.banned = { reason: String(b.reason || 'Нарушение правил').slice(0, 100), t: Date.now() }; u.tokens.forEach(h => byToken.delete(h)); u.tokens = []; markDirty(u); flush(); audit(`Бан: ${u.name} (${u.banned.reason})`); return ok('Игрок заблокирован'); }

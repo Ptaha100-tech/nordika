@@ -65,7 +65,7 @@ function loginView(){
   return `<h1>Nordika: управление</h1><p class="muted sm">Вход только для владельца.</p><div class="card"><label class="muted sm">Секретный ключ</label><input id="key" type="password" autocomplete="off" style="margin:6px 0 10px"><button id="go">Войти</button></div>`;
 }
 function shell(inner){
-  const T=[['over','Обзор'],['pl','Игроки'],['chat','Чат'],['say','Объявление']];
+  const T=[['over','Обзор'],['pl','Игроки'],['chat','Чат'],['say','Новости']];
   return `<h1>Nordika: управление</h1><div class="tabs">${T.map(t=>`<button class="${t[0]===tab?'':'g'}" data-t="${t[0]}">${t[1]}</button>`).join('')}</div>${inner}`;
 }
 function pRow(p){
@@ -111,7 +111,10 @@ function chatView(){
   return `<div class="card"><h2>Жалобы</h2>${rp}</div><div class="card"><h2>Общий чат</h2>${w}</div>`;
 }
 function sayView(){
-  return `<div class="card"><h2>Объявление в общий чат</h2><p class="muted sm">Сообщение появится от имени «Вести фьерда» у всех игроков.</p><textarea id="say" rows="3" maxlength="300" style="margin:8px 0"></textarea><button id="saygo">Отправить всем</button></div>`;
+  const nw=data.news;
+  return `<div class="card"><h2>Объявление в общий чат</h2><p class="muted sm">Сообщение появится от имени «Вести фьерда» у всех игроков.</p><textarea id="say" rows="3" maxlength="300" style="margin:8px 0"></textarea><button id="saygo">Отправить всем</button></div>
+  <div class="card"><h2>Новость на сайте</h2><input id="ntitle" maxlength="80" placeholder="Заголовок" style="margin-bottom:8px"><textarea id="ntext" rows="4" maxlength="600" placeholder="Текст новости" style="margin-bottom:8px"></textarea><button id="newsgo">Опубликовать</button></div>
+  <div class="card"><h2>Новости на сайте</h2>${nw?nw.news.map(n=>`<div class="row"><div><p><b>${esc(n.title)}</b> <span class="muted sm">${fmtD(n.t)}</span></p><p class="muted sm">${esc(n.text)}</p></div><button class="s r" data-nd="${n.id}">×</button></div>`).join('')||'<p class="muted sm">Новостей нет.</p>':'<p class="muted">Загрузка…</p>'}</div>`;
 }
 function render(){
   const a=$('app');
@@ -129,6 +132,7 @@ async function load(){
     if(tab==='over')data.over=await api('GET','/api/admin/overview');
     if(tab==='pl'&&!cur)data.pl=await api('GET','/api/admin/players?q='+encodeURIComponent(pq)+'&page='+ppage+'&sort='+psort);
     if(tab==='chat')data.chat=await api('GET','/api/admin/chat');
+    if(tab==='say')data.news=await api('GET','/api/admin/news');
   }catch(e){toast(e.message,1);}
   render();
 }
@@ -156,6 +160,8 @@ function bind(){
   on('ban',()=>act('ban',{reason:$('reason').value}));
   on('setpw',()=>act('setpw',{password:$('npw').value}));
   on('del',()=>act('delete',{confirm:$('dconf').value}));
+  on('newsgo',async()=>{if(await act('newsadd',{title:$('ntitle').value,text:$('ntext').value})){data.news=await api('GET','/api/admin/news');render();}});
+  document.querySelectorAll('[data-nd]').forEach(b=>b.onclick=async()=>{if(await act('newsdel',{nid:b.dataset.nd})){data.news=await api('GET','/api/admin/news');render();}});
   on('saygo',async()=>{const t=$('say').value;if(await act('say',{text:t}))$('say').value='';});
   document.querySelectorAll('[data-dis]').forEach(b=>b.onclick=()=>act('dismiss',{rid:b.dataset.dis}));
   document.querySelectorAll('[data-dm]').forEach(b=>b.onclick=()=>{const[t,p]=b.dataset.dm.split('|');act('delmsg',{t:Number(t),pid:p});});

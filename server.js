@@ -127,9 +127,32 @@ function limited(key, max, windowMs) {
 }
 setInterval(() => { const now = Date.now(); for (const [k, b] of buckets) if (now > b.until) buckets.delete(k); }, 60000).unref();
 
+/* ---------- новости на главной странице сайта ---------- */
+const NEWS_FILE = path.join(DATA_DIR, 'news.json');
+let news; try { news = JSON.parse(fs.readFileSync(NEWS_FILE, 'utf8')); } catch (e) {
+  const t = Date.now();
+  news = [
+    { id: 'n1', t: t - 2 * 86400000, title: 'Открытие Nordika', text: 'Фьерд ждёт первых ярлов. Стройте деревню, собирайте дружину и ведите её в поход.' },
+    { id: 'n2', t: t - 86400000, title: 'Приложение для Android', text: 'Игру можно скачать на телефон прямо с этого сайта. Для iPhone есть установка на экран «Домой».' },
+    { id: 'n3', t: t - 3600000, title: 'Чат, друзья и кланы', text: 'В игре появились общий чат, личные сообщения, друзья и кланы с помощью в стройке.' }
+  ];
+}
+function saveNews() { try { fs.writeFileSync(NEWS_FILE, JSON.stringify(news)); } catch (e) { console.error('Новости не сохранены', e.message); } }
+let pubCache = { at: 0, data: null };
+function publicInfo() {
+  if (Date.now() - pubCache.at < 20000) return pubCache.data;
+  const all = [...users.values()], t = Date.now();
+  const top = ranking().filter(r => !(users.get(r.id) || {}).banned).slice(0, 10).map(r => ({ name: r.name, hall: r.hall, score: r.score, clan: sctx.tagOf(r.id) }));
+  const clans = Clan.view(cstore, cctx, '-').list.slice(0, 10);
+  pubCache = { at: t, data: { players: all.length, online: all.filter(u => sctx.online(u.id)).length, clans: Object.keys(cstore.clans).length,
+    news: news.slice().sort((a, b) => b.t - a.t).slice(0, 12), top, topClans: clans } };
+  return pubCache.data;
+}
+
 /* ---------- админ-панель ---------- */
 const adminApi = require('./admin.js')({ users, byName, byToken, DATA_DIR, Core, Clan, Social, sstore, cstore, sctx, cctx, json, readBody, limited, ipOf, markDirty, touchState, ranking, flush,
-  setSdirty: () => { sdirty = true; }, setCdirty: () => { cdirty = true; }, hashPw });
+  setSdirty: () => { sdirty = true; }, setCdirty: () => { cdirty = true; }, hashPw,
+  newsApi: { list: () => news, add: (title, text) => { news.push({ id: 'n' + Date.now().toString(36), t: Date.now(), title, text }); if (news.length > 60) news.shift(); saveNews(); pubCache.at = 0; }, del: id => { news = news.filter(x => x.id !== id); saveNews(); pubCache.at = 0; } } });
 
 /* ---------- магазин: пополнение за деньги подключается файлом payments.json ---------- */
 const PACKS = [
@@ -222,6 +245,7 @@ async function api(req, res, url) {
   }
 
   if (url.startsWith('/api/admin/')) return adminApi.handle(req, res, url);
+  if (req.method === 'GET' && url === '/api/public') return json(res, 200, publicInfo());
 
   const u = authUser(req);
   if (!u) return json(res, 401, { error: 'Нужно войти.' });
