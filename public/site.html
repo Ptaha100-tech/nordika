@@ -194,7 +194,7 @@ fetch('/nordika.apk',{method:'HEAD'}).then(function(r){
   document.getElementById('apknote').textContent='Пока играйте в браузере: игра работает на телефоне так же.';
 });
 /* живые данные: игроки, новости, рейтинг */
-var TG='';   // имя в Телеграме для связи, например 'nordika_admin' (без @)
+var TG='AlexAmbrela';   // имя в Телеграме для связи, например 'nordika_admin' (без @)
 (function(){
   var T=document.getElementById('contact');
   if(TG&&T)T.insertAdjacentHTML('beforeend','<a href="https://t.me/'+TG+'" rel="noopener">Telegram: @'+TG+'</a>');
