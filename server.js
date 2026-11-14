@@ -97,6 +97,9 @@ process.on('SIGINT', shutdown); process.on('SIGTERM', shutdown);
 /* ---------- связь ядра с игроками ---------- */
 Core.HOOK.getState = pid => { const u = users.get(pid); return u ? u.state : null; };
 Core.HOOK.touch = pid => markDirty(users.get(pid));
+/* Каждому игроку по номеру достаётся своё место на карте 100 на 100. Путь к другому игроку зависит от расстояния между местами. */
+const posOf = pid => ({ x: parseInt(String(pid).slice(0, 4), 16) % 100, y: parseInt(String(pid).slice(4, 8), 16) % 100 });
+const distTo = (a, b) => { const p = posOf(a), q = posOf(b); return Math.max(6, Math.round(Math.hypot(p.x - q.x, p.y - q.y) / 2.6)); };
 Core.HOOK.pickPlayers = (st, n) => {
   const taken = new Set(st.targets.filter(t => t.pid).map(t => t.pid));
   const H = st.b.hall;
@@ -105,7 +108,7 @@ Core.HOOK.pickPlayers = (st, n) => {
   let near = all.filter(u => Math.abs(u.state.b.hall - H) <= 2);
   if (near.length < n) near = all;
   for (let i = near.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [near[i], near[j]] = [near[j], near[i]]; }
-  return near.slice(0, n).map(u => ({ pid: u.id, name: u.name, level: u.state.b.hall, comp: Object.assign({}, u.state.troops), shield: u.state.shield }));
+  return near.slice(0, n).map(u => ({ pid: u.id, name: u.name, level: u.state.b.hall, comp: Object.assign({}, u.state.troops), shield: u.state.shield, dist: distTo(st.pid, u.id) }));
 };
 
 function touchState(u) {

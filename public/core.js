@@ -200,7 +200,7 @@ function randComp(n, keys) {
 
 /* ============ Цели на карте ============ */
 function playerTarget(p) {
-  return { id: 't' + (S.mid++), kind: 'player', pid: p.pid, name: p.name, level: p.level, comp: p.comp, loot: {}, defb: 1, res: null, dist: ri(10, 35), shieldAt: p.shield };
+  return { id: 't' + (S.mid++), kind: 'player', pid: p.pid, name: p.name, level: p.level, comp: p.comp, loot: {}, defb: 1, res: null, dist: p.dist || ri(10, 35), shieldAt: p.shield };
 }
 /* Если в списке нет живых игроков, а они появились, подменяем ими ботов-ярлов. */
 function topUpPlayers() {
@@ -239,8 +239,8 @@ function genTarget(kind) {
 }
 function refreshTargets() {
   S.targets = [];
-  ['node', 'node', 'node', 'camp', 'camp', 'camp'].forEach(k => S.targets.push(genTarget(k)));
-  HOOK.pickPlayers(S, 3).forEach(p => S.targets.push(playerTarget(p)));
+  ['node', 'node', 'node', 'node', 'camp', 'camp', 'camp', 'camp'].forEach(k => S.targets.push(genTarget(k)));
+  HOOK.pickPlayers(S, 4).forEach(p => S.targets.push(playerTarget(p)));
   while (S.targets.filter(t => t.kind === 'player' || t.kind === 'jarl').length < 2) S.targets.push(genTarget('jarl'));
   S.tgtAt = nowMs();
 }
