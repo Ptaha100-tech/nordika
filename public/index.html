@@ -960,10 +960,11 @@ function render(){
   const ae=document.activeElement;
   if((ui.tab==='clan'||ui.tab==='chat')&&ae&&ae.hasAttribute&&ae.hasAttribute('data-keep')){live();return;}   // не мешаем печатать
   const v=$('view'),top=v.scrollTop,list=$('list');
+  const bs={};['cbox','wbox','dbox'].forEach(i=>{const x=$(i);if(x)bs[i]={top:x.scrollTop,bot:x.scrollTop+x.clientHeight>=x.scrollHeight-20};});   // запоминаем, где читал чат
   const keep={};list.querySelectorAll('[data-keep]').forEach(el=>{keep[el.id]=el.value;});
   list.innerHTML=(ui.tab==='top'||ui.tab==='chat'||ui.tab==='clan'?'':tutHTML())+VIEWS[ui.tab]();
   for(const id in keep){const el=document.getElementById(id);if(el)el.value=keep[id];}
-  if(ui.tab==='clan'||ui.tab==='chat'){['cbox','wbox','dbox'].forEach(i=>stick($(i)));}
+  if(ui.tab==='clan'||ui.tab==='chat'){['cbox','wbox','dbox'].forEach(i=>{const x=$(i);if(!x)return;if(bs[i]&&!bs[i].bot)x.scrollTop=bs[i].top;else stick(x);});}
   try{window.Art&&Art.paintIn(list,id=>lvl(id));}catch(e){}
   if(ui.tab==='map'&&ui.msub==='world')wmInit();
   showHero(ui.tab);showLogo(ui.tab==='city');
