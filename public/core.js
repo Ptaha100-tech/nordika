@@ -49,7 +49,9 @@ const WEAK = {}; Object.keys(U).forEach(k => { WEAK[k] = Object.keys(U).find(x =
 const TECH = {
   atk: { n: 'Закалённая сталь', d: '+6% к атаке за уровень', r: 'ᛏ' },
   def: { n: 'Стена щитов',      d: '+6% к защите за уровень', r: 'ᚺ' },
-  eco: { n: 'Дары земли',       d: '+5% к добыче за уровень', r: 'ᚠ' }
+  eco: { n: 'Дары земли',       d: '+5% к добыче за уровень', r: 'ᚠ' },
+  bld: { n: 'Мастера-строители', d: '−3% ко времени стройки за уровень', r: 'ᛒ' },
+  fast: { n: 'Быстрые драккары', d: '−3% ко времени походов за уровень', r: 'ᚱ' }
 };
 const CAMPS = ['Лагерь разбойников', 'Стоянка мародёров', 'Логово берсерков', 'Засада изгоев'];
 const N1 = ['Бьорн', 'Ульф', 'Рагнар', 'Гуннар', 'Эйрик', 'Свейн', 'Торвальд', 'Хальвдан', 'Ивар', 'Олаф', 'Харальд', 'Сигурд', 'Ингвар', 'Гейр'];
@@ -97,6 +99,36 @@ const QUESTS = [
   { id: 'q11', t: 'Разграбь город другого игрока',      cur: () => S.stat.pvpWins, max: 1,  rw: { silver: 400, iron: 300, haste: 2 } }
 ];
 
+/* Дела-вехи: подними здание, воина или знание до уровня. Создаются по списку, награды растут с уровнем. */
+(function () {
+  const rw = (lv, kinds) => {
+    const o = {}; kinds.forEach((k, i) => { o[k] = Math.round(lv * (i ? 90 : 140)); });
+    if (lv >= 10) o.haste = Math.floor(lv / 5); if (lv >= 15) o.gems = Math.floor(lv / 5);
+    return o;
+  };
+  const bl = { farm: ['Ферма', ['food', 'wood']], sawmill: ['Лесопилка', ['wood', 'stone']], quarry: ['Каменоломня', ['stone', 'iron']], ironmine: ['Рудник', ['iron', 'silver']], storehouse: ['Склад', ['wood', 'stone']], barracks: ['Казарма', ['iron', 'food']], oracle: ['Оракул', ['silver', 'stone']], vault: ['Хранилище', ['stone', 'iron']] };
+  Object.keys(bl).forEach(id => [5, 10, 15, 20].forEach(L => {
+    if (id === 'sawmill' && L === 3) return;
+    QUESTS.push({ id: `b_${id}_${L}`, t: `${bl[id][0]}: подними до ${L} уровня`, cur: () => lvl(id), max: L, rw: rw(L, bl[id][1]) });
+  }));
+  Object.keys(U).forEach(k => [3, 5, 7].forEach(T => {
+    QUESTS.push({ id: `t_${k}_${T}`, t: `Улучши ${U[k].pl.toLowerCase()} до ${T} ступени`, cur: () => tierOf(S, k), max: T, rw: { silver: T * 250, iron: T * 300, haste: T >= 5 ? T - 3 : 0 } });
+  }));
+  Object.keys(TECH).forEach(k => [3, 5, 10].forEach(L => {
+    QUESTS.push({ id: `k_${k}_${L}`, t: `Знание «${TECH[k].n}»: ${L} уровень`, cur: () => S.tech[k] || 0, max: L, rw: { silver: L * 150, stone: L * 120, haste: L >= 5 ? 1 : 0 } });
+  }));
+  [[100, 'Обучи 100 воинов', 'trained'], [500, 'Обучи 500 воинов', 'trained'], [2000, 'Обучи 2000 воинов', 'trained'],
+   [10, 'Разгроми 10 лагерей разбойников', 'campWins'], [50, 'Разгроми 50 лагерей разбойников', 'campWins'],
+   [10, 'Собери ресурсы на точках 10 раз', 'gathered'], [50, 'Собери ресурсы на точках 50 раз', 'gathered'],
+   [5, 'Разграбь города игроков 5 раз', 'pvpWins'], [20, 'Разграбь города игроков 20 раз', 'pvpWins'],
+   [10, 'Отбей 10 набегов', 'defWins'], [50, 'Отбей 50 набегов', 'defWins'],
+   [5, 'Изучи 5 знаний', 'researched'], [20, 'Изучи 20 знаний', 'researched']].forEach(([n, t, f]) => {
+    QUESTS.push({ id: `s_${f}_${n}`, t, cur: () => (S.stat[f] || 0), max: n, rw: { silver: n * 20 + 200, iron: n * 20 + 200, haste: n >= 20 ? 3 : n >= 10 ? 1 : 0, gems: n >= 50 ? 5 : 0 } });
+  });
+  [5, 15, 20].forEach(L => QUESTS.push({ id: `h_${L}`, t: `Подними ярла до ${L} уровня`, cur: () => heroOf(S).lv, max: L, rw: { silver: L * 100, food: L * 150, haste: L >= 15 ? 4 : 1 } }));
+  QUESTS.forEach(q => { Object.keys(q.rw).forEach(k => { if (!q.rw[k]) delete q.rw[k]; }); });
+})();
+
 /* ============ Состояние ============ */
 function newState(name, pid) {
   const t = nowMs();
@@ -104,7 +136,7 @@ function newState(name, pid) {
     v: 3, pid: pid || '', name: name || 'Ярл', t, created: t,
     res: { food: 800, wood: 800, stone: 600, iron: 300, silver: 150 },
     b: { hall: 1, farm: 1, sawmill: 1, quarry: 1, ironmine: 1, silvermine: 0, storehouse: 1, vault: 0, barracks: 1, oracle: 0 },
-    tech: { atk: 0, def: 0, eco: 0 }, q: null, train: null, study: null,
+    tech: { atk: 0, def: 0, eco: 0, bld: 0, fast: 0 }, q: null, train: null, study: null,
     troops: { spear: 12, archer: 0, cav: 0 }, marches: [], targets: [], tgtAt: 0,
     shield: t + 90 * 60000, nextRaid: t + 120 * 60000, haste: 2,
     stat: { trained: 0, wins: 0, campWins: 0, researched: 0, defWins: 0, built: 0, gathered: 0, pvpWins: 0 },
@@ -116,6 +148,7 @@ function newState(name, pid) {
 function use(st) { S = st; }
 /* Старые сохранения без героя и ступеней получают их при первом обновлении. */
 function ensure(st) {
+  if (st.tech) { if (st.tech.bld === undefined) st.tech.bld = 0; if (st.tech.fast === undefined) st.tech.fast = 0; }
   if (!st.tier) st.tier = { spear: 1, archer: 1, cav: 1 };
   if (!st.hero) st.hero = { lv: 1, xp: 0, sp: 0, sk: { atk: 0, def: 0, loot: 0 } };
   if (st.upg === undefined) st.upg = null;
@@ -150,7 +183,8 @@ function prodAt(id, L) { const b = B[id]; return L ? Math.round(b.base * L * (1 
 function rate(rid) { const id = BORDER.find(k => B[k].res === rid); return prodAt(id, lvl(id)); }
 const upCost = (id, L) => { const o = {}; for (const k in B[id].cost) o[k] = Math.round(B[id].cost[k] * grow(L, 1.55, 1.10)); return o; };
 /* Первые уровни строятся быстро, чтобы новичок за первые минуты увидел результат. */
-const upSecs = (id, L) => Math.round(B[id].t * grow(L, 1.5, 1.12) * CFG.t * (L < 3 ? 0.3 : L < 4 ? 0.6 : 1));
+const techCut = (k) => (S && S.tech ? Math.max(0.55, 1 - 0.03 * (S.tech[k] || 0)) : 1);
+const upSecs = (id, L) => Math.round(B[id].t * grow(L, 1.5, 1.12) * CFG.t * (L < 3 ? 0.3 : L < 4 ? 0.6 : 1) * techCut('bld'));
 const canAfford = c => Object.keys(c).every(k => S.res[k] >= c[k]);
 const pay = c => { for (const k in c) S.res[k] -= c[k]; };
 const trainRate = () => 1 + 0.15 * (lvl('barracks') - 1);
@@ -159,7 +193,7 @@ const trainSecs = (k, n) => Math.max(3, Math.round(n * U[k].t / trainRate() * CF
 const techCost = L => ({ silver: Math.round(120 * grow(L, 1.6, 1.1)), food: Math.round(100 * grow(L, 1.5, 1.1)) });
 const techSecs = L => Math.round(40 * grow(L, 1.55, 1.1) * CFG.t);
 const gatherSecs = () => 25 * CFG.t;
-const marchSecs = d => Math.round(d * CFG.t);
+const marchSecs = d => Math.round(d * CFG.t * techCut('fast'));
 
 function addLogTo(st, txt, k, t) { st.log.unshift({ t: t || nowMs(), txt, k: k || 'info' }); if (st.log.length > 60) st.log.pop(); }
 const addLog = (txt, k, t) => addLogTo(S, txt, k, t);

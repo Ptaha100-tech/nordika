@@ -471,6 +471,7 @@ async function api(req, res, url) {
     const list = ranking(), idx = list.findIndex(x => x.id === id), c = Clan.clanOf(cstore, id);
     return json(res, 200, { pid: id, name: t.name, hall: t.state.b.hall, score: Core.score(t.state), rank: idx + 1, total: list.length,
       clan: c ? { tag: c.tag, name: c.name } : null, online: sctx.online(id), me: id === u.id,
+      hero: ((t.state.hero && t.state.hero.lv) || 1), stat: { wins: t.state.stat.wins || 0, pvpWins: t.state.stat.pvpWins || 0, campWins: t.state.stat.campWins || 0, defWins: t.state.stat.defWins || 0, trained: t.state.stat.trained || 0 },
       friend: (sstore.friends[u.id] || []).includes(id), blocked: (sstore.blocks[u.id] || []).includes(id) });
   }
   if (req.method === 'POST' && url === '/api/logout') {
