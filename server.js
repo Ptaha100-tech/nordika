@@ -101,11 +101,12 @@ Core.HOOK.dist = (a, b) => distTo(a, b);
 /* Каждому игроку по номеру достаётся своё место на карте 100 на 100. Путь к другому игроку зависит от расстояния между местами. */
 const posOf = Core.posOf;
 const distTo = (a, b) => { const p = posOf(a), q = posOf(b); return Math.max(6, Math.round(Math.hypot(p.x - q.x, p.y - q.y) / 2.6)); };
+Core.HOOK.sameClan = (a, b) => { const c = Clan.clanOf(cstore, a); return !!(c && c.members && c.members[b]); };
 Core.HOOK.pickPlayers = (st, n) => {
   const taken = new Set(st.targets.filter(t => t.pid).map(t => t.pid));
   const H = st.b.hall;
   const all = [];
-  for (const u of users.values()) if (u.id !== st.pid && !taken.has(u.id)) all.push(u);
+  for (const u of users.values()) if (u.id !== st.pid && !taken.has(u.id) && !Core.HOOK.sameClan(st.pid, u.id)) all.push(u);
   let near = all.filter(u => Math.abs(u.state.b.hall - H) <= 2);
   if (near.length < n) near = all;
   for (let i = near.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [near[i], near[j]] = [near[j], near[i]]; }

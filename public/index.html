@@ -157,6 +157,8 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--frost);outline-
 #nav .dot{position:absolute;top:6px;left:calc(50% + 10px);width:8px;height:8px;border-radius:50%;background:var(--blood)}
 
 #modal{position:fixed;inset:0;background:rgba(4,7,9,.74);display:flex;align-items:flex-end;justify-content:center;z-index:20}
+.rpl{background:none;border:0;color:var(--muted);font-size:14px;margin-left:6px;padding:0 4px;cursor:pointer}
+.cbox .ment{background:#f2cd7518;border-left:2px solid var(--accent);padding-left:6px}
 .lnk{color:var(--accent);white-space:nowrap}
 .tblw{overflow-x:auto;margin-top:8px}.tbl{width:100%;border-collapse:collapse;font-size:12px}.tbl th,.tbl td{padding:5px 6px;border-bottom:1px solid var(--line,#ffffff22);text-align:left;vertical-align:top}.tbl tr.cur td{background:#f2cd7522;font-weight:600}
 .sheet{width:100%;max-width:560px;max-height:100%;overflow-y:auto;background:var(--surface);border-top:2px solid var(--accent);
@@ -502,7 +504,7 @@ function viewMap(){
   h+=`<p class="note" style="margin:0 0 8px">${note}</p>`;
   if(ui.msub==='pvp'){
     const rs=(S.raids||[]).filter(r=>Core.now()-r.t<48*3600000);
-    if(rs.length)h+=`<section class="card"><h3>Нападения на вас</h3>${rs.slice(0,6).map(r=>`<div class="item"><div><b>${esc(r.name)}</b> <span class="pill ${r.win?'bad':'good'}">${r.win?'ограбил вас':'отбит'}</span><p class="sm muted">${ago(r.t)}${r.win&&r.loot?' · унёс: '+esc(r.loot):''}${r.lost?' · ваши потери: '+esc(r.lost):''}</p></div><button class="btn small" data-act="revenge" data-arg="${r.pid}">Отомстить</button></div>`).join('')}</section>`;
+    if(rs.length)h+=`<section class="card"><h3>Нападения на вас</h3>${rs.slice(0,6).map(r=>`<div class="item"><div><b>${esc(r.name)}</b> <span class="pill ${r.win?'bad':'good'}">${r.win?'ограбил вас':'отбит'}</span><p class="sm muted">${ago(r.t)}${r.win&&r.loot?' · унёс: '+esc(r.loot):''}${r.lost?' · ваши потери: '+esc(r.lost):''}${r.elost?' · враг потерял: '+esc(r.elost):''}</p></div><button class="btn small" data-act="revenge" data-arg="${r.pid}">Отомстить</button></div>`).join('')}</section>`;
   }
   const list=S.targets.filter(t=>grp(t)===ui.msub).sort((a,b)=>(a.kind==='player'?0:1)-(b.kind==='player'?0:1)||a.dist-b.dist);
   if(!list.length)h+=`<p class="muted sm">Целей нет. Нажмите «Новые цели».</p>`;
@@ -692,7 +694,7 @@ let sbusy=false;
 const stick=b=>{if(b)b.scrollTop=b.scrollHeight;};
 function worldHTML(d){
   if(!d.world.length)return '<p class="cs">В общем чате пока тихо. Напишите первым.</p>';
-  return d.world.map(m=>m.sys?`<p class="cs">📜 ${esc(m.text)}</p>`:`<p class="${m.pid===d.me?'me':''}">${m.tag?`<span class="tag4">${esc(m.tag)}</span>`:''}<b class="nmb" data-act="prof" data-arg="${m.pid}">${m.vip?'<span style="color:var(--accent)">★</span> ':''}${esc(m.name)}</b><time>${hhmm(m.t)}</time><br>${esc(m.text)}</p>`).join('');
+  return d.world.map(m=>m.sys?`<p class="cs">📜 ${esc(m.text)}</p>`:`<p class="${m.pid===d.me?'me':''}${S&&m.text&&m.text.toLowerCase().includes(S.name.toLowerCase())&&m.pid!==d.me?' ment':''}">${m.tag?`<span class="tag4">${esc(m.tag)}</span>`:''}<b class="nmb" data-act="prof" data-arg="${m.pid}">${m.vip?'<span style="color:var(--accent)">★</span> ':''}${esc(m.name)}</b><time>${hhmm(m.t)}</time>${m.pid!==d.me?`<button class="rpl" data-act="reply" data-arg="${esc(m.name)}" aria-label="Ответить">↩</button>`:''}<br>${esc(m.text)}</p>`).join('');
 }
 function dmHTML(t,me){
   if(!t.msgs.length)return '<p class="cs">Переписка пуста. Напишите первым.</p>';
@@ -1178,6 +1180,7 @@ function onAct(act,arg){
     case 'pay':toast('Оплата пока не подключена');return;
     case 'msub':ui.msub=arg;render();return;
     case 'wprof':ui.tab='chat';ui.sub='world';ui.soc.peer=null;render();loadSoc();openProf({id:arg});return;
+    case 'reply':{const el=$('wmsg');if(el){const v=el.value.replace(/^[^,]{1,16}, /,'');el.value=arg+', '+v;el.focus();}return;}
     case 'me':meSheet();return;
     case 'help':helpSheet();return;
     case 'qall':ui.qall=!ui.qall;render();return;

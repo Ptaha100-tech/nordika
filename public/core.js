@@ -68,6 +68,7 @@ let toastFn = () => {};
 const HOOK = {
   dist: () => 12,
   pickPlayers: () => [],
+  sameClan: () => false,
   getState: () => null,
   touch: () => {}
 };
@@ -240,6 +241,7 @@ function playerTarget(p) {
 }
 /* Если в списке нет живых игроков, а они появились, подменяем ими ботов-ярлов. */
 function topUpPlayers() {
+  S.targets = S.targets.filter(t => !(t.kind === 'player' && HOOK.sameClan(S.pid, t.pid)));   // соклановцев не трогаем
   if (S.targets.some(t => t.kind === 'player')) return;
   HOOK.pickPlayers(S, 2).forEach(p => {
     const i = S.targets.findIndex(t => t.kind === 'jarl'); if (i >= 0) S.targets.splice(i, 1);
@@ -366,11 +368,11 @@ function resolveMarch(m) {
     m.send = r.survA; m.phase = 'back'; m.back = t + m.dur;
     S.stat.wins++; if (tg.kind === 'camp') S.stat.campWins++;
     S.targets = S.targets.filter(x => x.id !== tg.id); S.targets.push(genTarget(tg.kind));
-    addLog(`Победа над «${tg.name}». Потери: ${fmtComp(r.lostA) || 'нет'}. Добыча: ${fmtRes(m.loot)}.`, 'good', t);
+    addLog(`Победа над «${tg.name}». Ваши потери: ${fmtComp(r.lostA) || 'нет'}. Потери врага: ${fmtComp(r.lostD) || 'нет'}. Добыча: ${fmtRes(m.loot)}.`, 'good', t);
     toast(`Победа над «${tg.name}»`);
   } else {
     m.loot = {}; m.send = r.survA;
-    addLog(`Поражение у «${tg.name}». Потери: ${fmtComp(r.lostA) || 'нет'}.`, 'bad', t);
+    addLog(`Поражение у «${tg.name}». Ваши потери: ${fmtComp(r.lostA) || 'нет'}. Потери врага: ${fmtComp(r.lostD) || 'нет'}.`, 'bad', t);
     toast(`Поражение у «${tg.name}»`);
     if (sum(r.survA) > 0) { m.phase = 'back'; m.back = t + m.dur; }
     else S.marches = S.marches.filter(x => x !== m);
@@ -382,28 +384,29 @@ function resolvePlayer(m) {
   const D = HOOK.getState(tg.pid);
   if (!D) { m.loot = {}; home(); addLog(`Ярл «${tg.name}» исчез. Отряд вернулся.`, 'info', t); S.targets = S.targets.filter(x => x.id !== tg.id); S.targets.push(genTarget('player')); return; }
   settle(D, Math.max(t, D.t));
+  if (HOOK.sameClan(S.pid, tg.pid)) { m.loot = {}; home(); addLog(`Ярл «${tg.name}» теперь ваш соклановец. Отряд вернулся без боя.`, 'info', t); return; }
   if (D.shield > t) { m.loot = {}; home(); addLog(`Город «${tg.name}» под щитом. Отряд вернулся без боя.`, 'info', t); toast('Цель под щитом'); return; }
   const r = battle(m.send, D.troops, atkB(A), defB(D), tiersOf(A), tiersOf(D));
   D.troops = r.survD;
   const aName = A.name || 'Неизвестный ярл';
-  const raid = (win, loot) => { (D.raids || (D.raids = [])).unshift({ t, pid: A.pid, name: aName, win, lost: fmtComp(r.lostD) || '', loot: loot || '' }); if (D.raids.length > 20) D.raids.pop(); };
+  const raid = (win, loot) => { (D.raids || (D.raids = [])).unshift({ t, pid: A.pid, name: aName, win, lost: fmtComp(r.lostD) || '', elost: fmtComp(r.lostA) || '', loot: loot || '' }); if (D.raids.length > 20) D.raids.pop(); };
   if (r.win) {
     const pr = 300 * (D.b.vault || 0), take = {}; let tot = 0;
     RES.forEach(x => { const a = Math.floor(Math.max(0, D.res[x.id] - pr) * 0.25); take[x.id] = a; tot += a; });
     const f = tot > 0 ? Math.min(1, carryOf(r.survA) / tot) : 0;
     m.loot = {}; RES.forEach(x => { const g = Math.floor(take[x.id] * f); m.loot[x.id] = g; D.res[x.id] -= g; });
     D.shield = t + 45 * 60000; raid(true, fmtRes(m.loot));
-    addLogTo(D, `Ярл «${aName}» разграбил ваш город. Унесли: ${fmtRes(m.loot)}. Погибло: ${fmtComp(r.lostD) || 'никто'}. Щит на 45 минут.`, 'bad', t);
+    addLogTo(D, `Ярл «${aName}» разграбил ваш город. Унесли: ${fmtRes(m.loot)}. Ваши потери: ${fmtComp(r.lostD) || 'нет'}. Нападавшие потеряли: ${fmtComp(r.lostA) || 'нет'}. Щит на 45 минут.`, 'bad', t);
     m.send = r.survA; home();
     A.stat.wins++; A.stat.pvpWins++; gainXp(60 + 15 * (tg.level || 1));
-    addLog(`Победа над ярлом «${tg.name}». Потери: ${fmtComp(r.lostA) || 'нет'}. Добыча: ${fmtRes(m.loot)}.`, 'good', t);
+    addLog(`Победа над ярлом «${tg.name}». Ваши потери: ${fmtComp(r.lostA) || 'нет'}. Потери врага: ${fmtComp(r.lostD) || 'нет'}. Добыча: ${fmtRes(m.loot)}.`, 'good', t);
     toast(`Победа над «${tg.name}»`);
     S.targets = S.targets.filter(x => x.id !== tg.id); S.targets.push(genTarget('player'));
   } else {
     D.stat.defWins++; raid(false);
-    addLogTo(D, `Вы отбили нападение ярла «${aName}». Павшие: ${fmtComp(r.lostD) || 'нет'}.`, 'good', t);
+    addLogTo(D, `Вы отбили нападение ярла «${aName}». Ваши потери: ${fmtComp(r.lostD) || 'нет'}. Нападавшие потеряли: ${fmtComp(r.lostA) || 'нет'}.`, 'good', t);
     m.loot = {}; m.send = r.survA;
-    addLog(`Поражение у ярла «${tg.name}». Потери: ${fmtComp(r.lostA) || 'нет'}.`, 'bad', t);
+    addLog(`Поражение у ярла «${tg.name}». Ваши потери: ${fmtComp(r.lostA) || 'нет'}. Потери врага: ${fmtComp(r.lostD) || 'нет'}.`, 'bad', t);
     toast(`Поражение у «${tg.name}»`);
     if (sum(r.survA) > 0) home(); else S.marches = S.marches.filter(x => x !== m);
   }
@@ -434,12 +437,16 @@ function enemyRaid() {
     const lost = {};
     RES.forEach(x => { const l = Math.floor(Math.max(0, S.res[x.id] - prot()) * (H <= 3 ? 0.05 : H <= 6 ? 0.1 : 0.15)); S.res[x.id] -= l; lost[x.id] = l; });
     S.shield = t + 120 * 60000; S.nextRaid = Math.max(S.nextRaid, S.shield + ri(90, 150) * 60000);
-    addLog(`Набег! ${n} врагов прорвались в город. Унесли: ${fmtRes(lost)}. Погибло: ${fmtComp(r.lostD) || 'никто'}. Щит на 2 часа.`, 'bad', t);
+    addLog(`Набег! ${n} врагов прорвались в город. Унесли: ${fmtRes(lost)}. Ваши потери: ${fmtComp(r.lostD) || 'нет'}. Враги потеряли: ${fmtComp(r.lostA) || 'нет'}. Щит на 2 часа.`, 'bad', t);
     toast('Враги разграбили город');
   } else {
-    S.stat.defWins++; gainXp(20);
-    addLog(`Набег отбит! ${n} врагов разбиты. Павшие: ${fmtComp(r.lostD) || 'нет'}.`, 'good', t);
-    toast('Вы отбили набег');
+    S.stat.defWins++;
+    const killed = sum(r.lostA), tr = { food: killed * 20, wood: killed * 15, iron: killed * 8, silver: killed * 3 }, cp = cap();
+    for (const k in tr) S.res[k] = Math.max(S.res[k], Math.min(cp, S.res[k] + tr[k]));
+    let bonus = ''; if (Math.random() < 0.25) { S.haste += 1; bonus = ' и 1 ускорение'; }
+    gainXp(20 + killed);
+    addLog(`Набег отбит! ${n} врагов разбиты. Враги потеряли: ${fmtComp(r.lostA) || 'нет'}. Ваши потери: ${fmtComp(r.lostD) || 'нет'}. Трофеи: ${fmtRes(tr)}${bonus}.`, 'good', t);
+    toast('Набег отбит, трофеи получены');
   }
 }
 
@@ -510,6 +517,7 @@ function freeFinish(kind) { const o = jobObj(kind); if (!o) return; if (o.end - 
 function sendMarch(tid, send) {
   const tg = S.targets.find(x => x.id === tid);
   if (!tg || S.marches.length >= slots(lvl('hall')) || !send || typeof send !== 'object') return false;
+  if (tg.kind === 'player' && HOOK.sameClan(S.pid, tg.pid)) { toast('Нельзя нападать на соклановца'); return false; }
   const s = {}; let tot = 0;
   for (const k in U) { const v = Math.floor(Number(send[k])) || 0; s[k] = Math.max(0, Math.min(S.troops[k] || 0, v)); tot += s[k]; }
   if (!tot) return false;
@@ -602,6 +610,7 @@ function revenge(pid) {
   if (!r) { toast('Этот набег уже забыт'); return false; }
   const D = HOOK.getState(pid);
   if (!D) { toast('Ярл исчез'); return false; }
+  if (HOOK.sameClan(S.pid, pid)) { toast('Нельзя мстить соклановцу'); return false; }
   const ex = S.targets.find(x => x.kind === 'player' && x.pid === pid);
   if (ex) { toast('Этот ярл уже в списке ПВП'); return true; }
   settle(D, Math.max(nowMs(), D.t));
