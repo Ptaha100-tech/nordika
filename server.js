@@ -85,6 +85,7 @@ const cctx = {
   nameOf: pid => (users.get(pid) || {}).name || '?',
   scoreOf: pid => { const u = users.get(pid); return u ? Core.score(u.state) : 0; },
   hallOf: pid => { const u = users.get(pid); return u ? u.state.b.hall : 0; },
+  seen: pid => { const u = users.get(pid); return u ? (u.seen || 0) : 0; },
   charge: pid => { const u = users.get(pid); if (!u) return 'Нет такого игрока.'; touchState(u); Core.use(u.state); const e = Core.chargeClan(); if (!e) markDirty(u); return e; },
   jobInfo: (pid, kind) => { const u = users.get(pid); if (!u) return null; touchState(u); Core.use(u.state); const r = Core.jobInfo(kind); markDirty(u); return r; },
   helpApply: (pid, kind, sid, cut) => { const u = users.get(pid); if (!u) return false; touchState(u); Core.use(u.state); const ok = Core.helpJob(kind, sid, cut); if (ok) { Core.update(); markDirty(u); } return ok; },
@@ -424,7 +425,7 @@ let rankCache = { at: 0, list: [] };
 function ranking() {
   if (Date.now() - rankCache.at < 20000) return rankCache.list;
   const list = [];
-  for (const u of users.values()) list.push({ id: u.id, name: u.name, hall: u.state.b.hall, score: Core.score(u.state) });
+  for (const u of users.values()) list.push({ id: u.id, name: u.name, hall: u.state.b.hall, score: Core.score(u.state), tag: sctx.tagOf(u.id) });
   list.sort((a, b) => b.score - a.score);
   rankCache = { at: Date.now(), list };
   return list;
@@ -489,7 +490,7 @@ async function api(req, res, url) {
   if (req.method === 'GET' && url === '/api/rank') {
     const list = ranking();
     const idx = list.findIndex(x => x.id === u.id);
-    return json(res, 200, { top: list.slice(0, 30).map(x => ({ name: x.name, hall: x.hall, score: x.score, me: x.id === u.id })), me: idx + 1, total: list.length, my: idx >= 0 ? list[idx].score : 0 });
+    return json(res, 200, { clans: Clan.view(cstore, cctx, u.id).list.slice(0, 10), top: list.slice(0, 30).map(x => ({ name: x.name, hall: x.hall, score: x.score, tag: x.tag, me: x.id === u.id })), me: idx + 1, total: list.length, my: idx >= 0 ? list[idx].score : 0 });
   }
   if (req.method === 'GET' && url === '/api/clan') {
     const v = Clan.view(cstore, cctx, u.id);
@@ -573,7 +574,7 @@ async function api(req, res, url) {
     if (!t) return json(res, 404, { error: 'Нет такого игрока.' });
     const list = ranking(), idx = list.findIndex(x => x.id === id), c = Clan.clanOf(cstore, id);
     return json(res, 200, { pid: id, name: t.name, hall: t.state.b.hall, score: Core.score(t.state), rank: idx + 1, total: list.length,
-      clan: c ? { tag: c.tag, name: c.name } : null, online: sctx.online(id), me: id === u.id,
+      clan: c ? { tag: c.tag, name: c.name } : null, online: sctx.online(id), seen: (t.seen || 0), me: id === u.id,
       hero: ((t.state.hero && t.state.hero.lv) || 1), stat: { wins: t.state.stat.wins || 0, pvpWins: t.state.stat.pvpWins || 0, campWins: t.state.stat.campWins || 0, defWins: t.state.stat.defWins || 0, trained: t.state.stat.trained || 0 },
       friend: (sstore.friends[u.id] || []).includes(id), blocked: (sstore.blocks[u.id] || []).includes(id) });
   }

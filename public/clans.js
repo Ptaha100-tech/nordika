@@ -53,7 +53,7 @@ function view(st, ctx, pid) {
   const out = { list: topList(st, ctx), me: pid, max: MAXM, helpMax: HELP_MAX };
   if (!c) { out.clan = null; return out; }
   purge(c, ctx);
-  const members = Object.keys(c.members).map(p => ({ pid: p, name: c.members[p].name, hall: ctx.hallOf(p), score: ctx.scoreOf(p) || 0, helps: c.members[p].helps || 0, leader: p === c.leader }));
+  const members = Object.keys(c.members).map(p => ({ pid: p, name: c.members[p].name, hall: ctx.hallOf(p), score: ctx.scoreOf(p) || 0, helps: c.members[p].helps || 0, leader: p === c.leader, seen: ctx.seen ? ctx.seen(p) : 0, online: ctx.seen ? Date.now() - ctx.seen(p) < 180000 : false }));
   members.sort((a, b) => (b.leader - a.leader) || (b.score - a.score));
   out.clan = {
     id: c.id, name: c.name, tag: c.tag, leader: c.leader, power: members.reduce((a, m) => a + m.score, 0), members,

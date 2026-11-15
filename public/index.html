@@ -654,7 +654,7 @@ function viewClan(){
   mine.forEach(j=>{help+=`<div class="hrow"><div><b>${esc(j.what)}</b></div>${j.asked?'<span class="muted sm">Просьба отправлена</span>':`<button class="btn small" data-act="cask" data-arg="${j.kind}">Попросить помощь</button>`}</div>`;});
   others.forEach(r=>{help+=`<div class="hrow"><div><b>${esc(r.name)}</b><p class="sm muted">${esc(r.what)} · осталось ${fmtT(Math.max(0,(r.end-Core.now())/1000))} · помогли ${r.n} из ${r.max}</p></div>${r.done?'<span class="muted sm">Вы помогли</span>':`<button class="btn small" data-act="chelp" data-arg="${r.id}">Помочь</button>`}</div>`;});
   if(!help)help='<p class="muted sm">Сейчас никто не просит помощи, и у вас нет дел, которым она нужна.</p>';
-  const members=c.members.map(m=>`<div class="cm"><span class="nm">${m.leader?'👑 ':''}<b>${esc(m.name)}</b>${m.pid===d.me?' <span class="muted sm">(вы)</span>':''}</span><span class="lv">Палата ${m.hall} · сила ${fmt(m.score)} · помог ${m.helps}</span>${iAmLeader&&m.pid!==d.me?`<button class="btn small ghost" data-act="ctrans" data-arg="${m.pid}">Передать власть</button><button class="btn small danger" data-act="ckick" data-arg="${m.pid}">Исключить</button>`:''}</div>`).join('');
+  const members=c.members.map(m=>`<div class="cm"><span class="nm">${m.leader?'👑 ':''}<b>${esc(m.name)}</b>${m.pid===d.me?' <span class="muted sm">(вы)</span>':''}</span><span class="lv">${seenTxt(m.seen,m.online)} · Палата ${m.hall} · сила ${fmt(m.score)} · помог ${m.helps}</span>${iAmLeader&&m.pid!==d.me?`<button class="btn small ghost" data-act="ctrans" data-arg="${m.pid}">Передать власть</button><button class="btn small danger" data-act="ckick" data-arg="${m.pid}">Исключить</button>`:''}</div>`).join('');
   return `<section class="card"><div class="trow2"><h2><span class="tag4">${esc(c.tag)}</span>${esc(c.name)}</h2><span class="lv">${c.members.length} из ${d.max}</span></div>
       <p class="sm muted">Сила клана ${fmt(c.power)}</p></section>
     ${goalH}
@@ -663,6 +663,7 @@ function viewClan(){
     <section class="card"><h2>Новости клана</h2>${newsHTML(c)}
       ${iAmLeader?`<div class="crow"><input id="cnews" data-keep maxlength="300" placeholder="Новость для клана" autocomplete="off" enterkeyhint="send"><button class="btn small" data-act="cnews">Опубликовать</button></div>`:'<p class="note">Новости пишет предводитель. Общаться с кланом можно во вкладке «Чат» → «Клан».</p>'}</section>
     <section class="card"><h2>Участники</h2>${members}</section>
+    <section class="card"><h2>Рейтинг кланов</h2>${d.list.map((x,i)=>`<div class="rk ${x.id===c.id?'me':''}"><span class="n">${i+1}</span><span class="nm"><span class="tag4">${esc(x.tag)}</span>${esc(x.name)}</span><span>${x.count} игр.</span><span>${fmt(x.power)}</span></div>`).join('')}</section>
     <button class="btn danger ${ui.leaveSure?'':'ghost'}" data-act="cleave">${ui.leaveSure?'Точно выйти из клана?':'Выйти из клана'}</button>`;
 }
 async function loadClan(){
@@ -733,6 +734,7 @@ function profCard(){
   }
   b.push('<button class="btn small ghost" data-act="profx">Закрыть</button>');
   return `<section class="card pcard"><div class="trow2"><h2>${p.clan?`<span class="tag4">${esc(p.clan.tag)}</span>`:''}${esc(p.name)}</h2><span class="lv"><i class="online ${p.online?'':'off'}"></i>${p.online?'в игре':'не в игре'}</span></div>
+    <p class="sm muted">${seenTxt(p.seen,p.online)}</p>
     <p class="sm muted">Палата ярла ${p.hall} · ярл ур. ${p.hero||1} · сила ${fmt(p.score)} · место ${p.rank} из ${p.total}${p.clan?' · клан «'+esc(p.clan.name)+'»':''}</p>
     ${p.stat?`<p class="sm muted">Побед в походах ${p.stat.wins} · лагерей ${p.stat.campWins} · городов игроков ${p.stat.pvpWins} · отбито набегов ${p.stat.defWins}</p>`:''}<div class="acts">${b.join('')}</div></section>`;
 }
@@ -893,7 +895,7 @@ function viewLog(){
 }
 /* ---------- сезон ---------- */
 ui.season=null;
-async function loadSeason(){try{ui.season=await call('GET','/api/season');if(ui.tab==='top')render();}catch(e){}}
+async function loadSeason(){try{ui.season=await call('GET','/api/season');if(ui.tab==='top')render(true);}catch(e){}}
 function seasonHTML(){
   const s=ui.season;if(!s)return '';
   const left=Math.max(0,s.end-(Date.now()+off)),d=Math.floor(left/86400000);
@@ -907,10 +909,11 @@ function seasonHTML(){
 function viewTop(){
   let rk='<p class="muted sm">Загрузка…</p>';
   if(ui.rank){
-    rk=ui.rank.top.map((x,i)=>`<div class="rk ${x.me?'me':''}"><span class="n">${i+1}</span><span class="nm" data-act="profn" data-arg="${esc(x.name)}" style="cursor:pointer">${esc(x.name)}</span><span>Палата ${x.hall}</span><span>${fmt(x.score)}</span></div>`).join('');
+    rk=ui.rank.top.map((x,i)=>`<div class="rk ${x.me?'me':''}"><span class="n">${i+1}</span><span class="nm" data-act="profn" data-arg="${esc(x.name)}" style="cursor:pointer">${x.tag?`<span class="tag4">${esc(x.tag)}</span>`:''}${esc(x.name)}</span><span>Палата ${x.hall}</span><span>${fmt(x.score)}</span></div>`).join('');
     if(ui.rank.me>30)rk+=`<div class="rk me"><span class="n">${ui.rank.me}</span><span class="nm">${esc(S.name)}</span><span></span><span>${fmt(ui.rank.my)}</span></div>`;
   }
-  return `${seasonHTML()}<h2>Топ ярлов</h2><section class="card">${rk}</section>${window.DEMO?window.demoCard():''}`;
+  const ck=ui.rank&&ui.rank.clans&&ui.rank.clans.length?`<h2>Топ кланов</h2><section class="card">${ui.rank.clans.map((c,i)=>`<div class="rk"><span class="n">${i+1}</span><span class="nm"><span class="tag4">${esc(c.tag)}</span>${esc(c.name)}</span><span>${c.count} игр.</span><span>${fmt(c.power)}</span></div>`).join('')}</section>`:'';
+  return `${seasonHTML()}<h2>Топ ярлов</h2><section class="card">${rk}</section>${ck}${window.DEMO?window.demoCard():''}`;
 }
 const VIEWS={log:viewLog,city:viewCity,troops:viewTroops,map:viewMap,quests:viewQuests,chat:viewSocial,clan:viewClan,shop:viewShop,top:viewTop};
 /* ---------- обучение: шаги выводятся из состояния игры, поэтому ничего лишнего не хранится на сервере ---------- */
@@ -1065,6 +1068,7 @@ function wmInit(){
   bt('wzm',()=>{const m=wmMe();if(!m)return;ui.wz=Math.max(ui.wz,3);ui.wcx=m.x;ui.wcy=m.y;wmClamp();wmDraw();});
   wmInfo();wmList();wmDraw();wmLoop();loadWorld();
 }
+const seenTxt=(ts,on)=>on?'в сети':(ts?'был(а) '+ago(ts):'давно не заходил(а)');
 const ago=t=>{const m=Math.round((Core.now()-t)/60000);return m<2?'только что':m<60?m+' мин назад':m<1440?Math.round(m/60)+' ч назад':Math.round(m/1440)+' дн назад';};
 /* ---------- звук ---------- */
 const SND_ACT={go:'none',march:'horn',claim:'reward',streak:'reward',daily:'reward',up:'build',train:'build',study:'build',tierup:'build',buy:'ok',scout:'ok',revenge:'horn',haste:'ok'};
@@ -1225,7 +1229,7 @@ function closeModal(){ui.modal=null;$('modal').hidden=true;$('modal').innerHTML=
 
 /* ---------- события ---------- */
 async function loadRank(){
-  try{ui.rank=await call('GET','/api/rank');ui.rankAt=Date.now();if(ui.tab==='top')render();}catch(e){}
+  try{ui.rank=await call('GET','/api/rank');ui.rankAt=Date.now();if(ui.tab==='top')render(true);}catch(e){}
 }
 function onAct(act,arg){
   switch(act){
