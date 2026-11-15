@@ -58,6 +58,7 @@ function view(st, ctx, pid) {
   out.clan = {
     id: c.id, name: c.name, tag: c.tag, leader: c.leader, power: members.reduce((a, m) => a + m.score, 0), members,
     chat: c.chat.slice(-40),
+    news: (c.news || []).slice(-10),
     reqs: c.reqs.map(r => ({ id: r.id, pid: r.pid, name: c.members[r.pid] ? c.members[r.pid].name : '?', what: r.what, end: r.end, n: r.n, max: r.max, mine: r.pid === pid, done: r.by.includes(pid) }))
   };
   return out;
@@ -106,6 +107,13 @@ function act(st, ctx, pid, a, p) {
       if (!c || c.leader !== pid) return { error: 'Передать власть может только предводитель.' };
       if (!c.members[p.pid] || p.pid === pid) return { error: 'Выберите соклановца.' };
       c.leader = p.pid; sys(c, ctx, `${c.members[p.pid].name} теперь предводитель клана.`); return { ok: true };
+    }
+    case 'news': {
+      if (!c || c.leader !== pid) return { error: 'Писать новости может только предводитель.' };
+      const text = clean(p.text, 300); if (!text) return { error: '' };
+      (c.news || (c.news = [])).push({ t, text });
+      if (c.news.length > 20) c.news.splice(0, c.news.length - 20);
+      return { ok: true };
     }
     case 'say': {
       if (!c) return { error: 'Вы не в клане.' };

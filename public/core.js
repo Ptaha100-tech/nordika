@@ -273,7 +273,7 @@ function update() {
   ensure(S);
   wkSync(S);
   const tn = nowMs();
-  if (S.nextRaid < tn - 50 * 60000) S.nextRaid = tn - 50 * 60000;      // за время отсутствия набегов копится не больше одного-двух
+  if (S.nextRaid < tn - 20 * 60000) S.nextRaid = tn - 20 * 60000;      // за время отсутствия набегов копится не больше одного-двух
   let g = 0, ev;
   while (g++ < 300 && (ev = nextEvent(tn))) { produce(Math.max(ev.time, S.t)); ev.run(); }
   produce(tn);
@@ -389,8 +389,8 @@ function returnMarch(m) {
   toast('Дружина вернулась домой');
 }
 function enemyRaid() {
-  const t = S.nextRaid; S.nextRaid = t + ri(35, 60) * 60000;
-  if (S.shield > t) return;
+  const t = S.nextRaid; S.nextRaid = t + ri(150, 270) * 60000;      // раз в 2.5–4.5 часа
+  if (S.shield > t) { S.nextRaid = Math.max(S.nextRaid, S.shield + ri(90, 150) * 60000); return; }   // после щита не сразу
   const H = lvl('hall');
   const n = Math.max(4, Math.round(4 * Math.pow(H, 1.55) * rnd(0.8, 1.5)));
   const comp = randComp(n, shuffle(Object.keys(U)).slice(0, 2));
@@ -398,9 +398,9 @@ function enemyRaid() {
   S.troops = r.survD;
   if (r.win) {
     const lost = {};
-    RES.forEach(x => { const l = Math.floor(Math.max(0, S.res[x.id] - prot()) * (H <= 3 ? 0.1 : H <= 6 ? 0.18 : 0.25)); S.res[x.id] -= l; lost[x.id] = l; });
-    S.shield = t + 45 * 60000;
-    addLog(`Набег! ${n} врагов прорвались в город. Унесли: ${fmtRes(lost)}. Погибло: ${fmtComp(r.lostD) || 'никто'}. Щит на 45 минут.`, 'bad', t);
+    RES.forEach(x => { const l = Math.floor(Math.max(0, S.res[x.id] - prot()) * (H <= 3 ? 0.05 : H <= 6 ? 0.1 : 0.15)); S.res[x.id] -= l; lost[x.id] = l; });
+    S.shield = t + 120 * 60000; S.nextRaid = Math.max(S.nextRaid, S.shield + ri(90, 150) * 60000);
+    addLog(`Набег! ${n} врагов прорвались в город. Унесли: ${fmtRes(lost)}. Погибло: ${fmtComp(r.lostD) || 'никто'}. Щит на 2 часа.`, 'bad', t);
     toast('Враги разграбили город');
   } else {
     S.stat.defWins++; gainXp(20);
@@ -547,14 +547,16 @@ function tgtPos(pid, tg) {
 }
 
 /* Разведка: обновляет данные о войске живого игрока. Стоит серебра. */
-const SCOUT_COST = 25;
+/* Цена разведки: еда и дерево. Чем дальше цель и сильнее её Палата, тем дороже. */
+const scoutCost = tg => { const d = (tg && tg.dist) || 10, h = (tg && tg.level) || 1; return { food: Math.round(40 + d * 6 + h * 12), wood: Math.round(30 + d * 4 + h * 9) }; };
 function scout(tid) {
   const tg = S.targets.find(x => x.id === tid);
   if (!tg || tg.kind !== 'player') return false;
   const D = HOOK.getState(tg.pid);
   if (!D) { toast('Ярл исчез'); return false; }
-  if (S.res.silver < SCOUT_COST) { toast('Не хватает серебра'); return false; }
-  S.res.silver -= SCOUT_COST;
+  const sc = scoutCost(tg);
+  if (!canAfford(sc)) { toast('Не хватает ресурсов для разведки'); return false; }
+  pay(sc);
   settle(D, Math.max(nowMs(), D.t));
   tg.comp = Object.assign({}, D.troops); tg.shieldAt = D.shield; tg.level = D.b.hall; tg.seenAt = nowMs();
   toast('Разведка: данные обновлены');
@@ -677,7 +679,7 @@ const API = {
   get S() { return S; },
   use, newState, update, produce, settle, battle, act, score, verdict,
   lvl, slots, cap, capAt, rate, prodAt, upCost, upSecs, canUp, canAfford, trainRate, maxBatch, trainSecs, techCost, techSecs, gatherSecs, marchSecs,
-  posOf, tgtPos, isLand, SHOP, SCOUT_COST, isVip, buy, claimDaily, dailyLeft, streakInfo, claimStreak, STREAK, CONTESTS, PRIZES, PRIZE_PART, weekId, weekEnd, contestOf, wkScoreOf, wkSync, dayId,
+  posOf, tgtPos, isLand, SHOP, scoutCost, isVip, buy, claimDaily, dailyLeft, streakInfo, claimStreak, STREAK, CONTESTS, PRIZES, PRIZE_PART, weekId, weekEnd, contestOf, wkScoreOf, wkSync, dayId,
   jobInfo, helpJob, chargeClan, CLAN_COST, CLAN_HALL, jobObj,
   tierOf, heroOf, tmul, tiersOf, botTiers, atkB, defB, lootB, unitName, xpNeed, tierCost, tierSecs,
   refreshTargets, topUpPlayers, addLogTo, fmt, fmtT, fmtRes, fmtComp, carryOf,

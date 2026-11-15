@@ -157,6 +157,8 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--frost);outline-
 #nav .dot{position:absolute;top:6px;left:calc(50% + 10px);width:8px;height:8px;border-radius:50%;background:var(--blood)}
 
 #modal{position:fixed;inset:0;background:rgba(4,7,9,.74);display:flex;align-items:flex-end;justify-content:center;z-index:20}
+.lnk{color:var(--accent);white-space:nowrap}
+.tblw{overflow-x:auto;margin-top:8px}.tbl{width:100%;border-collapse:collapse;font-size:12px}.tbl th,.tbl td{padding:5px 6px;border-bottom:1px solid var(--line,#ffffff22);text-align:left;vertical-align:top}.tbl tr.cur td{background:#f2cd7522;font-weight:600}
 .sheet{width:100%;max-width:560px;max-height:100%;overflow-y:auto;background:var(--surface);border-top:2px solid var(--accent);
   padding:16px max(16px,env(safe-area-inset-left,0px)) calc(16px + env(safe-area-inset-bottom,0px))}
 .srow{display:flex;align-items:center;gap:8px;margin:8px 0}
@@ -422,7 +424,7 @@ function viewCity(){
     else act=costHTML(upCost(id,L))+`<button class="btn" data-act="up" data-arg="${id}" data-gate="1">${L?'Улучшить':'Построить'} · ${fmtT(upSecs(id,L))}</button>`;
     h+=`<article class="card bld"><canvas class="pic" width="152" height="152" data-b="${id}" aria-label="${b.n}, уровень ${L}"></canvas><div class="bb">
       <div class="bt"><h3>${b.n}</h3><span class="lv">${L?'Ур. '+L:'Нет'}</span></div>
-      <p class="bd">${effect(id,L)}</p>${act}</div></article>`;
+      <p class="bd">${effect(id,L)} <a href="#" class="lnk" data-act="bsheet" data-arg="${id}">Все уровни</a></p>${act}</div></article>`;
   });
   return h;
 }
@@ -438,7 +440,7 @@ function viewTroops(){
     const n=Math.max(1,Math.min(ui.tn[k],maxBatch()||1));ui.tn[k]=n;
     const c={};for(const r in u.cost)c[r]=u.cost[r]*n;
     h+=`<article class="card bld"><canvas class="pic tall" width="152" height="200" data-u="${k}" data-t="${tr}" aria-label="${unitName(k,tr)}"></canvas><div class="bb"><div class="bt"><h3>${unitName(k,tr)}</h3><span class="lv">Ступень ${tr}</span></div><p class="lv" style="margin-top:3px;white-space:normal">Атака ${Math.round(u.atk*tm)} · Защита ${Math.round(u.def*tm)} · Ноша ${Math.round(u.carry*tm)}</p>
-      <p class="bd">Бьёт сильнее: ${U[u.counters].pl.toLowerCase()}. Уязвим к: ${U[WEAK[k]].pl.toLowerCase()}.</p>`;
+      <p class="bd">Бьёт сильнее: ${U[u.counters].pl.toLowerCase()}. Уязвим к: ${U[WEAK[k]].pl.toLowerCase()}. <a href="#" class="lnk" data-act="usheet" data-arg="${k}">Все ступени</a></p>`;
     if(!ok)h+=`<p class="note">Нужна Казарма ур. ${u.need}</p>`;
     else{
       h+=`<div class="stepper"><button class="btn ghost small" data-act="tn" data-arg="${k}:-5">−5</button><button class="btn ghost small" data-act="tn" data-arg="${k}:-1">−1</button><b>${n}</b><button class="btn ghost small" data-act="tn" data-arg="${k}:1">+1</button><button class="btn ghost small" data-act="tn" data-arg="${k}:5">+5</button></div>`;
@@ -511,7 +513,7 @@ function viewMap(){
     h+=`<article class="card tg ${t.kind}"><div class="trow2"><span class="kind">${KIND[t.kind]} · ур. ${t.level}</span><span class="pill ${sh?'mute':v.c}">${sh?'Под щитом':v.t}</span></div>
       <h3 style="margin-top:2px">${esc(t.name)}</h3>
       ${t.kind==='node'?'':`<p class="bd">${t.kind==='player'?'Разведка'+(t.seenAt?' ('+ago(t.seenAt)+'): ':': '):''}${fmtComp(t.comp)||'войск не видно'}</p>`}${loot}
-      <div class="tgb"><span class="muted sm">Расстояние ${t.dist} лиг · в пути ${fmtT(marchSecs(t.dist))} в одну сторону</span><span class="tgbtn">${t.kind==='player'?`<button class="btn ghost ${S.res.silver>=Core.SCOUT_COST?'':'off'}" data-act="scout" data-arg="${t.id}">Разведать · ${Core.SCOUT_COST}<i class="rn" style="color:var(--silver)">${RI.silver.r}</i></button>`:''}<button class="btn ${free>0&&sum(S.troops)?'':'off'}" data-act="atk" data-arg="${t.id}">${t.kind==='node'?'Собрать':'Напасть'}</button></span></div></article>`;
+      <div class="tgb"><span class="muted sm">Расстояние ${t.dist} лиг · в пути ${fmtT(marchSecs(t.dist))} в одну сторону${t.kind==='node'?` · сбор ${fmtT(gatherSecs())} · всего в поле ${fmtT(marchSecs(t.dist)*2+gatherSecs())}`:''}</span><span class="tgbtn">${t.kind==='player'?(()=>{const sc=Core.scoutCost(t);return `<button class="btn ghost ${(S.res.food>=sc.food&&S.res.wood>=sc.wood)?'':'off'}" data-act="scout" data-arg="${t.id}">Разведать · ${fmt(sc.food)}<i class="rn" style="color:var(--food)">${RI.food.r}</i> ${fmt(sc.wood)}<i class="rn" style="color:var(--wood)">${RI.wood.r}</i></button>`;})():''}<button class="btn ${free>0&&sum(S.troops)?'':'off'}" data-act="atk" data-arg="${t.id}">${t.kind==='node'?'Собрать':'Напасть'}</button></span></div></article>`;
   });
   return h;
 }
@@ -593,6 +595,10 @@ function clanGoalHTML(d){
   <details style="margin-top:6px"><summary class="sm">Вклад участников</summary>${g.members.map(m=>`<p class="sm" style="display:flex;justify-content:space-between;margin:2px 0"><span>${esc(m.name)}</span><b>${m.v}</b></p>`).join('')}</details>
   ${g.last&&g.last.top.length?`<p class="sm muted" style="margin-top:8px">Прошлая неделя: ${g.last.top.slice(0,3).map(c=>`${c.place}. [${esc(c.tag)}] ${c.total}`).join(', ')}.</p>`:''}</section>`;
 }
+function newsHTML(c){
+  const n=(c.news||[]).slice().reverse();
+  return n.length?n.map(x=>`<p class="bd" style="margin:6px 0"><span class="muted sm">${ago?ago(x.t):''}</span><br>${esc(x.text)}</p>`).join(''):'<p class="muted sm">Пока новостей нет.</p>';
+}
 function viewClan(){
   const d=ui.clan;
   if(!d)return '<p class="muted sm">Загрузка…</p>';
@@ -621,8 +627,8 @@ function viewClan(){
     ${goalH}
     <section class="card"><h2>Помощь соклановцев</h2>${help}${canAll?'<button class="btn" style="margin-top:10px" data-act="chelpall">Помочь всем</button>':''}
       <p class="note">Каждая помощь сокращает дело на 2% (не меньше 30 секунд), всего до ${d.helpMax} раз. Помогать можно один раз с каждым делом.</p></section>
-    <section class="card"><h2>Чат клана</h2><div id="cbox" class="cbox">${chatHTML(c)}</div>
-      <div class="crow"><input id="cmsg" data-keep maxlength="200" placeholder="Сообщение клану" autocomplete="off" enterkeyhint="send"><button class="btn small" data-act="csay">Отправить</button></div></section>
+    <section class="card"><h2>Новости клана</h2>${newsHTML(c)}
+      ${iAmLeader?`<div class="crow"><input id="cnews" data-keep maxlength="300" placeholder="Новость для клана" autocomplete="off" enterkeyhint="send"><button class="btn small" data-act="cnews">Опубликовать</button></div>`:'<p class="note">Новости пишет предводитель. Общаться с кланом можно во вкладке «Чат» → «Клан».</p>'}</section>
     <section class="card"><h2>Участники</h2>${members}</section>
     <button class="btn danger ${ui.leaveSure?'':'ghost'}" data-act="cleave">${ui.leaveSure?'Точно выйти из клана?':'Выйти из клана'}</button>`;
 }
@@ -699,7 +705,8 @@ function profCard(){
 function viewSocial(){
   const d=ui.soc.d,sub=ui.sub;
   const un=d?d.unread:0,fr=d?d.reqs.length:0;
-  const tabs=[['world','Мир'],['friends','Друзья'+(fr?`<span class="bdg">${fr}</span>`:'')],['dm','Личные'+(d&&d.threads.some(x=>x.unread)?`<span class="bdg">${d.threads.reduce((s,x)=>s+x.unread,0)}</span>`:'')]];
+  const hasClan=!!(ui.clan&&ui.clan.clan);
+  const tabs=[['world','Мир'],...(hasClan?[['clan','Клан']]:[]),['friends','Друзья'+(fr?`<span class="bdg">${fr}</span>`:'')],['dm','Личные'+(d&&d.threads.some(x=>x.unread)?`<span class="bdg">${d.threads.reduce((s,x)=>s+x.unread,0)}</span>`:'')]];
   let h=`<div class="subtabs">${tabs.map(t=>`<button class="btn ${t[0]===sub?'on':'ghost'}" data-act="sub" data-arg="${t[0]}">${t[1]}</button>`).join('')}</div>`+profCard();
   if(!d)return h+'<p class="muted sm">Загрузка…</p>';
   if(sub==='world'){
@@ -714,6 +721,12 @@ function viewSocial(){
     const bl=d.blocks.length?`<section class="card"><h2>Чёрный список</h2>${d.blocks.map(x=>`<div class="hrow"><b>${esc(x.name)}</b><button class="btn small ghost" data-act="unblock" data-arg="${x.pid}">Разблокировать</button></div>`).join('')}</section>`:'';
     return h+(rq?`<section class="card"><h2>Заявки</h2>${rq}</section>`:'')+`<section class="card"><h2>Найти игрока</h2><div class="crow" style="margin-top:0"><input id="fname" data-keep maxlength="16" placeholder="Имя ярла" autocomplete="off" enterkeyhint="search"><button class="btn small" data-act="fsearch">Найти</button></div></section>
       <section class="card"><h2>Друзья <span class="lv">${d.friends.length}</span></h2>${fl}</section>`+bl;
+  }
+  if(sub==='clan'){
+    const c=ui.clan&&ui.clan.clan;
+    if(!c)return h+'<p class="muted sm">Вы не в клане. Вступите в клан во вкладке «Клан».</p>';
+    return h+`<section class="card"><h2><span class="tag4">${esc(c.tag)}</span>Чат клана</h2><div id="cbox" class="cbox" style="max-height:340px">${chatHTML(c)}</div>
+      <div class="crow"><input id="cmsg" data-keep maxlength="200" placeholder="Сообщение клану" autocomplete="off" enterkeyhint="send"><button class="btn small" data-act="csay">Отправить</button></div></section>`;
   }
   // личные
   if(ui.soc.peer&&!d.thread)return h+'<p class="muted sm">Загрузка…</p>';
@@ -827,7 +840,7 @@ function wmInfo(){
   const el=$('wi');if(!el)return;
   const j=ui.wm&&ui.wm.j,me=wmMe(),tsel=ui.wtsel&&S.targets.find(x=>x.id===ui.wtsel),p=j&&j.players.find(x=>x.pid===ui.wsel);
   if(tsel){const t=tsel,v=verdict(t),free=slots(lvl('hall'))-S.marches.length;
-    el.innerHTML=`<div class="trow2"><h3>${esc(t.name)}</h3><span class="pill ${v.c}">${v.t}</span></div><p class="bd">${KIND[t.kind]} · ур. ${t.level} · расстояние ${t.dist} лиг, в пути ${fmtT(marchSecs(t.dist))}</p>${t.kind==='node'?'':`<p class="bd">Защита: ${fmtComp(t.comp)||'войск не видно'}</p>`}<div class="costs" style="margin:4px 0 8px">${Object.keys(t.loot||{}).map(k=>cpHTML(k,t.loot[k])).join('')}</div><button class="btn ${free>0&&sum(S.troops)?'':'off'}" data-act="atk" data-arg="${t.id}">${t.kind==='node'?'Собрать':'Напасть'}</button>`;return;}
+    el.innerHTML=`<div class="trow2"><h3>${esc(t.name)}</h3><span class="pill ${v.c}">${v.t}</span></div><p class="bd">${KIND[t.kind]} · ур. ${t.level} · расстояние ${t.dist} лиг, в пути ${fmtT(marchSecs(t.dist))}${t.kind==='node'?` · сбор ${fmtT(gatherSecs())} · всего в поле ${fmtT(marchSecs(t.dist)*2+gatherSecs())}`:''}</p>${t.kind==='node'?'':`<p class="bd">Защита: ${fmtComp(t.comp)||'войск не видно'}</p>`}<div class="costs" style="margin:4px 0 8px">${Object.keys(t.loot||{}).map(k=>cpHTML(k,t.loot[k])).join('')}</div><button class="btn ${free>0&&sum(S.troops)?'':'off'}" data-act="atk" data-arg="${t.id}">${t.kind==='node'?'Собрать':'Напасть'}</button>`;return;}
   if(!j){el.innerHTML='<p class="muted sm">Загружаю карту…</p>';return;}
   if(!p){el.innerHTML=`<p class="muted sm">Ярлов на карте: ${j.total}. Нажмите на город, лагерь или точку добычи, чтобы узнать подробности.</p>`;return;}
   let dist=me&&!p.me?Math.max(6,Math.round(Math.hypot(p.x-me.x,p.y-me.y)/2.6)):0;
@@ -1074,6 +1087,28 @@ function modalPreview(){
   const carry=carryOf(r.survA),lt=sum(t.loot);
   $('pv').innerHTML=r.win?`Ожидается победа. Потери: ${fmtComp(r.lostA)||'нет'}.<br>Унесёте ${Math.round(Math.min(1,carry/lt)*100)}% добычи.`:`Ожидается поражение: большинство отряда не вернётся.`;
 }
+function bSheet(id){
+  const b=B[id],cur=lvl(id);let rows='';
+  for(let L=1;L<=MAXL;L++){
+    const ef=effect(id,L).split(' → ')[0],c=upCost(id,L-1);
+    rows+=`<tr class="${L===cur?'cur':''}"><td>${L}</td><td>${ef}</td><td>${fmtRes(c)}</td><td>${fmtT(upSecs(id,L-1))}</td></tr>`;
+  }
+  $('modal').innerHTML=`<div class="sheet"><div class="trow2"><h3>${b.n}: все уровни</h3><button class="btn small ghost" data-act="sheetx">Закрыть</button></div>
+    <p class="muted sm">Стоимость и время указаны для постройки этого уровня. Ваш уровень выделен.</p>
+    <div class="tblw"><table class="tbl"><thead><tr><th>Ур.</th><th>Эффект</th><th>Цена</th><th>Время</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+  $('modal').hidden=false;
+}
+function uSheet(k){
+  const u=U[k],cur=tierOf(S,k);let rows='';
+  for(let t=1;t<=MAXT;t++){
+    const m=tmul(t),up=t>1?`${fmtRes(tierCost(k,t))} · ${fmtT(tierSecs(t))} · Казарма ${TIER_NEED[t-1]}`:'—';
+    rows+=`<tr class="${t===cur?'cur':''}"><td>${t}</td><td>${unitName(k,t)}</td><td>${Math.round(u.atk*m)}/${Math.round(u.def*m)}/${Math.round(u.carry*m)}</td><td>${up}</td></tr>`;
+  }
+  $('modal').innerHTML=`<div class="sheet"><div class="trow2"><h3>${u.pl}: все ступени</h3><button class="btn small ghost" data-act="sheetx">Закрыть</button></div>
+    <p class="muted sm">Обучение одного бойца: ${fmtRes(u.cost)}, ${fmtT(trainSecs(k,1))} (нужна Казарма ур. ${u.need}). Ваша ступень выделена.</p>
+    <div class="tblw"><table class="tbl"><thead><tr><th>Ст.</th><th>Название</th><th>Атака / защита / ноша</th><th>Улучшение до ступени</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+  $('modal').hidden=false;
+}
 function closeModal(){ui.modal=null;$('modal').hidden=true;$('modal').innerHTML='';}
 
 /* ---------- события ---------- */
@@ -1087,8 +1122,11 @@ function onAct(act,arg){
     case 'pay':toast('Оплата пока не подключена');return;
     case 'msub':ui.msub=arg;render();return;
     case 'wprof':ui.tab='chat';ui.sub='world';ui.soc.peer=null;render();loadSoc();openProf({id:arg});return;
+    case 'bsheet':bSheet(arg);return;
+    case 'usheet':uSheet(arg);return;
+    case 'sheetx':closeModal();return;
     case 'wpvp':ui.msub='pvp';render();return;
-    case 'sub':ui.sub=arg;ui.soc.peer=null;ui.soc.prof=null;render();loadSoc();return;
+    case 'sub':ui.sub=arg;ui.soc.peer=null;ui.soc.prof=null;render();loadSoc();if(arg==='clan')loadClan();return;
     case 'prof':openProf({id:arg});return;
     case 'profn':ui.tab='chat';ui.sub='world';ui.soc.peer=null;openProf({name:arg}).then(()=>{loadSoc();});return;
     case 'profx':ui.soc.prof=null;render();return;
@@ -1104,6 +1142,7 @@ function onAct(act,arg){
     case 'cleave':if(!ui.leaveSure){ui.leaveSure=true;render();setTimeout(()=>{ui.leaveSure=false;if(ui.tab==='clan')render();},4000);return;}ui.leaveSure=false;cact('leave');return;
     case 'ckick':cact('kick',{pid:arg});return;
     case 'ctrans':cact('transfer',{pid:arg});return;
+    case 'cnews':{const el=$('cnews');const t=el?el.value.trim():'';if(!t)return;el.value='';cact('news',{text:t});return;}
     case 'csay':{const el=$('cmsg');const t=el?el.value.trim():'';if(!t)return;el.value='';cact('say',{text:t});return;}
     case 'cask':cact('ask',{kind:arg});return;
     case 'chelp':cact('help',{id:arg});return;
@@ -1139,6 +1178,7 @@ function boot(){
     if(e.target.id==='modal'){closeModal();return;}
     window.Snd&&Snd.unlock();
     const el=e.target.closest('[data-act]');if(!el)return;
+    if(el.tagName==='A')e.preventDefault();
     if(el.classList.contains('off')||el.disabled){window.Snd&&Snd.sfx('err');return;}
     sndFor(el.dataset.act);
     onAct(el.dataset.act,el.dataset.arg);
@@ -1154,9 +1194,9 @@ function boot(){
   },1000);
   setInterval(()=>{if(S&&!document.hidden&&!ui.modal)sync();},20000);
   setInterval(()=>{if(S&&!document.hidden&&ui.tab==='map'&&ui.msub==='world')loadWorld();},12000);
-  setInterval(()=>{if(S&&!document.hidden&&!$('app').hidden&&!cbusy&&(ui.tab==='clan'||Date.now()-ui.clanAt>30000))loadClan();},5000);
+  setInterval(()=>{if(S&&!document.hidden&&!$('app').hidden&&!cbusy&&(ui.tab==='clan'||(ui.tab==='chat'&&ui.sub==='clan')||Date.now()-ui.clanAt>30000))loadClan();},5000);
   setInterval(()=>{if(S&&!document.hidden&&!$('app').hidden&&(ui.tab==='chat'||Date.now()-ui.soc.at>20000))loadSoc();},4000);
-  document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target){const m={cmsg:'csay',wmsg:'wsay',dmsg:'dsay',fname:'fsearch'}[e.target.id];if(m){e.preventDefault();onAct(m);}}});
+  document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target){const m={cnews:'cnews',cmsg:'csay',wmsg:'wsay',dmsg:'dsay',fname:'fsearch'}[e.target.id];if(m){e.preventDefault();onAct(m);}}});
   document.addEventListener('visibilitychange',()=>{if(!document.hidden&&S)sync();});
   if(!window.DEMO&&'serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});
   const hs=document.querySelector('#heroV source');
