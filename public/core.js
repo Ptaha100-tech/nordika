@@ -312,7 +312,7 @@ function finishStudy() {
   addLog(`Оракул открыл знание «${TECH[s.key].n}», уровень ${s.to}.`, 'good', s.end); toast(`Знание: ${TECH[s.key].n} ${s.to}`);
 }
 function fmtRes(o) { return Object.keys(o).filter(k => o[k] > 0 && RI[k]).map(k => `${RI[k].n} ${fmt(o[k])}`).join(' · ') || 'ничего'; }
-function fmtComp(c) { return Object.keys(U).filter(k => (c[k] || 0) > 0).map(k => `${U[k].pl} ${c[k]}`).join(' · '); }
+function fmtComp(c) { return Object.keys(U).filter(k => (c[k] || 0) > 0).map(k => `${S ? unitName(k, tierOf(S, k)) : U[k].pl} ${c[k]}`).join(' · '); }
 const carryOf = (s, st) => { st = st || S; return Math.round(Object.keys(U).reduce((a, k) => a + (s[k] || 0) * U[k].carry * tmul(tierOf(st, k)), 0) * lootB(st)); };
 
 function resolveMarch(m) {
