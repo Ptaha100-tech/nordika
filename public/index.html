@@ -1113,7 +1113,7 @@ function render(bg){
   list.innerHTML=html;
   for(const id in keep){const el=document.getElementById(id);if(el)el.value=keep[id];}
   if(ui.tab==='clan'||ui.tab==='chat'){['cbox','wbox','dbox'].forEach(i=>{const x=$(i);if(!x)return;if(bs[i]&&!bs[i].bot)x.scrollTop=bs[i].top;else stick(x);});}
-  try{window.Art&&Art.paintIn(list,id=>lvl(id));}catch(e){}
+  try{window.Art&&Art.paintIn(list,id=>lvl(id));if(ui.tab==='city')Art.animateIn(list,id=>lvl(id));}catch(e){}
   if(ui.tab==='map'&&ui.msub==='world')wmInit();
   showHero(ui.tab);showLogo(ui.tab==='city');
   v.scrollTop=top;

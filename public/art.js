@@ -387,6 +387,85 @@ function paintIn(root,levelOf){
   root.querySelectorAll('canvas[data-u]').forEach(cv=>drawUnit(cv,cv.dataset.u,+cv.dataset.t||1));
   root.querySelectorAll('canvas[data-hero]').forEach(cv=>drawHero(cv,+cv.dataset.hero||1));
 }
-window.Art={drawThumb,drawUnit,drawHero,paintIn,DRAW,soldier};
+
+/* ---------- оживление картинок: огонь, дым, мерцание ---------- */
+/* Координаты точек в долях картинки (0..1). Стадия = номер картинки здания (1..6). */
+const FXPT={
+  hall:      {1:[['fire',.15,.86]],2:[['smoke',.57,.13],['fire',.29,.55],['fire',.47,.63]],3:[['glow',.2,.72,.10]],4:[['glow',.3,.78,.08]],5:[['fire',.29,.63],['fire',.52,.78]],6:[['fire',.30,.53],['fire',.60,.73],['fire',.90,.53]]},
+  farm:      {1:[['fire',.12,.82]],2:[['glow',.25,.78,.08]],3:[['smoke',.39,.13]],4:[['glow',.3,.7,.08]],5:[['fire',.29,.63],['fire',.52,.78]],6:[['fire',.30,.53],['fire',.60,.73],['fire',.90,.53]]},
+  sawmill:   {1:[['fire',.1,.86]],2:[['glow',.4,.8,.08]],3:[['smoke',.4,.12]],4:[['fire',.16,.88]],5:[['fire',.29,.63],['fire',.52,.78]],6:[['fire',.30,.53],['fire',.60,.73],['fire',.90,.53]]},
+  quarry:    {1:[['fire',.5,.8]],2:[['glow',.55,.7,.08]],3:[['smoke',.9,.42]],4:[['glow',.5,.7,.1]],5:[['fire',.7,.7]],6:[['fire',.2,.9],['fire',.7,.7]]},
+  ironmine:  {1:[['fire',.1,.86]],2:[['fire',.25,.7],['smoke',.2,.5]],3:[['glow',.3,.78,.09]],4:[['glow',.45,.78,.09]],5:[['fire',.2,.75],['smoke',.45,.55]],6:[['fire',.2,.88],['fire',.7,.9]]},
+  silvermine:{1:[['fire',.5,.86],['twinkle',.78,.55],['twinkle',.3,.6]],2:[['twinkle',.5,.7],['twinkle',.7,.8]],3:[['twinkle',.5,.85],['twinkle',.35,.7]],4:[['twinkle',.4,.4],['twinkle',.7,.6]],5:[['smoke',.7,.5],['twinkle',.3,.7]],6:[['fire',.17,.9],['fire',.35,.7],['twinkle',.7,.8]]},
+  storehouse:{1:[['twinkle',.8,.35]],2:[['smoke',.46,.14]],3:[['glow',.55,.78,.08]],4:[['glow',.4,.8,.08]],5:[['fire',.29,.63],['fire',.52,.78]],6:[['fire',.30,.53],['fire',.60,.73],['fire',.90,.53]]},
+  vault:     {1:[['fire',.15,.84],['twinkle',.5,.7]],2:[['fire',.1,.65],['twinkle',.55,.6]],3:[['twinkle',.55,.5],['twinkle',.25,.75]],4:[['twinkle',.4,.5]],5:[['fire',.29,.63],['fire',.52,.78],['twinkle',.6,.4]],6:[['fire',.30,.53],['fire',.60,.73],['fire',.90,.53],['twinkle',.5,.45]]},
+  oracle:    {1:[['fire',.28,.86],['smoke',.5,.5]],2:[['smoke',.55,.2],['smoke',.75,.35],['fire',.18,.75]],3:[['glow',.18,.8,.13,'#5ee6ff'],['glow',.43,.88,.12,'#5ee6ff'],['fire',.65,.8],['smoke',.78,.35]],4:[['fire',.5,.18],['fire',.3,.86],['glow',.5,.17,.1]],5:[['fire',.29,.63],['fire',.52,.78],['glow',.5,.35,.1,'#5ee6ff']],6:[['fire',.30,.53],['fire',.60,.73],['fire',.90,.53],['glow',.6,.1,.14]]},
+  barracks:  {1:[['fire',.12,.87]],2:[['smoke',.46,.1],['fire',.2,.76]],3:[['glow',.3,.78,.08]],4:[['glow',.5,.78,.08]],5:[['fire',.29,.63],['fire',.52,.78]],6:[['fire',.30,.53],['fire',.60,.73],['fire',.90,.53]]}
+};
+function fxFire(c,x,y,r,t,k){
+  const f=1+0.12*Math.sin(t*0.011+k*2.3)+0.08*Math.sin(t*0.027+k);
+  const g=c.createRadialGradient(x,y,0,x,y,r*3.2*f);
+  g.addColorStop(0,'rgba(255,170,60,.38)');g.addColorStop(1,'rgba(255,120,30,0)');
+  c.fillStyle=g;c.beginPath();c.arc(x,y,r*3.2*f,0,TAU);c.fill();
+  for(let i=0;i<3;i++){
+    const ph=t*0.008+i*2.1+k,w=Math.sin(ph)*r*0.35,h=r*(1.1+0.5*Math.sin(ph*1.7+i)),x0=x+(i-1)*r*0.5;
+    c.fillStyle=i===1?'rgba(255,220,120,.8)':'rgba(255,140,40,.65)';
+    c.beginPath();c.moveTo(x0-r*0.3,y);c.quadraticCurveTo(x0+w,y-h*0.6,x0+w*1.4,y-h);c.quadraticCurveTo(x0+r*0.1+w,y-h*0.5,x0+r*0.3,y);c.closePath();c.fill();
+  }
+  for(let i=0;i<3;i++){
+    const u=((t*0.0004+i/3+k*0.17)%1),ex=x+Math.sin(u*9+i)*r*1.2,ey=y-u*r*5;
+    c.fillStyle='rgba(255,190,90,'+(0.8*(1-u))+')';c.fillRect(ex,ey,1.4,1.4);
+  }
+}
+function fxSmoke(c,x,y,r,t,k){
+  for(let i=0;i<4;i++){
+    const u=((t*0.00018+i/4+k*0.21)%1),px=x+Math.sin(u*5+i+k)*r*0.9+u*r*1.2,py=y-u*r*7,rr=r*(0.5+u*1.1);
+    c.fillStyle='rgba(205,205,210,'+(0.4*(1-u)*(u<0.1?u*10:1))+')';
+    c.beginPath();c.arc(px,py,rr,0,TAU);c.fill();
+  }
+}
+function fxGlow(c,x,y,r,t,k,col){
+  const a=0.35+0.2*Math.sin(t*0.003+k*1.7);
+  const g=c.createRadialGradient(x,y,0,x,y,r);
+  const rgb=col==='#5ee6ff'?'94,230,255':'255,185,90';
+  g.addColorStop(0,'rgba('+rgb+','+a+')');g.addColorStop(1,'rgba('+rgb+',0)');
+  c.fillStyle=g;c.beginPath();c.arc(x,y,r,0,TAU);c.fill();
+}
+function fxTwinkle(c,x,y,r,t,k){
+  const u=((t*0.0006+k*0.37)%1),a=Math.max(0,Math.sin(u*Math.PI))**3,s=r*0.9*a;
+  c.strokeStyle='rgba(255,246,210,'+a+')';c.lineWidth=1;
+  c.beginPath();c.moveTo(x-s,y);c.lineTo(x+s,y);c.moveTo(x,y-s);c.lineTo(x,y+s);c.stroke();
+}
+/* Рисует картинку здания и поверх неё живые эффекты. */
+function animThumb(cv,id,L,t){
+  drawThumb(cv,id,L);
+  const n=(window.PIC&&window.PIC[id]||[]).length;if(!n||!FXPT[id]||L<1)return;
+  const st=Math.min(n,Math.ceil(L/5)),list=FXPT[id][st];if(!list)return;
+  const c=cv.getContext('2d'),W=cv.width,H=cv.height,x0=W*0.03,y0=H*0.9-W*0.94,S=W*0.94;
+  list.forEach((e,i)=>{
+    const x=x0+e[1]*S,y=y0+e[2]*S,r=S*0.028;
+    if(e[0]==='fire')fxFire(c,x,y,r,t,i);
+    else if(e[0]==='smoke')fxSmoke(c,x,y,r,t,i);
+    else if(e[0]==='glow')fxGlow(c,x,y,S*(e[3]||0.1),t,i,e[4]);
+    else if(e[0]==='twinkle')fxTwinkle(c,x,y,S*0.04,t,i);
+  });
+}
+let animOn=false,animList=new Set(),animObs=null;
+function animLoop(now){
+  if(!animOn)return;
+  if(!document.hidden&&animList.size){
+    animList.forEach(cv=>{ if(!cv.isConnected){animList.delete(cv);return;} try{animThumb(cv,cv.dataset.b,cv._L||1,now);}catch(e){} });
+  }
+  setTimeout(()=>requestAnimationFrame(animLoop),66);   // примерно 15 кадров в секунду
+}
+/* Включить оживление для холстов зданий внутри узла; анимируются только те, что видны на экране. */
+function animateIn(root,levelOf){
+  if(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+  if(!('IntersectionObserver' in window))return;
+  if(!animObs)animObs=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)animList.add(e.target);else animList.delete(e.target);}),{threshold:0.1});
+  root.querySelectorAll('canvas[data-b]').forEach(cv=>{cv._L=levelOf(cv.dataset.b);if(cv._L>0&&FXPT[cv.dataset.b])animObs.observe(cv);});
+  if(!animOn){animOn=true;requestAnimationFrame(animLoop);}
+}
+window.Art={drawThumb,drawUnit,drawHero,paintIn,animateIn,animThumb,DRAW,soldier};
 
 })();
