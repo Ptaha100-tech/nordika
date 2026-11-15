@@ -557,7 +557,7 @@ function viewQuests(){
   h+=`<h3>В работе</h3>`+(prog.slice(0,ui.qall?999:12).map(questCard).join('')||'<p class="muted sm">Все дела выполнены.</p>');
   if(prog.length>12)h+=`<button class="btn ghost" data-act="qall">${ui.qall?'Свернуть':'Показать все ('+prog.length+')'}</button>`;
   if(got.length)h+=`<details style="margin-top:10px"><summary class="muted sm">Выполненные (${got.length})</summary>${got.map(questCard).join('')}</details>`;
-  return h+inviteHTML()+`<button class="btn ghost" style="margin-top:10px" data-act="help">База знаний</button>`;
+  return h+inviteHTML()+`<button class="btn ghost" style="margin-top:10px" data-act="help">База знаний</button><button class="btn ghost" style="margin-top:10px" data-act="cl">История обновлений</button>`;
 }
 
 /* ---------- приглашение друзей ---------- */
@@ -737,6 +737,25 @@ function profCard(){
     <p class="sm muted">${seenTxt(p.seen,p.online)}</p>
     <p class="sm muted">Палата ярла ${p.hall} · ярл ур. ${p.hero||1} · сила ${fmt(p.score)} · место ${p.rank} из ${p.total}${p.clan?' · клан «'+esc(p.clan.name)+'»':''}</p>
     ${p.stat?`<p class="sm muted">Побед в походах ${p.stat.wins} · лагерей ${p.stat.campWins} · городов игроков ${p.stat.pvpWins} · отбито набегов ${p.stat.defWins}</p>`:''}<div class="acts">${b.join('')}</div></section>`;
+}
+/* ---------- что нового ---------- */
+const CLK='nd_cl';
+async function loadChangelog(auto){
+  try{
+    const r=await fetch('/changelog.json',{cache:'no-store'});if(!r.ok)return;
+    ui.cl=await r.json();if(!ui.cl.length)return;
+    let seen=null;try{seen=localStorage.getItem(CLK);}catch(e){}
+    if(auto){
+      if(seen===null){try{localStorage.setItem(CLK,ui.cl[0].id);}catch(e){}return;}   // новичку не показываем
+      if(seen!==ui.cl[0].id)clSheet(true);
+    }
+  }catch(e){}
+}
+function clSheet(latest){
+  const list=(ui.cl||[]).slice(0,latest?1:8);
+  $('modal').innerHTML=`<div class="sheet"><div class="trow2"><h3>${latest?'Что нового':'История обновлений'}</h3><button class="btn small" data-act="clx">${latest?'Понятно':'Закрыть'}</button></div>
+    ${list.map(e=>`<section style="margin:10px 0"><p class="muted sm" style="margin:0">${esc(e.date)}</p><h3 style="margin:2px 0 6px">${esc(e.title)}</h3>${e.items.map(i=>`<p class="sm" style="margin:6px 0"><b>${esc(i.h)}.</b> ${esc(i.t)}</p>`).join('')}</section>`).join('<hr style="border:0;border-top:1px solid #ffffff22">')}</div>`;
+  $('modal').hidden=false;
 }
 /* ---------- боссы ---------- */
 async function loadBoss(){
@@ -1242,6 +1261,8 @@ function onAct(act,arg){
     case 'reply':{const el=$('wmsg');if(el){const v=el.value.replace(/^[^,]{1,16}, /,'');el.value=arg+', '+v;el.focus();}return;}
     case 'me':meSheet();return;
     case 'help':helpSheet();return;
+    case 'cl':if(ui.cl)clSheet(false);else loadChangelog(false).then(()=>clSheet(false));return;
+    case 'clx':try{localStorage.setItem(CLK,(ui.cl&&ui.cl[0].id)||'');}catch(e){}closeModal();return;
     case 'qall':ui.qall=!ui.qall;render();return;
     case 'bsheet':bSheet(arg);return;
     case 'usheet':uSheet(arg);return;
@@ -1315,6 +1336,7 @@ function boot(){
     if(Date.now()-lastSync>2500&&dueSoon())sync();
   },1000);
   setInterval(()=>{if(S&&!document.hidden&&!ui.modal)sync();},20000);
+  const clT=setInterval(()=>{if(S&&S.introDone&&!$('app').hidden){clearInterval(clT);loadChangelog(true);}},3000);
   setInterval(()=>{if(S&&!document.hidden&&ui.tab==='map'&&ui.msub==='world')loadWorld();},12000);
   setInterval(()=>{if(S&&!document.hidden&&ui.tab==='map'&&ui.msub==='boss')loadBoss();},15000);
   setInterval(()=>{if(S&&!document.hidden&&!$('app').hidden&&!cbusy&&(ui.tab==='clan'||(ui.tab==='chat'&&ui.sub==='clan')||Date.now()-ui.clanAt>30000))loadClan();},5000);
