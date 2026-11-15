@@ -130,6 +130,65 @@ const QUESTS = [
   QUESTS.forEach(q => { Object.keys(q.rw).forEach(k => { if (!q.rw[k]) delete q.rw[k]; }); });
 })();
 
+/* ============ Снаряжение ярла ============ */
+const SLOTS = {
+  weapon: { n: 'Оружие',  stat: 'atk',  base: 3, w: 'к атаке всех воинов',      names: ['Дубовый топор', 'Стальная секира', 'Клинок ярла'] },
+  armor:  { n: 'Броня',   stat: 'def',  base: 3, w: 'к защите всех воинов',     names: ['Кожаная броня', 'Кольчуга', 'Доспех берсерка'] },
+  helm:   { n: 'Шлем',    stat: 'loot', base: 4, w: 'к ноше в походах',         names: ['Кожаный шлем', 'Шлем с наносником', 'Рогатый шлем'] },
+  amulet: { n: 'Амулет',  stat: 'eco',  base: 3, w: 'к добыче в городе',        names: ['Костяной амулет', 'Молот Тора', 'Руна Одина'] }
+};
+const SLOTK = Object.keys(SLOTS), RARN = ['Обычное', 'Редкое', 'Эпическое'], EQMAX = 30, EQ_IL = 5;
+const itemPct = it => Math.round(SLOTS[it.slot].base * [1, 1.7, 2.6][it.r] * (1 + 0.2 * (it.il - 1)) * 10) / 10;
+function eqB(st, stat) {
+  if (!st || !st.eq) return 0; let v = 0;
+  SLOTK.forEach(k => { const it = st.eq.s[k]; if (it && SLOTS[k].stat === stat) v += itemPct(it) / 100; });
+  return v;
+}
+const itemName = it => SLOTS[it.slot].names[it.r];
+const forgeLvl = () => Math.min(EQ_IL, 1 + Math.floor(lvl('hall') / 5));
+const forgeCost = () => { const il = forgeLvl(); return { wood: 300 * il, iron: 200 * il, silver: 100 * il }; };
+function newItem(il, w) {
+  const x = Math.random() * (w[0] + w[1] + w[2]), r = x < w[0] ? 0 : x < w[0] + w[1] ? 1 : 2;
+  return { id: 'i' + (S.mid++), slot: pick(SLOTK), r, il: Math.max(1, Math.min(EQ_IL, il)) };
+}
+function giveItem(it, why, t) {
+  if (S.eq.inv.length >= EQMAX) { addLog(`Находка «${itemName(it)}» пропала: сумка полна.`, 'info', t); return false; }
+  S.eq.inv.push(it); addLog(`${why}: ${RARN[it.r].toLowerCase()} «${itemName(it)}» (+${itemPct(it)}% ${SLOTS[it.slot].w}).`, 'good', t); toast(`Находка: ${itemName(it)}`);
+  return true;
+}
+function forge() {
+  if (lvl('hall') < 3) { toast('Ковка открывается с Палаты ярла 3'); return; }
+  if (S.eq.inv.length >= EQMAX) { toast('Сумка полна'); return; }
+  const c = forgeCost(); if (!canAfford(c)) { toast('Не хватает ресурсов'); return; }
+  pay(c); giveItem(newItem(forgeLvl(), [72, 23, 5]), 'Кузнец выковал');
+}
+function equip(id) {
+  const i = S.eq.inv.findIndex(x => x.id === id); if (i < 0) return;
+  const it = S.eq.inv[i], old = S.eq.s[it.slot];
+  S.eq.inv.splice(i, 1); S.eq.s[it.slot] = it; if (old) S.eq.inv.push(old);
+}
+function unequip(slot) {
+  const it = S.eq.s[slot]; if (!it || S.eq.inv.length >= EQMAX) return;
+  S.eq.s[slot] = null; S.eq.inv.push(it);
+}
+const scrapOf = it => ({ iron: 60 * it.il * (it.r + 1), silver: 30 * it.il * (it.r + 1) });
+function scrap(id) {
+  const i = S.eq.inv.findIndex(x => x.id === id); if (i < 0) return;
+  const g = scrapOf(S.eq.inv[i]); S.eq.inv.splice(i, 1);
+  for (const k in g) S.res[k] = Math.max(S.res[k], Math.min(cap(), S.res[k] + g[k]));
+  toast('Разобрано: ' + fmtRes(g));
+}
+function mergeItems(arg) {
+  const [slot, r0] = String(arg).split(':'), r = Number(r0);
+  if (!SLOTS[slot] || !(r >= 0 && r < 2)) return;
+  const same = S.eq.inv.filter(x => x.slot === slot && x.r === r).slice(0, 3);
+  if (same.length < 3) { toast('Нужно три одинаковых предмета'); return; }
+  S.eq.inv = S.eq.inv.filter(x => !same.includes(x));
+  const il = Math.round(same.reduce((a, x) => a + x.il, 0) / 3);
+  S.eq.inv.push({ id: 'i' + (S.mid++), slot, r: r + 1, il }); toast('Слияние удалось: ' + RARN[r + 1].toLowerCase() + ' предмет');
+}
+
+
 /* ============ Состояние ============ */
 function newState(name, pid) {
   const t = nowMs();
@@ -150,6 +209,7 @@ function use(st) { S = st; }
 /* Старые сохранения без героя и ступеней получают их при первом обновлении. */
 function ensure(st) {
   if (st.tech) { if (st.tech.bld === undefined) st.tech.bld = 0; if (st.tech.fast === undefined) st.tech.fast = 0; }
+  if (!st.eq) st.eq = { s: { weapon: null, armor: null, helm: null, amulet: null }, inv: [] };
   if (!st.tier) st.tier = { spear: 1, archer: 1, cav: 1 };
   if (!st.hero) st.hero = { lv: 1, xp: 0, sp: 0, sk: { atk: 0, def: 0, loot: 0 } };
   if (st.upg === undefined) st.upg = null;
@@ -160,9 +220,9 @@ const heroOf = st => st.hero || { lv: 1, xp: 0, sp: 0, sk: { atk: 0, def: 0, loo
 const tmul = t => 1 + 0.3 * (t - 1);
 const tiersOf = st => { const o = {}; for (const k in U) o[k] = tierOf(st, k); return o; };
 const botTiers = L => { const t = Math.min(MAXT, 1 + Math.floor((Math.max(1, L) - 1) / 4)); return { spear: t, archer: t, cav: t }; };
-const atkB = st => 1 + 0.06 * st.tech.atk + 0.03 * (heroOf(st).sk.atk || 0);
-const defB = st => 1 + 0.06 * st.tech.def + 0.03 * (heroOf(st).sk.def || 0);
-const lootB = st => 1 + 0.05 * (heroOf(st).sk.loot || 0);
+const atkB = st => 1 + 0.06 * st.tech.atk + 0.03 * (heroOf(st).sk.atk || 0) + eqB(st, 'atk');
+const defB = st => 1 + 0.06 * st.tech.def + 0.03 * (heroOf(st).sk.def || 0) + eqB(st, 'def');
+const lootB = st => 1 + 0.05 * (heroOf(st).sk.loot || 0) + eqB(st, 'loot');
 const unitName = (k, t) => TIERN[k][(t || 1) - 1];
 const xpNeed = L => 80 + 60 * L;
 const tierCost = (k, to) => { const f = Math.pow(2.2, to - 2); return { food: Math.round(300 * f), iron: Math.round(200 * f), silver: Math.round(120 * f) }; };
@@ -178,7 +238,7 @@ const slots = h => 1 + (h >= 4 ? 1 : 0) + (h >= 8 ? 1 : 0) + (h >= 14 ? 1 : 0) +
 const capAt = (st, h) => 2000 + 1500 * (st - 1) + 250 * (h - 1);
 const isVip = () => (S.vip || 0) > nowMs();
 const cap = () => Math.round(capAt(lvl('storehouse'), lvl('hall')) * (isVip() ? 1.2 : 1));
-const ecoMul = () => (1 + 0.05 * S.tech.eco) * (isVip() ? 1.15 : 1);
+const ecoMul = () => (1 + 0.05 * S.tech.eco + eqB(S, 'eco')) * (isVip() ? 1.15 : 1);
 const prot = () => 300 * lvl('vault');
 function prodAt(id, L) { const b = B[id]; return L ? Math.round(b.base * L * (1 + 0.12 * (L - 1)) * ecoMul()) : 0; }
 function rate(rid) { const id = BORDER.find(k => B[k].res === rid); return prodAt(id, lvl(id)); }
@@ -205,6 +265,7 @@ function score(st) {
   for (const k in U) s += (st.troops[k] || 0) * (U[k].atk + U[k].def) / 2;
   for (const k in st.tech) s += st.tech[k] * 50;
   s += heroOf(st).lv * 30;
+  if (st.eq) SLOTK.forEach(k => { const it = st.eq.s[k]; if (it) s += 15 * (it.r + 1) * it.il; });
   for (const k in U) s += (tierOf(st, k) - 1) * 60;
   return Math.round(s);
 }
@@ -367,6 +428,7 @@ function resolveMarch(m) {
     m.loot = {}; for (const k in tg.loot) m.loot[k] = Math.floor(tg.loot[k] * f);
     m.send = r.survA; m.phase = 'back'; m.back = t + m.dur;
     S.stat.wins++; if (tg.kind === 'camp') S.stat.campWins++;
+    if (tg.kind === 'camp' && Math.random() < 0.15) giveItem(newItem(Math.ceil((tg.level || 1) / 4), [80, 18, 2]), 'Трофей из лагеря', t);
     S.targets = S.targets.filter(x => x.id !== tg.id); S.targets.push(genTarget(tg.kind));
     addLog(`Победа над «${tg.name}». Ваши потери: ${fmtComp(r.lostA) || 'нет'}. Потери врага: ${fmtComp(r.lostD) || 'нет'}. Добыча: ${fmtRes(m.loot)}.`, 'good', t);
     toast(`Победа над «${tg.name}»`);
@@ -696,6 +758,11 @@ function act(a, arg) {
     case 'streak': claimStreak(); break;
     case 'scout': if (typeof arg === 'string') scout(arg); break;
     case 'revenge': if (typeof arg === 'string') revenge(arg); break;
+    case 'forge': forge(); break;
+    case 'equip': if (typeof arg === 'string') equip(arg); break;
+    case 'unequip': if (typeof arg === 'string' && SLOTS[arg]) unequip(arg); break;
+    case 'scrap': if (typeof arg === 'string') scrap(arg); break;
+    case 'merge': if (typeof arg === 'string') mergeItems(arg); break;
   }
 }
 
@@ -718,6 +785,7 @@ function fmtT(sec) {
 }
 
 const API = {
+  SLOTS, SLOTK, RARN, EQMAX, itemPct, itemName, forgeCost, forgeLvl, scrapOf, eqB,
   RES, RI, B, BORDER, U, WEAK, TECH, QUESTS, MAXL, TMAX, CFG, HOOK, NODE, TIERN, TIER_NEED, MAXT, HSK, MAXHL, MAXSK,
   get S() { return S; },
   use, newState, update, produce, settle, battle, act, score, verdict,

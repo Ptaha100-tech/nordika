@@ -485,7 +485,27 @@ function heroHTML(){
     const L=H.sk[k]||0;
     h+=`<div class="trow2" style="margin:8px 0"><div style="min-width:0"><b>${HSK[k].n}</b> <span class="lv">${L}/${MAXSK}</span><p class="sm muted">${HSK[k].d}</p></div><button class="btn small" data-act="skill" data-arg="${k}" ${H.sp<1||L>=MAXSK?'disabled':''}>+1</button></div>`;
   });
-  return h+`<p class="note">Опыт приходит за победы, сбор и отбитые набеги. Каждый уровень даёт очко навыка.</p></section>`;
+  h+=`<p class="note">Опыт приходит за победы, сбор и отбитые набеги. Каждый уровень даёт очко навыка.</p></section>`;
+  return h+eqHTML();
+}
+const RC=['var(--fg)','#6fa8ff','#c78bff'];
+function itemLine(it){return `<b style="color:${RC[it.r]}">${Core.itemName(it)}</b> <span class="muted sm">${Core.RARN[it.r].toLowerCase()}, ур. ${it.il}</span><p class="sm muted" style="margin:0">+${Core.itemPct(it)}% ${Core.SLOTS[it.slot].w}</p>`;}
+function eqHTML(){
+  const E=S.eq,fc=Core.forgeCost(),can=lvl('hall')>=3&&E.inv.length<Core.EQMAX&&S.res.wood>=fc.wood&&S.res.iron>=fc.iron&&S.res.silver>=fc.silver;
+  let h=`<section class="card"><h2>Снаряжение ярла</h2>`;
+  Core.SLOTK.forEach(k=>{const it=E.s[k];h+=`<div class="trow2" style="margin:8px 0"><div style="min-width:0"><span class="muted sm">${Core.SLOTS[k].n}</span><br>${it?itemLine(it):'<span class="muted sm">Пусто</span>'}</div>${it?`<button class="btn small ghost" data-act="unequip" data-arg="${k}">Снять</button>`:''}</div>`;});
+  h+=`<h3 style="margin-top:12px">Кузница</h3><p class="sm muted">Куёт случайный предмет (чаще обычный, реже редкий и эпический). Уровень предметов растёт с Палатой ярла. Нужна Палата ярла 3.</p>
+    <div class="trow2"><div class="costs" style="margin:0">${Object.keys(fc).map(k=>cpHTML(k,fc[k])).join('')}</div><button class="btn small ${can?'':'off'}" data-act="forge">Ковать</button></div>`;
+  h+=`<h3 style="margin-top:12px">Сумка <span class="lv">${E.inv.length}/${Core.EQMAX}</span></h3>`;
+  const inv=E.inv.slice().sort((a,b)=>b.r-a.r||b.il-a.il);
+  if(!inv.length)h+='<p class="muted sm">Пусто. Предметы выпадают из лагерей разбойников, боссов и выковываются в кузнице.</p>';
+  inv.forEach(it=>{const cur=E.s[it.slot],sc=Core.scrapOf(it);
+    h+=`<div class="trow2" style="margin:8px 0"><div style="min-width:0"><span class="muted sm">${Core.SLOTS[it.slot].n}</span><br>${itemLine(it)}${cur?`<p class="sm" style="margin:0;color:${Core.itemPct(it)>Core.itemPct(cur)?'var(--good,#7ad07a)':'var(--muted)'}">Сейчас надето: +${Core.itemPct(cur)}%</p>`:''}</div>
+      <div style="display:flex;flex-direction:column;gap:4px"><button class="btn small" data-act="equip" data-arg="${it.id}">Надеть</button><button class="btn small ghost" data-act="scrap" data-arg="${it.id}" title="Получите ${fmtRes(sc)}">Разобрать</button></div></div>`;});
+  const grp={};E.inv.forEach(it=>{if(it.r<2){const g=it.slot+':'+it.r;grp[g]=(grp[g]||0)+1;}});
+  const mg=Object.keys(grp).filter(g=>grp[g]>=3);
+  if(mg.length)h+=`<h3 style="margin-top:12px">Слияние</h3><p class="sm muted">Три одинаковых предмета (слот и редкость) сливаются в один следующей редкости.</p>`+mg.map(g=>{const [sl,r]=g.split(':');return `<button class="btn small" style="margin:3px" data-act="merge" data-arg="${g}">${Core.SLOTS[sl].n}: 3 ${Core.RARN[r].toLowerCase()}х → ${Core.RARN[+r+1].toLowerCase()}</button>`;}).join('');
+  return h+`</section>`;
 }
 const TL={atk:'Атака',def:'Защита',eco:'Экономика',bld:'Стройка',fast:'Походы'};
 const KIND={node:'Ресурсная точка',camp:'Разбойники',jarl:'Ярл',player:'Игрок'};
