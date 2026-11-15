@@ -27,15 +27,15 @@ const B = {
 };
 const BORDER = ['hall', 'farm', 'sawmill', 'quarry', 'ironmine', 'silvermine', 'storehouse', 'vault', 'barracks', 'oracle'];
 const U = {
-  spear:  { n: 'Копейщик', pl: 'Копейщики', atk: 10, def: 14, carry: 20, cost: { food: 30, wood: 25 }, t: 6,  need: 1, counters: 'cav' },
-  archer: { n: 'Лучник',   pl: 'Лучники',   atk: 16, def: 8,  carry: 15, cost: { food: 20, wood: 40 }, t: 8,  need: 2, counters: 'spear' },
+  spear:  { n: 'Ополченец', pl: 'Ополченцы', atk: 10, def: 14, carry: 20, cost: { food: 30, wood: 25 }, t: 6,  need: 1, counters: 'cav' },
+  archer: { n: 'Охотник',   pl: 'Охотники',   atk: 16, def: 8,  carry: 15, cost: { food: 20, wood: 40 }, t: 8,  need: 2, counters: 'spear' },
   cav:    { n: 'Всадник',  pl: 'Всадники',  atk: 18, def: 10, carry: 35, cost: { food: 50, iron: 40, silver: 5 }, t: 12, need: 3, counters: 'archer' }
 };
 /* Ступени воинов: улучшаются в Казарме, усиливают всех воинов этого вида сразу. */
 const TIERN = {
   spear: ['Ополченец', 'Копейщик', 'Щитоносец', 'Дружинник', 'Хирдман', 'Гвардеец', 'Королевский страж'],
   archer: ['Охотник', 'Лучник', 'Следопыт', 'Меткий стрелок', 'Ловчий', 'Северный стрелок', 'Королевский лучник'],
-  cav: ['Наездник', 'Всадник', 'Разведчик', 'Конный дружинник', 'Латный всадник', 'Тяжёлый всадник', 'Королевский рыцарь']
+  cav: ['Всадник', 'Конник', 'Разведчик', 'Конный дружинник', 'Латный всадник', 'Тяжёлый всадник', 'Королевский рыцарь']
 };
 const TIER_NEED = [1, 4, 8, 12, 16, 21, 26];   // какая Казарма нужна для ступени
 const MAXT = 7;
