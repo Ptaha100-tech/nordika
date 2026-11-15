@@ -198,6 +198,98 @@ function clanAward(prev) {
   });
   return res.slice(0, 5);
 }
+/* ---------- боссы: мировой и клановый ---------- */
+const BOSS_HITS = 2, BOSS_LOSS = 0.05;
+const WBOSS = ['Йотун Хримтурс', 'Дракон Нидхёгг', 'Волк Фенрир', 'Змей Йормунганд', 'Хель, владычица мёртвых'];
+const CBOSS = ['Ледяной тролль', 'Лесной великан', 'Болотная ведьма', 'Каменный исполин'];
+const bossIl = st => Math.min(5, 1 + Math.floor(st.b.hall / 5));
+function bossPay(u, why, o) {
+  const st = u.state; Core.use(st);
+  const cp = Core.cap();
+  for (const k of ['wood', 'iron', 'silver', 'food']) if (o.res) st.res[k] = Math.max(st.res[k], Math.min(cp, st.res[k] + (o.res[k] || 0)));
+  st.gems = (st.gems || 0) + (o.gems || 0); st.haste += o.haste || 0;
+  if (o.w) Core.giveItem(Core.newItem(bossIl(st), o.w), why);
+  Core.addLogTo(st, `${why}. Награда: ${o.gems ? o.gems + ' рунных камн., ' : ''}${o.haste ? o.haste + ' ускор., ' : ''}ресурсы${o.w ? ' и предмет' : ''}.`, 'good');
+  markDirty(u);
+}
+function topRows(dm) { return Object.keys(dm).map(pid => ({ pid, name: (users.get(pid) || {}).name || '?', v: Math.round(dm[pid]) })).sort((a, b) => b.v - a.v); }
+function worldSettle(b) {
+  const killed = b.hp <= 0, rows = topRows(b.dmg);
+  rows.forEach((r, i) => {
+    const u = users.get(r.pid); if (!u) return;
+    const res = killed ? { wood: 500, iron: 400, silver: 250 } : { wood: 150, iron: 100, silver: 60 };
+    if (i === 0) bossPay(u, `Мировой босс «${b.name}»: 1-е место по урону`, { res, gems: killed ? 25 : 10, haste: 4, w: [0, 35, 65] });
+    else if (i < 3) bossPay(u, `Мировой босс «${b.name}»: ${i + 1}-е место по урону`, { res, gems: killed ? 15 : 6, haste: 3, w: [20, 60, 20] });
+    else bossPay(u, `Мировой босс «${b.name}»${killed ? ' повержен' : ' ушёл'}: награда за участие`, { res, gems: killed ? 5 : 0, haste: killed ? 2 : 1, w: killed ? [65, 31, 4] : null });
+  });
+  b.settled = true; b.killed = killed; b.top = rows.slice(0, 3).map(r => ({ name: r.name, v: r.v }));
+  b.nextAt = Math.max(Date.now(), b.end) + 24 * 3600000;
+  try { Social.admin.say(sstore, sctx, `Мировой босс «${b.name}» ${killed ? 'повержен! Награды в хронике участников.' : 'ушёл непобеждённым.'}`); sdirty = true; } catch (e) { /* чат не критичен */ }
+}
+function worldBoss() {
+  const now = Date.now(), b = evs.boss;
+  if (b && !b.settled && (b.hp <= 0 || now >= b.end)) { worldSettle(b); saveEvs(); }
+  if (!b || (b.settled && now >= b.nextAt)) {
+    let n = 0; for (const u of users.values()) if (!u.banned && u.state.t > now - 7 * 86400000) n++;
+    n = Math.max(1, Math.min(200, n));
+    const max = 8000 + 6000 * n, i = ((b ? b.i : -1) + 1) % WBOSS.length;
+    evs.boss = { i, name: WBOSS[i], hp: max, max, start: now, end: now + 72 * 3600000, dmg: {}, settled: false };
+    saveEvs();
+  }
+  return evs.boss;
+}
+function clanBoss(c) {
+  const w = Core.weekId(Date.now()), n = Object.keys(c.members).length;
+  if (n < 2) return null;
+  if (!c.boss || c.boss.w !== w) {
+    if (c.boss && !c.boss.settled) clanSettle(c);
+    const i = (c.boss ? c.boss.i + 1 : w) % CBOSS.length, max = 10000 * Math.min(20, n);
+    c.boss = { w, i, name: CBOSS[i], hp: max, max, dmg: {}, settled: false }; cdirty = true;
+  }
+  if (!c.boss.settled && c.boss.hp <= 0) clanSettle(c);
+  return c.boss;
+}
+function clanSettle(c) {
+  const b = c.boss; if (b.settled) return; b.settled = true; cdirty = true;
+  if (b.hp > 0) return;
+  topRows(b.dmg).forEach((r, i) => {
+    const u = users.get(r.pid); if (!u || !c.members[r.pid]) return;
+    bossPay(u, `Клановый босс «${b.name}» повержен`, { res: { wood: 400, iron: 300, silver: 200 }, gems: 10 + (i === 0 ? 10 : 0), haste: 3, w: i === 0 ? [20, 60, 20] : [55, 38, 7] });
+  });
+}
+function bossTick() { try { worldBoss(); for (const c of Object.values(cstore.clans || {})) clanBoss(c); } catch (e) { console.error('boss', e.message); } }
+function bossView(u) {
+  const now = Date.now(), st = u.state, day = Core.dayId(now), bt = (st.boss && st.boss.d === day) ? st.boss : { d: day, w: 0, c: 0 };
+  const wb = worldBoss(), rows = topRows(wb.dmg), me = rows.findIndex(r => r.pid === u.id);
+  const out = { now, left: { w: Math.max(0, BOSS_HITS - bt.w), c: Math.max(0, BOSS_HITS - bt.c) }, atk: Math.round(Core.armyAtk(st)), loss: BOSS_LOSS * 100,
+    world: { name: wb.name, hp: Math.max(0, Math.round(wb.hp)), max: wb.max, end: wb.end, state: wb.settled ? (now >= wb.nextAt ? 'wait' : 'done') : 'active', killed: !!wb.killed, nextAt: wb.nextAt || 0, top: rows.slice(0, 5), me: { v: me < 0 ? 0 : rows[me].v, rank: me < 0 ? 0 : me + 1 }, lastTop: wb.top || [] } };
+  const c = Clan.clanOf(cstore, u.id);
+  if (!c) out.clan = { none: 'Вступите в клан, чтобы бить кланового босса.' };
+  else { const b = clanBoss(c); if (!b) out.clan = { none: 'Клановый босс появляется, когда в клане два игрока и больше.' };
+    else { const r2 = topRows(b.dmg), m2 = r2.findIndex(r => r.pid === u.id); out.clan = { name: b.name, hp: Math.max(0, Math.round(b.hp)), max: b.max, end: Core.weekEnd(b.w), state: b.settled ? 'done' : 'active', killed: b.hp <= 0, top: r2.slice(0, 5), me: { v: m2 < 0 ? 0 : r2[m2].v, rank: m2 < 0 ? 0 : m2 + 1 } }; } }
+  return out;
+}
+function bossHit(u, type) {
+  const st = u.state; Core.use(st);
+  if (st.b.hall < 3) return { error: 'Бить босса можно с Палаты ярла 3.' };
+  const now = Date.now(), day = Core.dayId(now);
+  if (!st.boss || st.boss.d !== day) st.boss = { d: day, w: 0, c: 0 };
+  const key = type === 'clan' ? 'c' : 'w';
+  if (st.boss[key] >= BOSS_HITS) return { error: 'Сегодня удары уже потрачены (2 в день).' };
+  let b, c = null;
+  if (type === 'clan') { c = Clan.clanOf(cstore, u.id); if (!c) return { error: 'Вы не в клане.' }; b = clanBoss(c); if (!b || b.settled) return { error: 'Босс сейчас недоступен.' }; }
+  else { b = worldBoss(); if (b.settled || now >= b.end) return { error: 'Мирового босса сейчас нет.' }; }
+  if (b.hp <= 0) return { error: 'Босс уже повержен.' };
+  const base = Core.armyAtk(st); if (base < 1) return { error: 'Нет войск для удара.' };
+  const dmg = Math.round(base * (0.9 + Math.random() * 0.2));
+  const lost = {}; for (const k of Object.keys(st.troops)) { const n = st.troops[k] || 0, l = Math.min(n, Math.ceil(n * BOSS_LOSS)); if (l > 0) { st.troops[k] = n - l; lost[k] = l; } }
+  st.boss[key]++;
+  b.hp -= dmg; b.dmg[u.id] = (b.dmg[u.id] || 0) + dmg;
+  Core.addLogTo(st, `Удар по боссу «${b.name}»: ${dmg} урона. Потери: ${Core.fmtComp(lost) || 'нет'}.`, 'info');
+  if (type === 'clan') { if (b.hp <= 0) clanSettle(c); cdirty = true; } else if (b.hp <= 0) { worldSettle(b); saveEvs(); } else saveEvs();
+  markDirty(u);
+  return { ok: true, dmg, lost: Core.fmtComp(lost) || 'нет', killed: b.hp <= 0 };
+}
 /* ---------- приглашения друзей ---------- */
 const REF_WELCOME = 5;                                                     // новичку сразу
 const REF_STEPS = [{ hall: 4, gems: 25, haste: 3 }, { hall: 8, gems: 40, haste: 5 }];   // пригласившему, когда друг дорос до уровня Палаты
@@ -253,6 +345,7 @@ function seasonTick() {
   Social.admin.say(sstore, sctx, `Сезон «${seasonLabel(prev)}» завершён! ${hallPl.length ? 'Победитель: ' + hallPl[0].name + '. ' : ''}Награды разосланы, начался новый сезон.`); sdirty = true;
 }
 function eventsTick() {
+  bossTick();
   try { seasonTick(); } catch (e) { console.error('seasonTick', e.message); }
   try { refTick(); } catch (e) { console.error('refTick', e.message); }
   const cur = Core.weekId(Date.now()), prev = cur - 1;
@@ -430,6 +523,15 @@ async function api(req, res, url) {
     if (r.error !== undefined) return json(res, 400, { error: r.error });
     sdirty = true;
     return json(res, 200, Object.assign(Social.view(sstore, sctx, u.id, String(b.peer || b.to || b.pid || '').slice(0, 16)), { result: r }));
+  }
+  if (req.method === 'GET' && url === '/api/boss') return json(res, 200, bossView(u));
+  if (req.method === 'POST' && url === '/api/boss/hit') {
+    if (limited('boss:' + u.id, 6, 10000)) return json(res, 429, { error: 'Слишком быстро.' });
+    let b; try { b = await readBody(req); } catch (e) { return json(res, 400, { error: 'Некорректный запрос' }); }
+    touchState(u);
+    const r = bossHit(u, b.t === 'clan' ? 'clan' : 'world');
+    if (r.error) return json(res, 400, { error: r.error });
+    return json(res, 200, Object.assign({ view: bossView(u), state: u.state }, r));
   }
   if (req.method === 'GET' && url === '/api/events') {
     Core.use(u.state); Core.wkSync(u.state);

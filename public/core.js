@@ -130,6 +130,7 @@ const QUESTS = [
   QUESTS.forEach(q => { Object.keys(q.rw).forEach(k => { if (!q.rw[k]) delete q.rw[k]; }); });
 })();
 
+const armyAtk = st => { let a = 0; for (const k in U) a += (st.troops[k] || 0) * U[k].atk * tmul(tierOf(st, k)); return a * atkB(st); };
 /* ============ Снаряжение ярла ============ */
 const SLOTS = {
   weapon: { n: 'Оружие',  stat: 'atk',  base: 3, w: 'к атаке всех воинов',      names: ['Дубовый топор', 'Стальная секира', 'Клинок ярла'] },
@@ -785,7 +786,7 @@ function fmtT(sec) {
 }
 
 const API = {
-  SLOTS, SLOTK, RARN, EQMAX, itemPct, itemName, forgeCost, forgeLvl, scrapOf, eqB,
+  armyAtk, newItem, giveItem, SLOTS, SLOTK, RARN, EQMAX, itemPct, itemName, forgeCost, forgeLvl, scrapOf, eqB,
   RES, RI, B, BORDER, U, WEAK, TECH, QUESTS, MAXL, TMAX, CFG, HOOK, NODE, TIERN, TIER_NEED, MAXT, HSK, MAXHL, MAXSK,
   get S() { return S; },
   use, newState, update, produce, settle, battle, act, score, verdict,
