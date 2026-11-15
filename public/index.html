@@ -770,13 +770,26 @@ function viewLog(){
   ui.logSeen=S.log.length?S.log[0].t:0;
   return `<h2>Хроника</h2>${sh}<section class="card">${rows}</section>`;
 }
+/* ---------- сезон ---------- */
+ui.season=null;
+async function loadSeason(){try{ui.season=await call('GET','/api/season');if(ui.tab==='top')render();}catch(e){}}
+function seasonHTML(){
+  const s=ui.season;if(!s)return '';
+  const left=Math.max(0,s.end-(Date.now()+off)),d=Math.floor(left/86400000);
+  const pr=s.players.map((p,i)=>`${i+1} место: ᛝ${p.gems} ᛞ${p.haste}`).join('<br>');
+  return `<section class="card"><div class="trow2"><h2>Сезон: ${esc(s.label)}</h2><span class="muted sm">осталось ${d>0?d+' д '+Math.floor(left%86400000/3600000)+' ч':fmtT(left/1000)}</span></div>
+  <p class="sm muted">Сезон идёт месяц. В конце лучшие ярлы по силе получают призы, а лучшие кланы наградят всех своих участников. Чтобы участвовать, нужна Палата ярла ${s.minHall} уровня.</p>
+  <p class="sm" style="margin:8px 0">${s.me.ok?`Ваше место: <b>${s.me.rank}</b> · сила ${fmt(s.me.score)}`:`Вырастите Палату до ${s.minHall} уровня, чтобы попасть в список.`}</p>
+  <p class="sm">${pr}<br>4–10 место: ᛝ${s.rest.gems}<br>Клан: ${s.clans.map((g,i)=>`${i+1} место ᛝ${g}`).join(', ')} каждому участнику</p>
+  ${s.hall.length?`<details style="margin-top:8px"><summary class="sm">Зал славы</summary>${s.hall.map(x=>`<div class="sm" style="margin:6px 0"><b>${esc(x.label)}</b><br>${x.players.map((p,i)=>`${i+1}. ${esc(p.name)} (${fmt(p.score)})`).join(', ')||'нет'}${x.clans.length?`<br>Кланы: ${x.clans.map((c,i)=>`${i+1}. [${esc(c.tag)}] ${esc(c.name)}`).join(', ')}`:''}</div>`).join('')}</details>`:''}</section>`;
+}
 function viewTop(){
   let rk='<p class="muted sm">Загрузка…</p>';
   if(ui.rank){
     rk=ui.rank.top.map((x,i)=>`<div class="rk ${x.me?'me':''}"><span class="n">${i+1}</span><span class="nm" data-act="profn" data-arg="${esc(x.name)}" style="cursor:pointer">${esc(x.name)}</span><span>Палата ${x.hall}</span><span>${fmt(x.score)}</span></div>`).join('');
     if(ui.rank.me>30)rk+=`<div class="rk me"><span class="n">${ui.rank.me}</span><span class="nm">${esc(S.name)}</span><span></span><span>${fmt(ui.rank.my)}</span></div>`;
   }
-  return `<h2>Топ ярлов</h2><section class="card">${rk}</section>${window.DEMO?window.demoCard():''}`;
+  return `${seasonHTML()}<h2>Топ ярлов</h2><section class="card">${rk}</section>${window.DEMO?window.demoCard():''}`;
 }
 const VIEWS={log:viewLog,city:viewCity,troops:viewTroops,map:viewMap,quests:viewQuests,chat:viewSocial,clan:viewClan,shop:viewShop,top:viewTop};
 /* ---------- обучение: шаги выводятся из состояния игры, поэтому ничего лишнего не хранится на сервере ---------- */
@@ -1069,7 +1082,7 @@ async function loadRank(){
 function onAct(act,arg){
   switch(act){
     case 'tutskip':try{localStorage.setItem(tutKey(),'1');}catch(e){}render();return;
-    case 'tab':ui.tab=arg;if(arg==='shop')loadShop();if(arg==='top'&&Date.now()-ui.rankAt>20000)loadRank();if(arg==='clan')loadClan();if(arg==='quests'){loadEvents();loadInvite();}if(arg==='chat')loadSoc();render();return;
+    case 'tab':ui.tab=arg;if(arg==='shop')loadShop();if(arg==='top'){loadSeason();if(Date.now()-ui.rankAt>20000)loadRank();}if(arg==='clan')loadClan();if(arg==='quests'){loadEvents();loadInvite();}if(arg==='chat')loadSoc();render();return;
     case 'pay':toast('Оплата пока не подключена');return;
     case 'msub':ui.msub=arg;render();return;
     case 'wprof':ui.tab='chat';ui.sub='world';ui.soc.peer=null;render();loadSoc();openProf({id:arg});return;

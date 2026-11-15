@@ -219,7 +219,40 @@ function refTick() {
     }
   }
 }
+/* ---------- сезоны: месяц, призы лучшим игрокам и кланам, зал славы ---------- */
+const MONTHS = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+const seasonId = t => { const d = new Date(t + 3 * 3600000); return d.getUTCFullYear() * 12 + d.getUTCMonth(); };
+const seasonEnd = id => Date.UTC(Math.floor((id + 1) / 12), (id + 1) % 12, 1) - 3 * 3600000;       // конец месяца по Москве
+const seasonLabel = id => MONTHS[id % 12] + ' ' + Math.floor(id / 12);
+const SEASON_PL = [{ gems: 200, haste: 10 }, { gems: 120, haste: 6 }, { gems: 80, haste: 4 }], SEASON_REST = { gems: 30, haste: 0 }, SEASON_CL = [60, 40, 25], SEASON_MIN_HALL = 3;
+function seasonTick() {
+  const cur = seasonId(Date.now()), prev = cur - 1;
+  if (evs.lastSeason === prev) return;
+  if (evs.lastSeason == null) { evs.lastSeason = prev; saveEvs(); return; }
+  if (evs.lastSeason < prev) evs.lastSeason = prev - 1;           // сервер долго стоял: награждаем только за последний сезон
+  const rows = ranking().filter(r => { const u = users.get(r.id); return u && !u.banned && r.hall >= SEASON_MIN_HALL; });
+  const pl = rows.slice(0, 10), hallPl = [];
+  pl.forEach((r, i) => {
+    const u = users.get(r.id), pz = SEASON_PL[i] || SEASON_REST;
+    u.state.gems = (u.state.gems || 0) + pz.gems; u.state.haste += pz.haste;
+    Core.addLogTo(u.state, `Сезон «${seasonLabel(prev)}» завершён: вы на ${i + 1}-м месте по силе. Награда: ${pz.gems} рунных камн.${pz.haste ? ', ' + pz.haste + ' ускор.' : ''}`, 'good'); markDirty(u);
+    if (i < 3) hallPl.push({ name: r.name, score: r.score });
+  });
+  const cl = Object.values(cstore.clans).map(c => ({ c, p: Object.keys(c.members).reduce((a, pid) => a + (users.has(pid) ? Core.score(users.get(pid).state) : 0), 0) })).sort((a, b) => b.p - a.p).slice(0, 3), hallCl = [];
+  cl.forEach((x, i) => {
+    for (const pid of Object.keys(x.c.members)) {
+      const u = users.get(pid); if (!u || u.banned || u.state.b.hall < SEASON_MIN_HALL) continue;
+      u.state.gems = (u.state.gems || 0) + SEASON_CL[i];
+      Core.addLogTo(u.state, `Сезон «${seasonLabel(prev)}»: клан [${x.c.tag}] занял ${i + 1}-е место. Награда: ${SEASON_CL[i]} рунных камн.`, 'good'); markDirty(u);
+    }
+    hallCl.push({ tag: x.c.tag, name: x.c.name, power: x.p });
+  });
+  evs.hall = [{ id: prev, label: seasonLabel(prev), players: hallPl, clans: hallCl }].concat(evs.hall || []).slice(0, 12);
+  evs.lastSeason = prev; saveEvs();
+  Social.admin.say(sstore, sctx, `Сезон «${seasonLabel(prev)}» завершён! ${hallPl.length ? 'Победитель: ' + hallPl[0].name + '. ' : ''}Награды разосланы, начался новый сезон.`); sdirty = true;
+}
 function eventsTick() {
+  try { seasonTick(); } catch (e) { console.error('seasonTick', e.message); }
   try { refTick(); } catch (e) { console.error('refTick', e.message); }
   const cur = Core.weekId(Date.now()), prev = cur - 1;
   if (evs.lastAwarded === prev) return;
@@ -405,6 +438,10 @@ async function api(req, res, url) {
   if (req.method === 'GET' && url === '/api/invite') {
     const mine = [...users.values()].filter(x => x.ref === u.id).map(x => ({ name: x.name, hall: x.state.b.hall, paid: (x.refPaid || []).length, same: !!(u.rip && u.rip === x.rip) })).sort((a, b) => b.hall - a.hall);
     return json(res, 200, { code: u.id.slice(0, 8), welcome: REF_WELCOME, steps: REF_STEPS, max: REF_MAX, list: mine.slice(0, 30), total: mine.length });
+  }
+  if (req.method === 'GET' && url === '/api/season') {
+    const id = seasonId(Date.now()), rk = ranking(), i = rk.findIndex(x => x.id === u.id);
+    return json(res, 200, { label: seasonLabel(id), now: Date.now(), end: seasonEnd(id), minHall: SEASON_MIN_HALL, players: SEASON_PL, rest: SEASON_REST, clans: SEASON_CL, hall: evs.hall || [], me: { rank: i + 1, score: i < 0 ? 0 : rk[i].score, ok: u.state.b.hall >= SEASON_MIN_HALL } });
   }
   if (req.method === 'GET' && url === '/api/worldmap') {
     const now = Date.now(), me = posOf(u.id), players = [], marches = [];
