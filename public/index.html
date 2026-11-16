@@ -320,6 +320,26 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--frost);outline-
 @keyframes eqrune{50%{filter:brightness(1.5) hue-rotate(-12deg) drop-shadow(0 0 4px #4aa8ff)}}
 @keyframes eqtw{0%,100%{opacity:0;transform:scale(.4)}50%{opacity:1;transform:scale(1.1) rotate(20deg)}}
 @media (prefers-reduced-motion:reduce){.eqs,.eqs::after,.eqs::before,.eqs .eqi{animation:none!important}}
+
+/* чат: аватарки и компактные сообщения */
+.cbox{gap:6px;padding:6px 8px}
+.cbox .m{display:flex;gap:8px;align-items:flex-start}
+.cbox .m.me{flex-direction:row-reverse}
+.cav{flex:none;position:relative;width:32px;height:32px;border-radius:8px;overflow:hidden;border:1px solid var(--line);background:hsl(var(--h,200) 28% 30%);display:grid;place-items:center;cursor:pointer}
+.cav i{font-style:normal;font-size:14px;color:#fff;font-weight:700}
+.cav img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:var(--surface)}
+.cbox .mb{min-width:0;max-width:calc(100% - 44px);background:var(--surface);border:1px solid var(--line);border-radius:4px 10px 10px 10px;padding:4px 9px 5px}
+.cbox .m.me .mb{border-radius:10px 4px 10px 10px;border-color:#f2cd7566;background:#f2cd750f}
+.cbox .m.ment{background:none;border:0;padding:0}
+.cbox .m.ment .mb{border-color:var(--accent);background:#f2cd7522}
+.cbox .mh{display:flex;align-items:baseline;gap:6px;font-size:12px;line-height:1.3}
+.cbox .mh b{color:var(--frost);font-weight:600}.cbox .m.me .mh b{color:var(--accent)}
+.cbox .mh time{margin-left:auto;font-size:10px}
+.cbox .mt{font-size:13.5px;line-height:1.35;overflow-wrap:anywhere}
+.cbox .rpl{font-size:12px;margin:0;padding:0 2px}
+.subtabs .btn{padding:6px 4px;font-size:13px}
+.crow .btn.small{padding:7px 12px;font-size:13px}
+.crow input{padding:8px 10px;font-size:16px}
 </style>
 </head>
 <body>
@@ -722,7 +742,7 @@ function eventsHTML(){
 let cbusy=false;
 const hhmm=t=>new Date(t).toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
 function chatHTML(c){
-  return c.chat.length?c.chat.map(m=>m.sys?`<p class="cs">${esc(m.text)}</p>`:`<p class="${m.pid===ui.clan.me?'me':''}"><b>${esc(m.name)}</b><time>${hhmm(m.t)}</time><br>${esc(m.text)}</p>`).join(''):'<p class="cs">Пока тихо. Напишите первым.</p>';
+  return c.chat.length?c.chat.map(m=>m.sys?`<p class="cs">${esc(m.text)}</p>`:msgH(m.pid,m.name,'',m.t,m.text,{me:m.pid===ui.clan.me})).join(''):'<p class="cs">Пока тихо. Напишите первым.</p>';
 }
 function myJobsForHelp(c){
   const out=[];
@@ -831,13 +851,15 @@ async function loadShop(){try{ui.shop=await call('GET','/api/shop');if(ui.tab===
 ui.sub='world';ui.soc={d:null,peer:null,prof:null,at:0};
 let sbusy=false;
 const stick=b=>{if(b)b.scrollTop=b.scrollHeight;};
+const avH=(pid,name)=>{const h=parseInt(String(pid).slice(0,3),16)%360;return `<span class="cav" style="--h:${h}" data-act="prof" data-arg="${pid}"><i>${esc(String(name||'?').trim().charAt(0).toUpperCase())}</i><img src="/api/av/${pid}" alt="" decoding="async" onerror="this.remove()"></span>`;};
+const msgH=(pid,name,tag,t,text,o)=>{o=o||{};return `<div class="m ${o.me?'me':''} ${o.ment?'ment':''}">${avH(pid,name)}<div class="mb"><div class="mh">${tag?`<span class="tag4">${esc(tag)}</span>`:''}<b class="nmb" data-act="prof" data-arg="${pid}">${o.vip?'<span style="color:var(--accent)">★</span> ':''}${esc(name)}</b><time>${hhmm(t)}</time>${o.reply?`<button class="rpl" data-act="reply" data-arg="${esc(name)}" aria-label="Ответить">↩</button>`:''}</div><div class="mt">${esc(text)}</div></div></div>`;};
 function worldHTML(d){
   if(!d.world.length)return '<p class="cs">В общем чате пока тихо. Напишите первым.</p>';
-  return d.world.map(m=>m.sys?`<p class="cs">📜 ${esc(m.text)}</p>`:`<p class="${m.pid===d.me?'me':''}${S&&m.text&&m.text.toLowerCase().includes(S.name.toLowerCase())&&m.pid!==d.me?' ment':''}">${m.tag?`<span class="tag4">${esc(m.tag)}</span>`:''}<b class="nmb" data-act="prof" data-arg="${m.pid}">${m.vip?'<span style="color:var(--accent)">★</span> ':''}${esc(m.name)}</b><time>${hhmm(m.t)}</time>${m.pid!==d.me?`<button class="rpl" data-act="reply" data-arg="${esc(m.name)}" aria-label="Ответить">↩</button>`:''}<br>${esc(m.text)}</p>`).join('');
+  return d.world.map(m=>m.sys?`<p class="cs">📜 ${esc(m.text)}</p>`:msgH(m.pid,m.name,m.tag,m.t,m.text,{me:m.pid===d.me,vip:m.vip,reply:m.pid!==d.me,ment:!!(S&&m.text&&m.text.toLowerCase().includes(S.name.toLowerCase())&&m.pid!==d.me)})).join('');
 }
 function dmHTML(t,me){
   if(!t.msgs.length)return '<p class="cs">Переписка пуста. Напишите первым.</p>';
-  return t.msgs.map(m=>`<p class="${m.from===me?'me':''}"><b>${m.from===me?'Вы':esc(t.name)}</b><time>${hhmm(m.t)}</time><br>${esc(m.text)}</p>`).join('');
+  return t.msgs.map(m=>msgH(m.from,m.from===me?'Вы':t.name,'',m.t,m.text,{me:m.from===me})).join('');
 }
 function profCard(){
   const p=ui.soc.prof;if(!p)return '';

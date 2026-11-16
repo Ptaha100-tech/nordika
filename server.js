@@ -530,6 +530,11 @@ async function api(req, res, url) {
   }
 
   if (url.startsWith('/api/admin/')) return adminApi.handle(req, res, url);
+  if (req.method === 'GET' && url.startsWith('/api/av/')) {
+    const t = users.get(url.slice(8)), m = t && !t.banned && typeof t.avatar === 'string' && t.avatar.match(/^data:(image\/(?:webp|jpeg|png));base64,([A-Za-z0-9+/=]+)$/);
+    if (!m) return send(res, 404, 'no', { 'Content-Type': 'text/plain', 'Cache-Control': 'public, max-age=60' });
+    return send(res, 200, Buffer.from(m[2], 'base64'), { 'Content-Type': m[1], 'Cache-Control': 'public, max-age=300', 'X-Content-Type-Options': 'nosniff' });
+  }
   if (req.method === 'GET' && url === '/api/public') return json(res, 200, publicInfo());
 
   const u = authUser(req);
