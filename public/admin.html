@@ -99,6 +99,7 @@ function curView(){
     <span>Войска</span><span>ополч. ${p.troops.spear}, охотн. ${p.troops.archer}, всадн. ${p.troops.cav}</span><span>Ярл</span><span>уровень ${p.hero.lv}</span>
     <span>Покупки</span><span>${esc(Object.keys(p.bought).map(k=>k+'×'+p.bought[k]).join(', ')||'нет')}</span>${p.banned?`<span>Причина бана</span><span>${esc(p.banned)}</span>`:''}</div></div>
   <div class="card"><h2>Выдать</h2><div class="f">${F('gems','Рунные камни')}${F('haste','Ускорения')}${F('vipDays','VIP, дней')}${F('shieldH','Щит, часов')}${F('food','Еда')}${F('wood','Дерево')}${F('stone','Камень')}${F('iron','Железо')}${F('silver','Серебро')}</div><button id="grant">Выдать</button></div>
+  <div class="card"><h2>Ник</h2><input id="nn" value="${esc(p.name)}" maxlength="16" style="margin-bottom:8px"><button class="g" id="rn">Сменить ник</button></div>
   <div class="card"><h2>Чат</h2><div class="acts"><button class="s g" id="noav">Убрать аватар</button><button class="s g" data-mute="10">Мут 10 мин</button><button class="s g" data-mute="60">1 час</button><button class="s g" data-mute="1440">1 день</button><button class="s g" data-mute="10080">7 дней</button><button class="s g" data-mute="0">Снять мут</button><button class="s r" id="clr">Удалить его сообщения</button></div></div>
   <div class="card"><h2>Доступ</h2>${p.banned?'<button id="unban">Разблокировать</button>':'<input id="reason" placeholder="Причина бана" style="margin-bottom:8px"><button class="r" id="ban">Заблокировать</button>'}
     <div style="margin-top:14px"><input id="npw" placeholder="Новый пароль игрока (от 6 символов)" style="margin-bottom:8px"><button class="g" id="setpw">Сменить пароль</button></div>
@@ -159,7 +160,7 @@ function bind(){
   document.querySelectorAll('[data-bk]').forEach(b=>b.onclick=async()=>{try{const r=await fetch('/api/admin/backup?name='+encodeURIComponent(b.dataset.bk),{headers:{Authorization:'Bearer '+tok}});if(!r.ok)throw new Error('Ошибка '+r.status);const u=URL.createObjectURL(await r.blob()),a=document.createElement('a');a.href=u;a.download=b.dataset.bk;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);}catch(e){toast(e.message,1);}});
   on('grant',()=>{const give={};['gems','haste','vipDays','shieldH','food','wood','stone','iron','silver'].forEach(k=>{const v=Number($('g-'+k).value);if(v>0)give[k]=v;});act('grant',{give});});
   document.querySelectorAll('[data-mute]').forEach(b=>b.onclick=()=>act('mute',{minutes:Number(b.dataset.mute)}));
-  on('clr',()=>act('clearmsgs'));on('noav',()=>act('noavatar'));on('unban',()=>act('unban'));
+  on('clr',()=>act('clearmsgs'));on('rn',()=>act('rename',{name:$('nn').value}));on('noav',()=>act('noavatar'));on('unban',()=>act('unban'));
   on('ban',()=>act('ban',{reason:$('reason').value}));
   on('setpw',()=>act('setpw',{password:$('npw').value}));
   on('del',()=>act('delete',{confirm:$('dconf').value}));
