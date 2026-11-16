@@ -230,7 +230,7 @@ function ensure(st) {
   if (!st.eq) st.eq = { s: { weapon: null, armor: null, helm: null, amulet: null }, inv: [] };
   if (!st.tier) st.tier = { spear: 1, archer: 1, cav: 1 };
   if (!st.hero) st.hero = { lv: 1, xp: 0, sp: 0, sk: { atk: 0, def: 0, loot: 0 } };
-  if (st.hero.look === undefined) st.hero.look = 0;
+  if (!(st.hero.look >= 1 && st.hero.look <= 5)) st.hero.look = 1;
   if (st.upg === undefined) st.upg = null;
   if (st.gems === undefined) { st.gems = 0; st.vip = 0; st.daily = 0; st.bought = {}; }
 }
@@ -774,7 +774,7 @@ function act(a, arg) {
     case 'claim': if (typeof arg === 'string') claim(arg); break;
     case 'intro': S.introDone = true; break;
     case 'bag': buyBag(); break;
-    case 'look': { const n = Math.floor(Number(arg)); if (n >= 0 && n <= LOOKS.length) S.hero.look = n; break; }
+    case 'look': { const n = Math.floor(Number(arg)); if (n >= 1 && n <= LOOKS.length) S.hero.look = n; break; }
     case 'buy': if (typeof arg === 'string') buy(arg); break;
     case 'daily': claimDaily(); break;
     case 'streak': claimStreak(); break;

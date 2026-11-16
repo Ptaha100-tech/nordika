@@ -975,13 +975,12 @@ function bossHTML(){
 }
 /* ---------- свой профиль ---------- */
 function looksSheet(){
-  const cur=(S.hero.look)|0,L=Core.LOOKS;
-  const one=(n,t)=>`<button class="lk ${cur===n?'on':''}" data-act="look" data-arg="${n}" type="button">${n?`<span class="lki full"><img src="img/herop${n}.webp" alt=""></span>`:`<span class="lki"><canvas width="152" height="200" data-std="1"></canvas></span>`}<b>${t}</b></button>`;
+  const cur=(S.hero.look)||1,L=Core.LOOKS;
+  const one=(n,t)=>`<button class="lk ${cur===n?'on':''}" data-act="look" data-arg="${n}" type="button"><span class="lki full"><img src="img/herop${n}.webp" alt=""></span><b>${t}</b></button>`;
   $('modal').innerHTML=`<div class="sheet"><div class="trow2"><h3>Облик ярла</h3><button class="btn small ghost" data-act="sheetx">Закрыть</button></div>
     <p class="sm muted">Выберите, как выглядит ваш ярл. Облик виден вам в игре, на силу он не влияет.</p>
-    <div class="lkg">${one(0,'По уровню')}${L.map((t,i)=>one(i+1,t)).join('')}</div></div>`;
+    <div class="lkg">${L.map((t,i)=>one(i+1,t)).join('')}</div></div>`;
   $('modal').hidden=false;
-  try{const cv=$('modal').querySelector('canvas[data-std]');if(cv)Art.drawHero(cv,S.hero.lv,true);}catch(e){}
 }
 async function meSheet(){
   let p=null;try{p=await call('GET','/api/profile?id='+encodeURIComponent(S.pid));}catch(e){}
