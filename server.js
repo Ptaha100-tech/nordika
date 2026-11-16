@@ -474,9 +474,17 @@ async function api(req, res, url) {
   if (!u) return json(res, 401, { error: 'Нужно войти.' });
   if (u.banned) return json(res, 403, { error: 'Аккаунт заблокирован: ' + (u.banned.reason || 'нарушение правил') });
 
+  const incomingOf = id => {
+    const now = Date.now(), out = [];
+    for (const t of users.values()) {
+      if (t.banned || t.id === id || !t.state) continue;
+      for (const m of t.state.marches || []) if (m.phase === 'out' && m.arrive > now && m.tgt && m.tgt.kind === 'player' && m.tgt.pid === id) out.push({ id: m.id + t.id.slice(0, 4), name: t.name, eta: m.arrive });
+    }
+    return out.sort((x, y) => x.eta - y.eta).slice(0, 5);
+  };
   if (req.method === 'GET' && url === '/api/state') {
     touchState(u);
-    return json(res, 200, { state: u.state, cfg: { t: Core.CFG.t }, now: Date.now() });
+    return json(res, 200, { state: u.state, cfg: { t: Core.CFG.t }, now: Date.now(), inc: incomingOf(u.id) });
   }
   if (req.method === 'POST' && url === '/api/act') {
     if (limited('act:' + u.id, 10, 3000)) return json(res, 429, { error: 'Слишком быстро.' });
@@ -486,7 +494,7 @@ async function api(req, res, url) {
     Core.act(b.a, b.arg);
     Core.update();
     markDirty(u);
-    return json(res, 200, { state: u.state, cfg: { t: Core.CFG.t }, now: Date.now() });
+    return json(res, 200, { state: u.state, cfg: { t: Core.CFG.t }, now: Date.now(), inc: incomingOf(u.id) });
   }
   if (req.method === 'GET' && url === '/api/rank') {
     const list = ranking();

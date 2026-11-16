@@ -272,6 +272,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--frost);outline-
 .tag4{display:inline-block;padding:1px 6px;border:1px solid var(--accent);border-radius:4px;color:var(--accent);font-size:12px;letter-spacing:.08em;margin-right:6px;vertical-align:2px}
 .hrow{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:8px 0;border-top:1px solid var(--line)}
 .hrow>div{min-width:0}
+.incb{margin:8px 12px;padding:10px 12px;border:1px solid #c0392b;background:rgba(192,57,43,.2);border-radius:10px;color:#ffd9d2;font-size:14px;animation:incp 1.4s ease-in-out infinite}.incb .sm{opacity:.85;font-size:12px}@keyframes incp{50%{box-shadow:0 0 14px #c0392b}}
 </style>
 </head>
 <body>
@@ -297,6 +298,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--frost);outline-
     </div>
     <div class="res" id="res"></div>
     <div id="net" hidden>Нет связи с сервером</div>
+    <div id="inc" class="incb" hidden></div>
   </header>
   <main id="view" class="scroll"><div id="hero" hidden><video id="heroV" muted loop autoplay playsinline preload="auto" poster="/city-poster.jpg" disablepictureinpicture><source src="/city.mp4" type="video/mp4"></video><video id="heroB" muted loop playsinline preload="none" poster="/barracks-poster.jpg" disablepictureinpicture hidden><source src="/barracks.mp4" type="video/mp4"></video></div><div id="list"></div></main>
   <nav id="nav"></nav>
@@ -332,12 +334,27 @@ async function call(method,path,body){
   return j;
 }
 let lastNow=0;
+function setInc(a){
+  const known=ui.incSeen||(ui.incSeen={});
+  const fresh=a.filter(x=>!known[x.id]);
+  a.forEach(x=>known[x.id]=1);
+  ui.inc=a;
+  if(fresh.length){try{window.Snd&&Snd.sfx('horn');}catch(e){}try{navigator.vibrate&&navigator.vibrate([200,100,200]);}catch(e){}toast('⚔ На вас идёт нападение: '+fresh[0].name);}
+  incDraw();
+}
+function incDraw(){
+  const el=$('inc');if(!el)return;
+  const now=Date.now()+off,l=(ui.inc||[]).filter(x=>x.eta>now);
+  if(!l.length){el.hidden=true;return;}
+  el.hidden=false;
+  el.innerHTML='⚔ <b>На вас идёт нападение!</b> '+l.map(x=>esc(x.name)+' через '+fmtT(Math.max(0,Math.ceil((x.eta-now)/1000)))).join(' · ')+'<br><span class="sm">Отправьте войска в поход, потратьте ресурсы или поднимите щит в магазине.</span>';
+}
 function apply(j){
   if(j.now<lastNow)return;lastNow=j.now;
   off=j.now-Date.now();Core.setNow(()=>Date.now()+off);
   Core.CFG.t=j.cfg.t;
   const first=S===null;
-  S=j.state;Core.use(S);
+  S=j.state;Core.use(S);setInc(j.inc||[]);
   const fresh=S.log.filter(e=>e.t>seenLog);
   if(!first&&window.Snd&&fresh.some(e=>e.k==='bad'&&/разграбил|напал|набег/i.test(e.txt)))Snd.sfx('alarm');
   if(!first){fresh.slice(0,2).reverse().forEach(e=>toast(e.txt.length>70?e.txt.slice(0,67)+'…':e.txt));}
@@ -1405,7 +1422,8 @@ function boot(){
     live();
     if(Date.now()-lastSync>2500&&dueSoon())sync();
   },1000);
-  setInterval(()=>{if(S&&!document.hidden&&!ui.modal)sync();},20000);
+  setInterval(()=>{if(S&&!document.hidden&&!ui.modal)sync();},15000);
+  setInterval(()=>{if(S)incDraw();},1000);
   const avT=setInterval(()=>{if(S&&!$('app').hidden){clearInterval(avT);loadAvatar();}},1500);
   const clT=setInterval(()=>{if(S&&S.introDone&&!$('app').hidden){clearInterval(clT);loadChangelog(true);}},3000);
   setInterval(()=>{if(S&&!document.hidden&&ui.tab==='map'&&ui.msub==='world')loadWorld();},12000);
