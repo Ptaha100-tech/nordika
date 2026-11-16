@@ -355,6 +355,8 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--frost);outline-
 .lk b{font-size:12px;font-weight:600}
 .lki{display:flex;width:100%;height:120px;align-items:flex-end;justify-content:center;background:radial-gradient(ellipse at 50% 30%,#3a2e24,#14100d);border-radius:5px;overflow:hidden}
 .lki img,.lki canvas{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain}
+.eqpt.full{left:0;top:0;width:100%;height:100%;transform:none;object-fit:cover;object-position:50% 22%;filter:none}
+.lki.full img{width:100%;height:100%;object-fit:cover;object-position:50% 20%}
 </style>
 </head>
 <body>
@@ -390,7 +392,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--frost);outline-
 
 <script src="/core.js"></script>
 <script src="/audio.js"></script>
-<script>/*PICS*/window.PIC={};[['herov',5],['hall',6],['farm',6],['sawmill',6],['quarry',6],['ironmine',6],['storehouse',6],['vault',6],['barracks',6],['oracle',6],['silvermine',6],['plot',1],['spear',7],['archer',7],['cav',7],['hero',7]].forEach(function(a){PIC[a[0]]=[];for(var i=1;i<=a[1];i++)PIC[a[0]].push('/img/'+a[0]+i+'.webp');});</script>
+<script>/*PICS*/window.PIC={};[['herop',5],['hall',6],['farm',6],['sawmill',6],['quarry',6],['ironmine',6],['storehouse',6],['vault',6],['barracks',6],['oracle',6],['silvermine',6],['plot',1],['spear',7],['archer',7],['cav',7],['hero',7]].forEach(function(a){PIC[a[0]]=[];for(var i=1;i<=a[1];i++)PIC[a[0]].push('/img/'+a[0]+i+'.webp');});</script>
 <script src="/art.js"></script>
 <script>
 'use strict';
@@ -646,7 +648,7 @@ function eqSheet(){
   $('modal').innerHTML=`<div class="sheet eqw"><i class="rv a"></i><i class="rv b"></i><i class="rv c"></i><i class="rv d"></i>
     <div class="eqban"><span>Снаряжение</span></div>
     <div class="eqtop"><div class="eqcol">${['helm','armor','gloves','pants','belt'].map(eqCell).join('')}</div>
-      <div class="eqhero"><img class="eqpt" src="${S.hero.look?'img/herov'+S.hero.look+'.webp':'img/hero'+(1+[1,5,10,15,20,25,30].reduce((a,v,k)=>H.lv>=v?k:a,0))+'.webp'}" alt="Ярл"><div class="eqnm"><b>${esc(S.name)}</b><span>Уровень ${H.lv}</span></div></div>
+      <div class="eqhero"><img class="eqpt ${S.hero.look?'full':''}" src="${S.hero.look?'img/herop'+S.hero.look+'.webp':'img/hero'+(1+[1,5,10,15,20,25,30].reduce((a,v,k)=>H.lv>=v?k:a,0))+'.webp'}" alt="Ярл"><div class="eqnm"><b>${esc(S.name)}</b><span>Уровень ${H.lv}</span></div></div>
       <div class="eqcol">${['cloak','weapon','amulet','ring1','ring2'].map(eqCell).join('')}</div></div>
     <div class="eqbars"><div class="eqbar rd"><i style="width:${Math.min(100,tot.atk*100/0.3)}%"></i><span>Атака</span><b>${pc(tot.atk)}</b></div><div class="eqbar gn"><i style="width:${Math.min(100,tot.def*100/0.3)}%"></i><span>Защита</span><b>${pc(tot.def)}</b></div><div class="eqbar bl"><i style="width:${Math.min(100,tot.loot*100/0.3)}%"></i><span>Ноша</span><b>${pc(tot.loot)}</b></div><div class="eqbar gd"><i style="width:${Math.min(100,tot.eco*100/0.3)}%"></i><span>Добыча</span><b>${pc(tot.eco)}</b></div></div>
     <div class="eqdet">${det}</div>
@@ -974,12 +976,12 @@ function bossHTML(){
 /* ---------- свой профиль ---------- */
 function looksSheet(){
   const cur=(S.hero.look)|0,L=Core.LOOKS;
-  const one=(n,t)=>`<button class="lk ${cur===n?'on':''}" data-act="look" data-arg="${n}" type="button">${n?`<span class="lki"><img src="img/herov${n}.webp" alt=""></span>`:`<span class="lki"><canvas width="152" height="200" data-hero="${S.hero.lv}" data-std="1"></canvas></span>`}<b>${t}</b></button>`;
+  const one=(n,t)=>`<button class="lk ${cur===n?'on':''}" data-act="look" data-arg="${n}" type="button">${n?`<span class="lki full"><img src="img/herop${n}.webp" alt=""></span>`:`<span class="lki"><canvas width="152" height="200" data-std="1"></canvas></span>`}<b>${t}</b></button>`;
   $('modal').innerHTML=`<div class="sheet"><div class="trow2"><h3>Облик ярла</h3><button class="btn small ghost" data-act="sheetx">Закрыть</button></div>
     <p class="sm muted">Выберите, как выглядит ваш ярл. Облик виден вам в игре, на силу он не влияет.</p>
     <div class="lkg">${one(0,'По уровню')}${L.map((t,i)=>one(i+1,t)).join('')}</div></div>`;
   $('modal').hidden=false;
-  try{const cv=$('modal').querySelector('canvas[data-std]');if(cv){const h=S.hero.look;S.hero.look=0;Art.drawHero(cv,S.hero.lv);S.hero.look=h;}}catch(e){}
+  try{const cv=$('modal').querySelector('canvas[data-std]');if(cv)Art.drawHero(cv,S.hero.lv,true);}catch(e){}
 }
 async function meSheet(){
   let p=null;try{p=await call('GET','/api/profile?id='+encodeURIComponent(S.pid));}catch(e){}
