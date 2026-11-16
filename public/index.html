@@ -274,21 +274,34 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--frost);outline-
 .hrow>div{min-width:0}
 .incb{margin:8px 12px;padding:10px 12px;border:1px solid #c0392b;background:rgba(192,57,43,.2);border-radius:10px;color:#ffd9d2;font-size:14px;animation:incp 1.4s ease-in-out infinite}.incb .sm{opacity:.85;font-size:12px}@keyframes incp{50%{box-shadow:0 0 14px #c0392b}}
 
-.eqw{max-height:92vh;overflow-y:auto;background:linear-gradient(#4a2f22,#2c1b14);border:3px solid #7a5238}
+.eqw{position:relative;max-height:92vh;overflow-y:auto;padding:22px 14px 14px;background:linear-gradient(#26201c,#15110f);border:7px solid #4a3827;border-image:linear-gradient(#6a5236,#2c2018 50%,#6a5236) 1;box-shadow:inset 0 0 0 2px #1a120c,inset 0 0 0 3px #8a6a3a,0 0 30px #000}
+.eqw .rv{position:absolute;width:12px;height:12px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#f3d58a,#8a6a2a 60%,#3a2a10);box-shadow:0 1px 2px #000;z-index:3}
+.eqw .rv.a{left:4px;top:4px}.eqw .rv.b{right:4px;top:4px}.eqw .rv.c{left:4px;bottom:4px}.eqw .rv.d{right:4px;bottom:4px}
+.eqban{position:relative;margin:-8px auto 12px;width:max-content;max-width:90%;padding:6px 26px;background:linear-gradient(#6b5226,#3d2c12);border:2px solid #d8b25a;border-radius:6px;box-shadow:0 2px 8px #000,inset 0 0 0 1px #2a1d0a}
+.eqban span{font:700 18px/1.1 Georgia,'Times New Roman',serif;letter-spacing:.14em;text-transform:uppercase;color:#f6dc9a;text-shadow:0 1px 2px #000}
+.eqbars{display:flex;flex-direction:column;gap:5px;margin:8px 0;padding:8px;border:2px solid #4a3827;border-radius:8px;background:#100c0a}
+.eqbar{position:relative;height:20px;border-radius:10px;border:1px solid #000;background:#1b1512;overflow:hidden;display:flex;align-items:center;justify-content:space-between;padding:0 10px;font-size:12px;color:#fff;text-shadow:0 1px 2px #000}
+.eqbar i{position:absolute;left:0;top:0;bottom:0;min-width:6px;border-radius:10px}
+.eqbar span,.eqbar b{position:relative}
+.eqbar.rd i{background:linear-gradient(#e0504a,#7a1b18)}.eqbar.gn i{background:linear-gradient(#59b84a,#1f5a1a)}.eqbar.bl i{background:linear-gradient(#4a9ae0,#18417a)}.eqbar.gd i{background:linear-gradient(#e0b04a,#7a5a18)}
+.eqhd{margin:10px 0 0;text-align:center;font:700 13px Georgia,serif;letter-spacing:.12em;text-transform:uppercase;color:#d8b25a;display:flex;justify-content:center;gap:10px}
+.eqnm{position:absolute;left:0;right:0;bottom:8px;text-align:center;display:flex;flex-direction:column;text-shadow:0 2px 4px #000}
+.eqnm b{font:700 20px Georgia,serif;color:#fff1cf}.eqnm span{font-size:12px;color:#e6d3a8}
+.eqx{display:block;margin:12px auto 0;padding:8px 34px;font:700 14px Georgia,serif;color:#f6dc9a;background:linear-gradient(#5a4220,#2e2010);border:2px solid #b8923f;border-radius:6px;cursor:pointer}
 .eqtop{display:grid;grid-template-columns:64px 1fr 64px;gap:6px;align-items:start}
 .eqcol{display:flex;flex-direction:column;gap:6px}
-.eqc{display:flex;flex-direction:column;align-items:center;font-size:10px;color:#d9bfa5}
-.eqs{position:relative;width:58px;height:58px;border-radius:8px;border:2px solid #6b4a36;background:#1c1411;display:flex;align-items:center;justify-content:center;padding:0;overflow:hidden;font-size:26px}
+.eqc{display:flex;flex-direction:column;align-items:center;font-size:10px;color:#c9b48c}
+.eqs{position:relative;width:58px;height:58px;border-radius:4px;border:2px solid #7a5c36;background:radial-gradient(#2a211b,#0f0b09);box-shadow:inset 0 0 8px #000;display:flex;align-items:center;justify-content:center;padding:0;overflow:hidden;font-size:26px}
 .eqs.empty{opacity:.35;background:#e9cdbd22}
 .eqs.r1{border-color:#6fa8ff}.eqs.r2{border-color:#c78bff;box-shadow:0 0 8px #c78bff88}.eqs.sel{outline:2px solid #f2b233}
 .eqs .eqg{opacity:.85}.eqs .eqi{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#1c1411}
 .eqil{position:absolute;right:3px;bottom:1px;font-size:10px;font-style:normal;color:#ffe08a;text-shadow:0 0 3px #000}
-.eqhero{display:flex;flex-direction:column;align-items:center;border:3px solid #e3a21a;border-radius:6px;background:linear-gradient(#5d3d2e,#241510);padding:6px 2px;min-height:200px}
-.eqhero canvas{width:100%;max-width:120px;height:auto}
+.eqhero{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;border:3px solid #6b5230;border-radius:4px;background:radial-gradient(ellipse at 50% 30%,#4a3a2c,#14100d);padding:6px 2px 56px;min-height:388px;box-shadow:inset 0 0 20px #000}
+.eqhero canvas{width:100%;max-width:140px;height:auto}
 .eqst{display:grid;grid-template-columns:1fr 1fr;gap:2px 10px;margin:10px 0;padding:8px 10px;border:2px solid #6b4a36;border-radius:6px;background:#2a1a13;font-size:13px}
 .eqdet{min-height:56px;padding:8px 10px;border:1px dashed #6b4a36;border-radius:6px}
 .eqb{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
-.eqgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;padding:8px;border:2px solid #6b4a36;border-radius:8px;background:#161010}
+.eqgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;padding:8px;border:2px solid #4a3827;border-radius:4px;background:#0f0b09}
 .eqgrid .eqs{width:100%;height:auto;aspect-ratio:1}
 .eqforge{display:flex;gap:10px;justify-content:space-between;align-items:center;margin-top:10px;padding-top:8px;border-top:1px solid #6b4a36}
 
@@ -594,16 +607,19 @@ function eqSheet(){
   const grp={};E.inv.forEach(it=>{if(it.r<2){const g=it.slot+':'+it.r;grp[g]=(grp[g]||0)+1;}});
   const mg=Object.keys(grp).filter(g=>grp[g]>=3);
   const tabs=[['all','Все'],['w','Оружие'],['a','Броня']];
-  $('modal').innerHTML=`<div class="sheet eqw"><div class="trow2"><h3>Снаряжение</h3><button class="btn small ghost" data-act="sheetx">Закрыть</button></div>
+  $('modal').innerHTML=`<div class="sheet eqw"><i class="rv a"></i><i class="rv b"></i><i class="rv c"></i><i class="rv d"></i>
+    <div class="eqban"><span>Снаряжение</span></div>
     <div class="eqtop"><div class="eqcol">${['helm','armor','gloves','pants','belt'].map(eqCell).join('')}</div>
-      <div class="eqhero"><canvas width="152" height="200" data-hero="${H.lv}" aria-label="Ярл"></canvas><b>${esc(S.name)}</b><span class="muted sm">ур. ${H.lv}</span></div>
+      <div class="eqhero"><canvas width="152" height="200" data-hero="${H.lv}" aria-label="Ярл"></canvas><div class="eqnm"><b>${esc(S.name)}</b><span>Уровень ${H.lv}</span></div></div>
       <div class="eqcol">${['cloak','weapon','amulet','ring1','ring2'].map(eqCell).join('')}</div></div>
-    <div class="eqst"><span>Атака ${pc(tot.atk)}</span><span>Защита ${pc(tot.def)}</span><span>Ноша ${pc(tot.loot)}</span><span>Добыча ${pc(tot.eco)}</span></div>
+    <div class="eqbars"><div class="eqbar rd"><i style="width:${Math.min(100,tot.atk*100/0.3)}%"></i><span>Атака</span><b>${pc(tot.atk)}</b></div><div class="eqbar gn"><i style="width:${Math.min(100,tot.def*100/0.3)}%"></i><span>Защита</span><b>${pc(tot.def)}</b></div><div class="eqbar bl"><i style="width:${Math.min(100,tot.loot*100/0.3)}%"></i><span>Ноша</span><b>${pc(tot.loot)}</b></div><div class="eqbar gd"><i style="width:${Math.min(100,tot.eco*100/0.3)}%"></i><span>Добыча</span><b>${pc(tot.eco)}</b></div></div>
     <div class="eqdet">${det}</div>
-    <div class="subtabs" style="margin:8px 0">${tabs.map(t=>`<button class="btn small ${t[0]===f?'on':'ghost'}" data-act="eqf" data-arg="${t[0]}">${t[1]}</button>`).join('')}<span class="lv" style="margin-left:auto">${E.inv.length}/${Core.EQMAX}</span></div>
+    <div class="eqhd"><span>Сумка</span><span class="lv">${E.inv.length}/${Core.EQMAX}</span></div>
+    <div class="subtabs" style="margin:6px 0">${tabs.map(t=>`<button class="btn small ${t[0]===f?'on':'ghost'}" data-act="eqf" data-arg="${t[0]}">${t[1]}</button>`).join('')}</div>
     <div class="eqgrid">${cells}</div>
     ${mg.length?`<p class="sm muted" style="margin:8px 0 2px">Слияние: три одинаковых предмета дают один следующей редкости.</p>`+mg.map(g=>{const [sl,r]=g.split(':');return `<button class="btn small" style="margin:3px" data-act="merge" data-arg="${g}">${Core.SLOTS[sl].n}: 3 ${Core.RARN[r].toLowerCase()}х → ${Core.RARN[+r+1].toLowerCase()}</button>`;}).join(''):''}
-    <div class="eqforge"><div style="min-width:0"><b>Кузница</b><p class="sm muted" style="margin:0">Куёт случайный предмет. Нужна Палата ярла 3.</p><div class="costs" style="margin:4px 0 0">${Object.keys(fc).map(k=>cpHTML(k,fc[k])).join('')}</div></div><button class="btn small ${can?'':'off'}" data-act="forge">Ковать</button></div></div>`;
+    <div class="eqforge"><div style="min-width:0"><b>Кузница</b><p class="sm muted" style="margin:0">Куёт случайный предмет. Нужна Палата ярла 3.</p><div class="costs" style="margin:4px 0 0">${Object.keys(fc).map(k=>cpHTML(k,fc[k])).join('')}</div></div><button class="btn small ${can?'':'off'}" data-act="forge">Ковать</button></div>
+    <button class="eqx" data-act="sheetx" type="button">Назад</button></div>`;
   $('modal').hidden=false;ui.eqOpen=true;
   try{window.Art&&Art.paintIn&&Art.paintIn($('modal'));}catch(e){}
 }
