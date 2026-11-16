@@ -291,6 +291,22 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--frost);outline-
 .eqgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;padding:8px;border:2px solid #6b4a36;border-radius:8px;background:#161010}
 .eqgrid .eqs{width:100%;height:auto;aspect-ratio:1}
 .eqforge{display:flex;gap:10px;justify-content:space-between;align-items:center;margin-top:10px;padding-top:8px;border-top:1px solid #6b4a36}
+
+/* оживление предметов: блик у редких, свечение и искры у эпических */
+.eqs.r1::after,.eqs.r2::after{content:"";position:absolute;inset:-20% auto -20% -60%;width:40%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.35),transparent);transform:skewX(-18deg);animation:eqsh 4.5s ease-in-out infinite;pointer-events:none}
+.eqs.r2::after{animation-duration:3s;background:linear-gradient(100deg,transparent,rgba(255,235,170,.5),transparent)}
+.eqs.r2{animation:eqglow 2.6s ease-in-out infinite}
+.eqs.r2 .eqi{animation:eqbr 2.6s ease-in-out infinite}
+.eqs.t-amulet2 .eqi{animation:eqrune 1.8s ease-in-out infinite}
+.eqs.t-ring1::before,.eqs.t-ring2::before{content:"✦";position:absolute;left:52%;top:30%;font-size:12px;color:#fff;text-shadow:0 0 6px #7fd0ff;animation:eqtw 2.4s ease-in-out infinite;z-index:2;pointer-events:none}
+.eqs.t-ring2::before{text-shadow:0 0 6px #d58bff;animation-duration:1.9s}
+.eqs.t-helm2::before,.eqs.t-weapon2::before,.eqs.t-gloves2::before{content:"✦";position:absolute;right:16%;top:14%;font-size:10px;color:#ffe9a8;text-shadow:0 0 5px #f2b233;animation:eqtw 2.8s ease-in-out infinite;z-index:2;pointer-events:none}
+@keyframes eqsh{0%,55%{left:-60%}100%{left:130%}}
+@keyframes eqglow{50%{box-shadow:0 0 14px #c78bffcc}}
+@keyframes eqbr{50%{filter:brightness(1.22) saturate(1.15)}}
+@keyframes eqrune{50%{filter:brightness(1.5) hue-rotate(-12deg) drop-shadow(0 0 4px #4aa8ff)}}
+@keyframes eqtw{0%,100%{opacity:0;transform:scale(.4)}50%{opacity:1;transform:scale(1.1) rotate(20deg)}}
+@media (prefers-reduced-motion:reduce){.eqs,.eqs::after,.eqs::before,.eqs .eqi{animation:none!important}}
 </style>
 </head>
 <body>
@@ -558,7 +574,7 @@ function eqIcon(it,k){
 }
 function eqCell(k){
   const it=S.eq.s[k],sel=ui.eqSel&&ui.eqSel.slot===k;
-  return `<div class="eqc"><button class="eqs ${it?'r'+it.r:''} ${sel?'sel':''}" data-act="eqsel" data-arg="s:${k}" type="button">${eqIcon(it,k)}${it?`<i class="eqil">${it.il}</i>`:''}</button><span>${EQSN[k]}</span></div>`;
+  return `<div class="eqc"><button class="eqs ${it?'r'+it.r+' t-'+it.slot+it.r:''} ${sel?'sel':''}" data-act="eqsel" data-arg="s:${k}" type="button">${eqIcon(it,k)}${it?`<i class="eqil">${it.il}</i>`:''}</button><span>${EQSN[k]}</span></div>`;
 }
 function eqHTML(){
   return `<section class="card"><h2>Снаряжение ярла</h2><p class="sm muted">Шлем, броня, оружие, кольца и другое дают бонусы к атаке, защите, ноше и добыче.</p><button class="btn" data-act="eq" type="button">Открыть снаряжение</button></section>`;
@@ -569,7 +585,7 @@ function eqSheet(){
   const tot={atk:Core.eqB(S,'atk'),def:Core.eqB(S,'def'),loot:Core.eqB(S,'loot'),eco:Core.eqB(S,'eco')};
   const pc=v=>'+'+Math.round(v*1000)/10+'%';
   const inv=E.inv.slice().sort((a,b)=>b.r-a.r||b.il-a.il).filter(it=>f==='all'||(f==='w'&&['weapon','gloves','ring','amulet'].includes(it.slot))||(f==='a'&&['armor','helm','pants','cloak','belt'].includes(it.slot)));
-  let cells=inv.map(it=>`<button class="eqs r${it.r} ${sel&&sel.id===it.id?'sel':''}" data-act="eqsel" data-arg="i:${it.id}" type="button">${eqIcon(it)}<i class="eqil">${it.il}</i></button>`).join('');
+  let cells=inv.map(it=>`<button class="eqs r${it.r} t-${it.slot}${it.r} ${sel&&sel.id===it.id?'sel':''}" data-act="eqsel" data-arg="i:${it.id}" type="button">${eqIcon(it)}<i class="eqil">${it.il}</i></button>`).join('');
   for(let n=inv.length;n<Math.max(15,Math.ceil(inv.length/5)*5);n++)cells+='<div class="eqs empty"></div>';
   let det='<p class="muted sm">Нажмите на предмет, чтобы увидеть бонус.</p>';
   if(sel&&sel.id){const it=E.inv.find(x=>x.id===sel.id);if(it){const k=it.slot==='ring'?(!E.s.ring1?'ring1':!E.s.ring2?'ring2':'ring1'):it.slot,cur=E.s[k],sc=Core.scrapOf(it);
