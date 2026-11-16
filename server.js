@@ -122,6 +122,68 @@ function touchState(u) {
   markDirty(u);
 }
 
+
+/* ---------- боты-ярлы: живут на карте как обычные игроки ---------- */
+const BOT_DEF = [
+  { name: 'Торвальд',     hall: 4, cap: 9,  mix: { spear: 5, archer: 2, cav: 1 } },
+  { name: 'Ингвар Седой', hall: 6, cap: 12, mix: { spear: 3, archer: 3, cav: 2 } },
+  { name: 'Рагнхильд',    hall: 5, cap: 10, mix: { spear: 2, archer: 4, cav: 2 } },
+  { name: 'Свейн Лютый',  hall: 7, cap: 13, mix: { spear: 2, archer: 2, cav: 4 } },
+  { name: 'Эйрик Рыжий',  hall: 3, cap: 8,  mix: { spear: 4, archer: 3, cav: 1 } }
+];
+const lastBotHit = new Map();
+function makeBot(d) {
+  const key = d.name.toLowerCase(); if (byName.has(key)) return;
+  const id = crypto.randomBytes(8).toString('hex');
+  Core.setNow(Date.now);
+  const st = Core.newState(d.name, id); Core.use(st);
+  const h = d.hall;
+  Object.assign(st.b, { hall: h, farm: Math.max(1, h - 1), sawmill: Math.max(1, h - 1), quarry: Math.max(1, h - 1), ironmine: Math.max(1, h - 1), silvermine: Math.max(0, h - 3), storehouse: Math.max(1, h - 1), barracks: Math.max(1, h - 1) });
+  const t = Math.min(3, 1 + Math.floor(h / 6)); st.tier = { spear: t, archer: t, cav: t };
+  const n = 22 * h, tot = Object.values(d.mix).reduce((a, b) => a + b, 0);
+  st.troops = {}; for (const k in d.mix) st.troops[k] = Math.round(n * d.mix[k] / tot);
+  const cp = Core.cap(); for (const k of Object.keys(st.res)) st.res[k] = Math.round(cp * 0.6);
+  st.shield = 0; st.nextRaid = 9e15; st.stat.trained = 60; st.introDone = true; st.hero.lv = Math.min(10, h);
+  const u = { id, name: d.name, nameKey: key, salt: '', hash: '', tokens: [], state: st, bot: true, bcfg: d, seen: Date.now() };
+  indexUser(u); Core.refreshTargets(); markDirty(u);
+}
+function ensureBots() { try { BOT_DEF.forEach(makeBot); } catch (e) { console.error('ensureBots', e.message); } }
+function botTick(u) {
+  const now = Date.now(), d = u.bcfg || BOT_DEF.find(x => x.name === u.name); if (!d) return;
+  Core.setNow(Date.now); touchState(u);
+  const S = u.state; Core.use(S);
+  if (Math.random() < 0.5) u.seen = now - Math.floor(Math.random() * 120000);
+  if (!u.nextGift || now > u.nextGift) { u.nextGift = now + 6 * 3600000; const cp = Core.cap(); for (const k of Object.keys(S.res)) S.res[k] = Math.min(cp, S.res[k] + cp * 0.1); }
+  const lim = Math.min(d.cap, d.hall + Math.floor((now - S.created) / (2.5 * 86400000)));
+  if (!S.q) {
+    const ks = ['barracks', 'farm', 'sawmill', 'quarry', 'ironmine', 'storehouse', 'hall'].sort((a, b) => (S.b[a] || 0) - (S.b[b] || 0));
+    for (const k of ks) { if (k === 'hall' && S.b.hall >= lim) continue; if (Core.canUp(k)) continue; Core.act('up', k); if (S.q) break; }
+  }
+  const t = Math.min(3, 1 + Math.floor(S.b.hall / 6)); for (const k of Object.keys(S.tier)) if (S.tier[k] < t) S.tier[k] = t;
+  if (!S.train) {
+    const ks = Object.keys(d.mix), tot = ks.reduce((a, k) => a + d.mix[k], 0); let x = Math.random() * tot, k = ks[0];
+    for (const q of ks) { x -= d.mix[q]; if (x <= 0) { k = q; break; } }
+    for (let n = Core.maxBatch(); n >= 4 && !S.train; n = Math.floor(n / 2)) Core.act('train', { k, n });
+  }
+  if (S.marches.length === 0 && (!u.nextAtk || now > u.nextAtk)) {
+    let cands = S.targets.filter(tg => {
+      if (tg.kind !== 'player') return false;
+      const v = users.get(tg.pid); if (!v || v.bot || v.banned || !v.state) return false;
+      if (v.state.b.hall < 3 || v.state.shield > now || (v.seen || 0) < now - 3 * 86400000) return false;
+      if (now - (lastBotHit.get(tg.pid) || 0) < 5 * 3600000) return false;
+      const send = {}; for (const k in S.troops) send[k] = Math.floor(S.troops[k] * 0.7);
+      const r = Core.battle(send, v.state.troops, Core.atkB(S), Core.defB(v.state), Core.tiersOf(S), Core.tiersOf(v.state));
+      return r.win || r.ratio > 0.8;
+    });
+    if (cands.length) {
+      const tg = cands[Math.floor(Math.random() * cands.length)], send = {}; for (const k in S.troops) send[k] = Math.floor(S.troops[k] * 0.7);
+      Core.act('march', { id: tg.id, send }); if (S.marches.length) lastBotHit.set(tg.pid, now);
+    }
+    u.nextAtk = now + (cands.length ? 3 + Math.random() * 4 : 0.2) * 3600000;
+  }
+  markDirty(u);
+}
+function botsTick() { for (const u of users.values()) if (u.bot) { try { botTick(u); } catch (e) { console.error('botTick', u.name, e.message); } } }
 /* ---------- защита от перебора и спама ---------- */
 const buckets = new Map();
 function limited(key, max, windowMs) {
@@ -162,7 +224,7 @@ let evs = { lastAwarded: null, last: null };
 try { evs = Object.assign(evs, JSON.parse(fs.readFileSync(EV_FILE, 'utf8'))); } catch (e) { /* первый запуск */ }
 function weekBoard(w) {
   const rows = [];
-  for (const u of users.values()) { if (u.banned) continue; const v = Core.wkScoreOf(u.state, w); if (v > 0) rows.push({ pid: u.id, name: u.name, clan: sctx.tagOf(u.id), v }); }
+  for (const u of users.values()) { if (u.banned || u.bot) continue; const v = Core.wkScoreOf(u.state, w); if (v > 0) rows.push({ pid: u.id, name: u.name, clan: sctx.tagOf(u.id), v }); }
   rows.sort((a, b) => b.v - a.v || a.name.localeCompare(b.name));
   return rows;
 }
@@ -325,7 +387,7 @@ function seasonTick() {
   if (evs.lastSeason === prev) return;
   if (evs.lastSeason == null) { evs.lastSeason = prev; saveEvs(); return; }
   if (evs.lastSeason < prev) evs.lastSeason = prev - 1;           // сервер долго стоял: награждаем только за последний сезон
-  const rows = ranking().filter(r => { const u = users.get(r.id); return u && !u.banned && r.hall >= SEASON_MIN_HALL; });
+  const rows = ranking().filter(r => { const u = users.get(r.id); return u && !u.banned && !u.bot && r.hall >= SEASON_MIN_HALL; });
   const pl = rows.slice(0, 10), hallPl = [];
   pl.forEach((r, i) => {
     const u = users.get(r.id), pz = SEASON_PL[i] || SEASON_REST;
@@ -336,7 +398,7 @@ function seasonTick() {
   const cl = Object.values(cstore.clans).map(c => ({ c, p: Object.keys(c.members).reduce((a, pid) => a + (users.has(pid) ? Core.score(users.get(pid).state) : 0), 0) })).sort((a, b) => b.p - a.p).slice(0, 3), hallCl = [];
   cl.forEach((x, i) => {
     for (const pid of Object.keys(x.c.members)) {
-      const u = users.get(pid); if (!u || u.banned || u.state.b.hall < SEASON_MIN_HALL) continue;
+      const u = users.get(pid); if (!u || u.banned || u.bot || u.state.b.hall < SEASON_MIN_HALL) continue;
       u.state.gems = (u.state.gems || 0) + SEASON_CL[i];
       Core.addLogTo(u.state, `Сезон «${seasonLabel(prev)}»: клан [${x.c.tag}] занял ${i + 1}-е место. Награда: ${SEASON_CL[i]} рунных камн.`, 'good'); markDirty(u);
     }
@@ -460,7 +522,7 @@ async function api(req, res, url) {
       return json(res, 200, { token });
     }
     const id = byName.get(name.toLowerCase()), u = id && users.get(id);
-    const ok = u && crypto.timingSafeEqual(Buffer.from(hashPw(pw, u.salt), 'hex'), Buffer.from(u.hash, 'hex'));
+    const ok = u && !u.bot && crypto.timingSafeEqual(Buffer.from(hashPw(pw, u.salt), 'hex'), Buffer.from(u.hash, 'hex'));
     if (!ok) return json(res, 401, { error: 'Неверное имя или пароль.' });
     if (u.banned) return json(res, 403, { error: 'Аккаунт заблокирован: ' + (u.banned.reason || 'нарушение правил') });
     const token = newToken(u); markDirty(u);
@@ -650,4 +712,6 @@ const server = http.createServer((req, res) => {
 });
 server.requestTimeout = 15000;
 loadAll();
+ensureBots();
+setTimeout(botsTick, 8000).unref(); setInterval(botsTick, 60000).unref();
 server.listen(PORT, HOST, () => console.log(`Nordika запущена: http://${HOST}:${PORT}  (темп игры x${Core.CFG.t})`));

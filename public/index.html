@@ -593,7 +593,7 @@ function eqHTML(){
   return `<section class="card"><h2>Снаряжение ярла</h2><p class="sm muted">Шлем, броня, оружие, кольца и другое дают бонусы к атаке, защите, ноше и добыче.</p><button class="btn" data-act="eq" type="button">Открыть снаряжение</button></section>`;
 }
 function eqSheet(){
-  const E=S.eq,fc=Core.forgeCost(),can=lvl('hall')>=3&&E.inv.length<Core.EQMAX&&S.res.wood>=fc.wood&&S.res.iron>=fc.iron&&S.res.silver>=fc.silver;
+  const E=S.eq,fc=Core.forgeCost(),can=lvl('hall')>=3&&E.inv.length<Core.eqCap(S)&&S.res.wood>=fc.wood&&S.res.iron>=fc.iron&&S.res.silver>=fc.silver;
   const H=heroOf(S),f=ui.eqF||'all',sel=ui.eqSel;
   const tot={atk:Core.eqB(S,'atk'),def:Core.eqB(S,'def'),loot:Core.eqB(S,'loot'),eco:Core.eqB(S,'eco')};
   const pc=v=>'+'+Math.round(v*1000)/10+'%';
@@ -614,7 +614,8 @@ function eqSheet(){
       <div class="eqcol">${['cloak','weapon','amulet','ring1','ring2'].map(eqCell).join('')}</div></div>
     <div class="eqbars"><div class="eqbar rd"><i style="width:${Math.min(100,tot.atk*100/0.3)}%"></i><span>Атака</span><b>${pc(tot.atk)}</b></div><div class="eqbar gn"><i style="width:${Math.min(100,tot.def*100/0.3)}%"></i><span>Защита</span><b>${pc(tot.def)}</b></div><div class="eqbar bl"><i style="width:${Math.min(100,tot.loot*100/0.3)}%"></i><span>Ноша</span><b>${pc(tot.loot)}</b></div><div class="eqbar gd"><i style="width:${Math.min(100,tot.eco*100/0.3)}%"></i><span>Добыча</span><b>${pc(tot.eco)}</b></div></div>
     <div class="eqdet">${det}</div>
-    <div class="eqhd"><span>Сумка</span><span class="lv">${E.inv.length}/${Core.EQMAX}</span></div>
+    <div class="eqhd"><span>Сумка</span><span class="lv">${E.inv.length}/${Core.eqCap(S)}</span></div>
+    ${(E.bag||0)<Core.BAG_COST.length?`<button class="btn small ghost" style="display:block;margin:6px auto 0" data-act="bag" type="button">Расширить сумку на ${Core.BAG_STEP} мест · ${Core.BAG_COST[E.bag||0]} рунных камней</button>`:''}
     <div class="subtabs" style="margin:6px 0">${tabs.map(t=>`<button class="btn small ${t[0]===f?'on':'ghost'}" data-act="eqf" data-arg="${t[0]}">${t[1]}</button>`).join('')}</div>
     <div class="subtabs sm" style="margin:2px 0 6px;align-items:center"><span class="muted sm">Порядок:</span>${[['r','редкость'],['s','слот'],['l','уровень'],['p','бонус']].map(t=>`<button class="btn small ${t[0]===so?'on':'ghost'}" data-act="eqsort" data-arg="${t[0]}">${t[1]}</button>`).join('')}</div>
     <div class="eqgrid">${cells}</div>
@@ -969,7 +970,7 @@ function helpSheet(){
     ['Войска',`Три вида: ополченец бьёт всадников, охотник бьёт ополченцев, всадник бьёт охотников. Обучение идёт в Казарме, партия растёт с её уровнем. Ступени улучшаются там же за еду, железо и серебро: каждая ступень сильнее на 30% и требует более высокой Казармы.`],
     ['Походы',`Отряд идёт на лагерь разбойников, ресурсную точку или город другого игрока. Число одновременных походов зависит от Палаты ярла. Сколько унесёт отряд, зависит от «ноши» воинов и навыка ярла «Добыча». В описании цели указано время в пути и сбора. Знание «Быстрые драккары» ускоряет походы.`],
     ['Разведка и месть',`Перед нападением на игрока разведайте его: цена в еде и дереве растёт с расстоянием и уровнем Палаты. Если вас разграбили, во вкладке «Войска» можно отомстить: цель добавится в список.`],
-    ['Набеги на вас',`Враги нападают на ваш город раз в несколько часов. После набега действует щит, и следующий набег не придёт сразу. Сильные войска и знание «Стена щитов» помогают отбиваться, а Хранилище защищает часть ресурсов.`],
+    ['Набеги на вас',`На ваш город могут напасть другие ярлы и боты. Когда поход идёт к вам, вверху загорается красная тревога с таймером. После набега действует щит, и следующий набег не придёт сразу. Сильные войска и знание «Стена щитов» помогают отбиваться, а Хранилище защищает часть ресурсов.`],
     ['Оракул',`Открывает знания: атака, защита, добыча, стройка и походы. Уровень знания не может быть выше уровня Оракула. Изучается по одному.`],
     ['Ярл',`Растёт от дел и побед. За уровни даются очки навыков: атака, защита и добыча.`],
     ['Кланы',`Клан даёт общий чат (вкладка «Чат» → «Клан»), взаимную помощь (каждая сокращает дело на 2%, но не меньше чем на 30 секунд, до 10 помощей), цель недели и новости от предводителя.`],

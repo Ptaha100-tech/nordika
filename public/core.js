@@ -146,7 +146,8 @@ const SLOTS = {
 /* места на ярле: два кольца делят один тип предметов */
 const EQS = ['helm', 'cloak', 'armor', 'gloves', 'pants', 'belt', 'weapon', 'amulet', 'ring1', 'ring2'];
 const slotType = k => (k === 'ring1' || k === 'ring2') ? 'ring' : k;
-const SLOTK = Object.keys(SLOTS), RARN = ['Обычное', 'Редкое', 'Эпическое'], EQMAX = 30, EQ_IL = 5;
+const SLOTK = Object.keys(SLOTS), RARN = ['Обычное', 'Редкое', 'Эпическое'], EQMAX = 30, EQ_IL = 5, BAG_STEP = 5, BAG_COST = [20, 30, 45, 65, 90];
+const eqCap = st => EQMAX + BAG_STEP * ((st && st.eq && st.eq.bag) || 0);
 const itemPct = it => Math.round(SLOTS[it.slot].base * [1, 1.7, 2.6][it.r] * (1 + 0.2 * (it.il - 1)) * 10) / 10;
 function eqB(st, stat) {
   if (!st || !st.eq) return 0; let v = 0;
@@ -161,13 +162,19 @@ function newItem(il, w) {
   return { id: 'i' + (S.mid++), slot: pick(SLOTK), r, il: Math.max(1, Math.min(EQ_IL, il)) };
 }
 function giveItem(it, why, t) {
-  if (S.eq.inv.length >= EQMAX) { addLog(`Находка «${itemName(it)}» пропала: сумка полна.`, 'info', t); return false; }
+  if (S.eq.inv.length >= eqCap(S)) { addLog(`Находка «${itemName(it)}» пропала: сумка полна.`, 'info', t); return false; }
   S.eq.inv.push(it); addLog(`${why}: ${RARN[it.r].toLowerCase()} «${itemName(it)}» (+${itemPct(it)}% ${SLOTS[it.slot].w}).`, 'good', t); toast(`Находка: ${itemName(it)}`);
   return true;
 }
+function buyBag() {
+  const n = S.eq.bag || 0;
+  if (n >= BAG_COST.length) { toast('Сумка уже расширена до предела'); return; }
+  if ((S.gems || 0) < BAG_COST[n]) { toast('Не хватает рунных камней'); return; }
+  S.gems -= BAG_COST[n]; S.eq.bag = n + 1; addLog(`Сумка расширена: теперь ${eqCap(S)} мест.`, 'good'); toast(`Сумка: ${eqCap(S)} мест`);
+}
 function forge() {
   if (lvl('hall') < 3) { toast('Ковка открывается с Палаты ярла 3'); return; }
-  if (S.eq.inv.length >= EQMAX) { toast('Сумка полна'); return; }
+  if (S.eq.inv.length >= eqCap(S)) { toast('Сумка полна'); return; }
   const c = forgeCost(); if (!canAfford(c)) { toast('Не хватает ресурсов'); return; }
   pay(c); giveItem(newItem(forgeLvl(), [72, 23, 5]), 'Кузнец выковал');
 }
@@ -177,7 +184,7 @@ function equip(id) {
   S.eq.inv.splice(i, 1); S.eq.s[sl] = it; if (old) S.eq.inv.push(old);
 }
 function unequip(slot) {
-  const it = S.eq.s[slot]; if (!it || S.eq.inv.length >= EQMAX) return;
+  const it = S.eq.s[slot]; if (!it || S.eq.inv.length >= eqCap(S)) return;
   S.eq.s[slot] = null; S.eq.inv.push(it);
 }
 const scrapOf = it => ({ iron: 60 * it.il * (it.r + 1), silver: 30 * it.il * (it.r + 1) });
@@ -371,7 +378,6 @@ function nextEvent(tn) {
     if (m.phase === 'out' && m.arrive <= tn) c.push({ time: m.arrive, run: () => resolveMarch(m) });
     if (m.phase === 'back' && m.back <= tn) c.push({ time: m.back, run: () => returnMarch(m) });
   });
-  if (S.nextRaid <= tn) c.push({ time: S.nextRaid, run: enemyRaid });
   c.sort((a, b) => a.time - b.time);
   return c[0];
 }
@@ -379,7 +385,6 @@ function update() {
   ensure(S);
   wkSync(S);
   const tn = nowMs();
-  if (S.nextRaid < tn - 20 * 60000) S.nextRaid = tn - 20 * 60000;      // за время отсутствия набегов копится не больше одного-двух
   let g = 0, ev;
   while (g++ < 300 && (ev = nextEvent(tn))) { produce(Math.max(ev.time, S.t)); ev.run(); }
   produce(tn);
@@ -765,6 +770,7 @@ function act(a, arg) {
     case 'march': if (arg && typeof arg === 'object') sendMarch(String(arg.id), arg.send); break;
     case 'claim': if (typeof arg === 'string') claim(arg); break;
     case 'intro': S.introDone = true; break;
+    case 'bag': buyBag(); break;
     case 'buy': if (typeof arg === 'string') buy(arg); break;
     case 'daily': claimDaily(); break;
     case 'streak': claimStreak(); break;
@@ -797,7 +803,7 @@ function fmtT(sec) {
 }
 
 const API = {
-  armyAtk, newItem, giveItem, SLOTS, SLOTK, EQS, slotType, EQ_IL, RARN, EQMAX, itemPct, itemName, forgeCost, forgeLvl, scrapOf, eqB,
+  armyAtk, newItem, giveItem, SLOTS, SLOTK, EQS, slotType, EQ_IL, RARN, EQMAX, BAG_COST, BAG_STEP, eqCap, itemPct, itemName, forgeCost, forgeLvl, scrapOf, eqB,
   RES, RI, B, BORDER, U, WEAK, TECH, QUESTS, MAXL, TMAX, CFG, HOOK, NODE, TIERN, TIER_NEED, MAXT, HSK, MAXHL, MAXSK,
   get S() { return S; },
   use, newState, update, produce, settle, battle, act, score, verdict,
