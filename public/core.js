@@ -51,7 +51,8 @@ const TECH = {
   def: { n: 'Стена щитов',      d: '+6% к защите за уровень', r: 'ᚺ' },
   eco: { n: 'Дары земли',       d: '+5% к добыче за уровень', r: 'ᚠ' },
   bld: { n: 'Мастера-строители', d: '−3% ко времени стройки за уровень', r: 'ᛒ' },
-  fast: { n: 'Быстрые драккары', d: '−3% ко времени походов за уровень', r: 'ᚱ' }
+  fast: { n: 'Быстрые драккары', d: '−3% ко времени походов за уровень', r: 'ᚱ' },
+  drill: { n: 'Выучка дружины', d: '−3% ко времени обучения войск за уровень', r: 'ᛗ' }
 };
 const CAMPS = ['Лагерь разбойников', 'Стоянка мародёров', 'Логово берсерков', 'Засада изгоев'];
 const N1 = ['Бьорн', 'Ульф', 'Рагнар', 'Гуннар', 'Эйрик', 'Свейн', 'Торвальд', 'Хальвдан', 'Ивар', 'Олаф', 'Харальд', 'Сигурд', 'Ингвар', 'Гейр'];
@@ -212,7 +213,7 @@ function newState(name, pid) {
     v: 3, pid: pid || '', name: name || 'Ярл', t, created: t,
     res: { food: 800, wood: 800, stone: 600, iron: 300, silver: 150 },
     b: { hall: 1, farm: 1, sawmill: 1, quarry: 1, ironmine: 1, silvermine: 0, storehouse: 1, vault: 0, barracks: 1, oracle: 0 },
-    tech: { atk: 0, def: 0, eco: 0, bld: 0, fast: 0 }, q: null, train: null, study: null,
+    tech: { atk: 0, def: 0, eco: 0, bld: 0, fast: 0, drill: 0 }, q: null, train: null, study: null,
     troops: { spear: 12, archer: 0, cav: 0 }, marches: [], targets: [], tgtAt: 0,
     shield: t + 90 * 60000, nextRaid: t + 120 * 60000, haste: 2,
     stat: { trained: 0, wins: 0, campWins: 0, researched: 0, defWins: 0, built: 0, gathered: 0, pvpWins: 0 },
@@ -224,7 +225,7 @@ function newState(name, pid) {
 function use(st) { S = st; }
 /* Старые сохранения без героя и ступеней получают их при первом обновлении. */
 function ensure(st) {
-  if (st.tech) { if (st.tech.bld === undefined) st.tech.bld = 0; if (st.tech.fast === undefined) st.tech.fast = 0; }
+  if (st.tech) { if (st.tech.bld === undefined) st.tech.bld = 0; if (st.tech.fast === undefined) st.tech.fast = 0; if (st.tech.drill === undefined) st.tech.drill = 0; }
   if (!st.eq) st.eq = { s: { weapon: null, armor: null, helm: null, amulet: null }, inv: [] };
   if (!st.tier) st.tier = { spear: 1, archer: 1, cav: 1 };
   if (!st.hero) st.hero = { lv: 1, xp: 0, sp: 0, sk: { atk: 0, def: 0, loot: 0 } };
@@ -266,7 +267,7 @@ const canAfford = c => Object.keys(c).every(k => S.res[k] >= c[k]);
 const pay = c => { for (const k in c) S.res[k] -= c[k]; };
 const trainRate = () => 1 + 0.15 * (lvl('barracks') - 1);
 const maxBatch = () => 10 * lvl('barracks') + 10;
-const trainSecs = (k, n) => Math.max(3, Math.round(n * U[k].t / trainRate() * CFG.t * (S && S.stat && S.stat.trained < 30 ? 0.4 : 1)));
+const trainSecs = (k, n) => Math.max(3, Math.round(n * U[k].t / trainRate() * CFG.t * techCut('drill') * (S && S.stat && S.stat.trained < 30 ? 0.4 : 1)));
 const techCost = L => ({ silver: Math.round(120 * grow(L, 1.6, 1.1)), food: Math.round(100 * grow(L, 1.5, 1.1)) });
 const techSecs = L => Math.round(40 * grow(L, 1.55, 1.1) * CFG.t);
 const gatherSecs = () => 25 * CFG.t;
