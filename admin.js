@@ -105,6 +105,7 @@ module.exports = function makeAdmin(env) {
         case 'ban': { if (!need()) return; u.banned = { reason: String(b.reason || 'Нарушение правил').slice(0, 100), t: Date.now() }; u.tokens.forEach(h => byToken.delete(h)); u.tokens = []; markDirty(u); flush(); audit(`Бан: ${u.name} (${u.banned.reason})`); return ok('Игрок заблокирован'); }
         case 'unban': { if (!need()) return; delete u.banned; markDirty(u); audit('Разбан: ' + u.name); return ok('Игрок разблокирован'); }
         case 'mute': { if (!need()) return; const m = Number(b.minutes) || 0; Social.admin.mute(sstore, sctx, u.id, m); setSdirty(); audit(`Мут: ${u.name} на ${m} мин`); return ok(m ? 'Мут выдан' : 'Мут снят'); }
+        case 'noavatar': { if (!need()) return; delete u.avatar; u.frame = 0; markDirty(u); audit('Убран аватар: ' + u.name); return ok('Аватар убран'); }
         case 'clearmsgs': { if (!need()) return; Social.admin.clearWorld(sstore, u.id); setSdirty(); audit('Удалены сообщения: ' + u.name); return ok('Сообщения удалены'); }
         case 'grant': {
           if (!need()) return;

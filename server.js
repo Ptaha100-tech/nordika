@@ -199,6 +199,7 @@ function clanAward(prev) {
   });
   return res.slice(0, 5);
 }
+const FRAME_NEED = [0, 1, 3, 5, 8, 12, 15];   // Палата ярла, с которой открывается рамка
 /* ---------- боссы: мировой и клановый ---------- */
 const BOSS_HITS = 2, BOSS_LOSS = 0.05;
 const WBOSS = ['Йотун Хримтурс', 'Дракон Нидхёгг', 'Волк Фенрир', 'Змей Йормунганд', 'Хель, владычица мёртвых'];
@@ -396,10 +397,10 @@ function send(res, code, body, headers) {
 }
 function json(res, code, obj) { send(res, code, JSON.stringify(obj), { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' }); }
 function ipOf(req) { return (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.socket.remoteAddress || '?'; }
-function readBody(req) {
+function readBody(req, max) {
   return new Promise((resolve, reject) => {
-    let d = '';
-    req.on('data', c => { d += c; if (d.length > 4096) { reject(new Error('big')); req.destroy(); } });
+    let d = ''; const lim = max || 4096;
+    req.on('data', c => { d += c; if (d.length > lim) { reject(new Error('big')); req.destroy(); } });
     req.on('end', () => { try { resolve(d ? JSON.parse(d) : {}); } catch (e) { reject(e); } });
     req.on('error', reject);
   });
@@ -525,6 +526,22 @@ async function api(req, res, url) {
     sdirty = true;
     return json(res, 200, Object.assign(Social.view(sstore, sctx, u.id, String(b.peer || b.to || b.pid || '').slice(0, 16)), { result: r }));
   }
+  if (req.method === 'GET' && url === '/api/avatar') return json(res, 200, { img: u.avatar || '', fr: u.frame || 0 });
+  if (req.method === 'POST' && url === '/api/avatar') {
+    if (limited('avatar:' + u.id, 6, 60000)) return json(res, 429, { error: 'Слишком часто.' });
+    let b; try { b = await readBody(req, 40000); } catch (e) { return json(res, 400, { error: 'Файл слишком большой.' }); }
+    if (b.clear) { delete u.avatar; }
+    else if (typeof b.img === 'string') {
+      if (b.img.length > 26000 || !/^data:image\/(webp|jpeg|png);base64,[A-Za-z0-9+\/=]+$/.test(b.img)) return json(res, 400, { error: 'Не подходит этот файл.' });
+      u.avatar = b.img;
+    }
+    if (b.fr !== undefined) {
+      const f = Number(b.fr) | 0; touchState(u);
+      if (f < 0 || f >= FRAME_NEED.length || u.state.b.hall < FRAME_NEED[f]) return json(res, 400, { error: 'Эта рамка пока закрыта.' });
+      u.frame = f;
+    }
+    markDirty(u); return json(res, 200, { img: u.avatar || '', fr: u.frame || 0 });
+  }
   if (req.method === 'GET' && url === '/api/boss') return json(res, 200, bossView(u));
   if (req.method === 'POST' && url === '/api/boss/hit') {
     if (limited('boss:' + u.id, 6, 10000)) return json(res, 429, { error: 'Слишком быстро.' });
@@ -574,7 +591,7 @@ async function api(req, res, url) {
     if (!t) return json(res, 404, { error: 'Нет такого игрока.' });
     const list = ranking(), idx = list.findIndex(x => x.id === id), c = Clan.clanOf(cstore, id);
     return json(res, 200, { pid: id, name: t.name, hall: t.state.b.hall, score: Core.score(t.state), rank: idx + 1, total: list.length,
-      clan: c ? { tag: c.tag, name: c.name } : null, online: sctx.online(id), seen: (t.seen || 0), me: id === u.id,
+      clan: c ? { tag: c.tag, name: c.name } : null, online: sctx.online(id), seen: (t.seen || 0), av: t.avatar || '', fr: t.frame || 0, me: id === u.id,
       hero: ((t.state.hero && t.state.hero.lv) || 1), stat: { wins: t.state.stat.wins || 0, pvpWins: t.state.stat.pvpWins || 0, campWins: t.state.stat.campWins || 0, defWins: t.state.stat.defWins || 0, trained: t.state.stat.trained || 0 },
       friend: (sstore.friends[u.id] || []).includes(id), blocked: (sstore.blocks[u.id] || []).includes(id) });
   }
