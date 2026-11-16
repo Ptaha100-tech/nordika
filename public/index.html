@@ -285,7 +285,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--frost);outline-
 .eqbar span,.eqbar b{position:relative}
 .eqbar.rd i{background:linear-gradient(#e0504a,#7a1b18)}.eqbar.gn i{background:linear-gradient(#59b84a,#1f5a1a)}.eqbar.bl i{background:linear-gradient(#4a9ae0,#18417a)}.eqbar.gd i{background:linear-gradient(#e0b04a,#7a5a18)}
 .eqhd{margin:10px 0 0;text-align:center;font:700 13px Georgia,serif;letter-spacing:.12em;text-transform:uppercase;color:#d8b25a;display:flex;justify-content:center;gap:10px}
-.eqnm{position:absolute;left:0;right:0;bottom:8px;text-align:center;display:flex;flex-direction:column;text-shadow:0 2px 4px #000}
+.eqnm{position:absolute;left:0;right:0;bottom:0;padding:26px 4px 8px;background:linear-gradient(transparent,#000c);z-index:2;text-align:center;display:flex;flex-direction:column;text-shadow:0 2px 4px #000}
 .eqnm b{font:700 20px Georgia,serif;color:#fff1cf}.eqnm span{font-size:12px;color:#e6d3a8}
 .eqx{display:block;margin:12px auto 0;padding:8px 34px;font:700 14px Georgia,serif;color:#f6dc9a;background:linear-gradient(#5a4220,#2e2010);border:2px solid #b8923f;border-radius:6px;cursor:pointer}
 .eqtop{display:grid;grid-template-columns:64px 1fr 64px;gap:6px;align-items:start}
@@ -296,8 +296,8 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--frost);outline-
 .eqs.r1{border-color:#6fa8ff}.eqs.r2{border-color:#c78bff;box-shadow:0 0 8px #c78bff88}.eqs.sel{outline:2px solid #f2b233}
 .eqs .eqg{opacity:.85}.eqs .eqi{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#1c1411}
 .eqil{position:absolute;right:3px;bottom:1px;font-size:10px;font-style:normal;color:#ffe08a;text-shadow:0 0 3px #000}
-.eqhero{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;border:3px solid #6b5230;border-radius:4px;background:radial-gradient(ellipse at 50% 30%,#4a3a2c,#14100d);padding:6px 2px 56px;min-height:388px;box-shadow:inset 0 0 20px #000}
-.eqhero canvas{width:100%;max-width:140px;height:auto}
+.eqhero{position:relative;overflow:hidden;border:3px solid #6b5230;border-radius:4px;min-height:388px;background:linear-gradient(#0006,#0003 40%,#000a),url(img/eqbg.webp) 50% 20%/cover #14100d;box-shadow:inset 0 0 20px #000}
+.eqpt{position:absolute;left:50%;top:3%;width:170%;max-width:none;transform:translateX(-50%);filter:drop-shadow(0 4px 8px #000a)}
 .eqst{display:grid;grid-template-columns:1fr 1fr;gap:2px 10px;margin:10px 0;padding:8px 10px;border:2px solid #6b4a36;border-radius:6px;background:#2a1a13;font-size:13px}
 .eqdet{min-height:56px;padding:8px 10px;border:1px dashed #6b4a36;border-radius:6px}
 .eqb{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
@@ -646,7 +646,7 @@ function eqSheet(){
   $('modal').innerHTML=`<div class="sheet eqw"><i class="rv a"></i><i class="rv b"></i><i class="rv c"></i><i class="rv d"></i>
     <div class="eqban"><span>Снаряжение</span></div>
     <div class="eqtop"><div class="eqcol">${['helm','armor','gloves','pants','belt'].map(eqCell).join('')}</div>
-      <div class="eqhero"><canvas width="152" height="200" data-hero="${H.lv}" aria-label="Ярл"></canvas><div class="eqnm"><b>${esc(S.name)}</b><span>Уровень ${H.lv}</span></div></div>
+      <div class="eqhero"><img class="eqpt" src="${S.hero.look?'img/herov'+S.hero.look+'.webp':'img/hero'+(1+[1,5,10,15,20,25,30].reduce((a,v,k)=>H.lv>=v?k:a,0))+'.webp'}" alt="Ярл"><div class="eqnm"><b>${esc(S.name)}</b><span>Уровень ${H.lv}</span></div></div>
       <div class="eqcol">${['cloak','weapon','amulet','ring1','ring2'].map(eqCell).join('')}</div></div>
     <div class="eqbars"><div class="eqbar rd"><i style="width:${Math.min(100,tot.atk*100/0.3)}%"></i><span>Атака</span><b>${pc(tot.atk)}</b></div><div class="eqbar gn"><i style="width:${Math.min(100,tot.def*100/0.3)}%"></i><span>Защита</span><b>${pc(tot.def)}</b></div><div class="eqbar bl"><i style="width:${Math.min(100,tot.loot*100/0.3)}%"></i><span>Ноша</span><b>${pc(tot.loot)}</b></div><div class="eqbar gd"><i style="width:${Math.min(100,tot.eco*100/0.3)}%"></i><span>Добыча</span><b>${pc(tot.eco)}</b></div></div>
     <div class="eqdet">${det}</div>
