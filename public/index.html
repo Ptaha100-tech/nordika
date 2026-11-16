@@ -273,6 +273,24 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--frost);outline-
 .hrow{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:8px 0;border-top:1px solid var(--line)}
 .hrow>div{min-width:0}
 .incb{margin:8px 12px;padding:10px 12px;border:1px solid #c0392b;background:rgba(192,57,43,.2);border-radius:10px;color:#ffd9d2;font-size:14px;animation:incp 1.4s ease-in-out infinite}.incb .sm{opacity:.85;font-size:12px}@keyframes incp{50%{box-shadow:0 0 14px #c0392b}}
+
+.eqw{max-height:92vh;overflow-y:auto;background:linear-gradient(#4a2f22,#2c1b14);border:3px solid #7a5238}
+.eqtop{display:grid;grid-template-columns:64px 1fr 64px;gap:6px;align-items:start}
+.eqcol{display:flex;flex-direction:column;gap:6px}
+.eqc{display:flex;flex-direction:column;align-items:center;font-size:10px;color:#d9bfa5}
+.eqs{position:relative;width:58px;height:58px;border-radius:8px;border:2px solid #6b4a36;background:#1c1411;display:flex;align-items:center;justify-content:center;padding:0;overflow:hidden;font-size:26px}
+.eqs.empty{opacity:.35;background:#e9cdbd22}
+.eqs.r1{border-color:#6fa8ff}.eqs.r2{border-color:#c78bff;box-shadow:0 0 8px #c78bff88}.eqs.sel{outline:2px solid #f2b233}
+.eqs .eqg{opacity:.85}.eqs .eqi{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#1c1411}
+.eqil{position:absolute;right:3px;bottom:1px;font-size:10px;font-style:normal;color:#ffe08a;text-shadow:0 0 3px #000}
+.eqhero{display:flex;flex-direction:column;align-items:center;border:3px solid #e3a21a;border-radius:6px;background:linear-gradient(#5d3d2e,#241510);padding:6px 2px;min-height:200px}
+.eqhero canvas{width:100%;max-width:120px;height:auto}
+.eqst{display:grid;grid-template-columns:1fr 1fr;gap:2px 10px;margin:10px 0;padding:8px 10px;border:2px solid #6b4a36;border-radius:6px;background:#2a1a13;font-size:13px}
+.eqdet{min-height:56px;padding:8px 10px;border:1px dashed #6b4a36;border-radius:6px}
+.eqb{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+.eqgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;padding:8px;border:2px solid #6b4a36;border-radius:8px;background:#161010}
+.eqgrid .eqs{width:100%;height:auto;aspect-ratio:1}
+.eqforge{display:flex;gap:10px;justify-content:space-between;align-items:center;margin-top:10px;padding-top:8px;border-top:1px solid #6b4a36}
 </style>
 </head>
 <body>
@@ -373,6 +391,7 @@ async function act(a,arg){
   catch(e){if(e.status===401)logout(true);else toast(e.message);}
   finally{busy=false;}
   render();
+  if(ui.eqOpen&&!$('modal').hidden){if(ui.eqSel&&ui.eqSel.id&&!S.eq.inv.some(x=>x.id===ui.eqSel.id))ui.eqSel=null;eqSheet();}
 }
 
 /* ---------- вход ---------- */
@@ -531,22 +550,46 @@ function heroHTML(){
 }
 const RC=['var(--fg)','#6fa8ff','#c78bff'];
 function itemLine(it){return `<b style="color:${RC[it.r]}">${Core.itemName(it)}</b> <span class="muted sm">${Core.RARN[it.r].toLowerCase()}, ур. ${it.il}</span><p class="sm muted" style="margin:0">+${Core.itemPct(it)}% ${Core.SLOTS[it.slot].w}</p>`;}
+const EQG={helm:'⛑',cloak:'🧥',armor:'🛡',gloves:'🧤',pants:'👖',belt:'🎗',weapon:'⚔',amulet:'🧿',ring:'💍'};
+const EQSN={helm:'Шлем',cloak:'Плащ',armor:'Броня',gloves:'Перчатки',pants:'Штаны',belt:'Пояс',weapon:'Оружие',amulet:'Амулет',ring1:'Кольцо',ring2:'Кольцо'};
+function eqIcon(it,k){
+  const t=it?it.slot:Core.slotType(k);
+  return `<span class="eqg">${EQG[t]}</span>${it?`<img class="eqi" src="img/eq-${it.slot}${it.r}.webp" alt="" onerror="this.remove()">`:''}`;
+}
+function eqCell(k){
+  const it=S.eq.s[k],sel=ui.eqSel&&ui.eqSel.slot===k;
+  return `<div class="eqc"><button class="eqs ${it?'r'+it.r:''} ${sel?'sel':''}" data-act="eqsel" data-arg="s:${k}" type="button">${eqIcon(it,k)}${it?`<i class="eqil">${it.il}</i>`:''}</button><span>${EQSN[k]}</span></div>`;
+}
 function eqHTML(){
+  return `<section class="card"><h2>Снаряжение ярла</h2><p class="sm muted">Шлем, броня, оружие, кольца и другое дают бонусы к атаке, защите, ноше и добыче.</p><button class="btn" data-act="eq" type="button">Открыть снаряжение</button></section>`;
+}
+function eqSheet(){
   const E=S.eq,fc=Core.forgeCost(),can=lvl('hall')>=3&&E.inv.length<Core.EQMAX&&S.res.wood>=fc.wood&&S.res.iron>=fc.iron&&S.res.silver>=fc.silver;
-  let h=`<section class="card"><h2>Снаряжение ярла</h2>`;
-  Core.SLOTK.forEach(k=>{const it=E.s[k];h+=`<div class="trow2" style="margin:8px 0"><div style="min-width:0"><span class="muted sm">${Core.SLOTS[k].n}</span><br>${it?itemLine(it):'<span class="muted sm">Пусто</span>'}</div>${it?`<button class="btn small ghost" data-act="unequip" data-arg="${k}">Снять</button>`:''}</div>`;});
-  h+=`<h3 style="margin-top:12px">Кузница</h3><p class="sm muted">Куёт случайный предмет (чаще обычный, реже редкий и эпический). Уровень предметов растёт с Палатой ярла. Нужна Палата ярла 3.</p>
-    <div class="trow2"><div class="costs" style="margin:0">${Object.keys(fc).map(k=>cpHTML(k,fc[k])).join('')}</div><button class="btn small ${can?'':'off'}" data-act="forge">Ковать</button></div>`;
-  h+=`<h3 style="margin-top:12px">Сумка <span class="lv">${E.inv.length}/${Core.EQMAX}</span></h3>`;
-  const inv=E.inv.slice().sort((a,b)=>b.r-a.r||b.il-a.il);
-  if(!inv.length)h+='<p class="muted sm">Пусто. Предметы выпадают из лагерей разбойников, боссов и выковываются в кузнице.</p>';
-  inv.forEach(it=>{const cur=E.s[it.slot],sc=Core.scrapOf(it);
-    h+=`<div class="trow2" style="margin:8px 0"><div style="min-width:0"><span class="muted sm">${Core.SLOTS[it.slot].n}</span><br>${itemLine(it)}${cur?`<p class="sm" style="margin:0;color:${Core.itemPct(it)>Core.itemPct(cur)?'var(--good,#7ad07a)':'var(--muted)'}">Сейчас надето: +${Core.itemPct(cur)}%</p>`:''}</div>
-      <div style="display:flex;flex-direction:column;gap:4px"><button class="btn small" data-act="equip" data-arg="${it.id}">Надеть</button><button class="btn small ghost" data-act="scrap" data-arg="${it.id}" title="Получите ${fmtRes(sc)}">Разобрать</button></div></div>`;});
+  const H=heroOf(S),f=ui.eqF||'all',sel=ui.eqSel;
+  const tot={atk:Core.eqB(S,'atk'),def:Core.eqB(S,'def'),loot:Core.eqB(S,'loot'),eco:Core.eqB(S,'eco')};
+  const pc=v=>'+'+Math.round(v*1000)/10+'%';
+  const inv=E.inv.slice().sort((a,b)=>b.r-a.r||b.il-a.il).filter(it=>f==='all'||(f==='w'&&['weapon','gloves','ring','amulet'].includes(it.slot))||(f==='a'&&['armor','helm','pants','cloak','belt'].includes(it.slot)));
+  let cells=inv.map(it=>`<button class="eqs r${it.r} ${sel&&sel.id===it.id?'sel':''}" data-act="eqsel" data-arg="i:${it.id}" type="button">${eqIcon(it)}<i class="eqil">${it.il}</i></button>`).join('');
+  for(let n=inv.length;n<Math.max(15,Math.ceil(inv.length/5)*5);n++)cells+='<div class="eqs empty"></div>';
+  let det='<p class="muted sm">Нажмите на предмет, чтобы увидеть бонус.</p>';
+  if(sel&&sel.id){const it=E.inv.find(x=>x.id===sel.id);if(it){const k=it.slot==='ring'?(!E.s.ring1?'ring1':!E.s.ring2?'ring2':'ring1'):it.slot,cur=E.s[k],sc=Core.scrapOf(it);
+    det=`${itemLine(it)}${cur?`<p class="sm" style="margin:2px 0;color:${Core.itemPct(it)>Core.itemPct(cur)?'var(--good,#7ad07a)':'var(--muted)'}">Сейчас надето: +${Core.itemPct(cur)}%</p>`:''}<div class="eqb"><button class="btn small" data-act="equip" data-arg="${it.id}">Надеть</button><button class="btn small ghost" data-act="scrap" data-arg="${it.id}">Разобрать (${fmtRes(sc)})</button></div>`;}}
+  else if(sel&&sel.slot){const it=E.s[sel.slot];det=it?`${itemLine(it)}<div class="eqb"><button class="btn small ghost" data-act="unequip" data-arg="${sel.slot}">Снять</button></div>`:`<p class="muted sm">Слот «${EQSN[sel.slot]}» пуст.</p>`;}
   const grp={};E.inv.forEach(it=>{if(it.r<2){const g=it.slot+':'+it.r;grp[g]=(grp[g]||0)+1;}});
   const mg=Object.keys(grp).filter(g=>grp[g]>=3);
-  if(mg.length)h+=`<h3 style="margin-top:12px">Слияние</h3><p class="sm muted">Три одинаковых предмета (слот и редкость) сливаются в один следующей редкости.</p>`+mg.map(g=>{const [sl,r]=g.split(':');return `<button class="btn small" style="margin:3px" data-act="merge" data-arg="${g}">${Core.SLOTS[sl].n}: 3 ${Core.RARN[r].toLowerCase()}х → ${Core.RARN[+r+1].toLowerCase()}</button>`;}).join('');
-  return h+`</section>`;
+  const tabs=[['all','Все'],['w','Оружие'],['a','Броня']];
+  $('modal').innerHTML=`<div class="sheet eqw"><div class="trow2"><h3>Снаряжение</h3><button class="btn small ghost" data-act="sheetx">Закрыть</button></div>
+    <div class="eqtop"><div class="eqcol">${['helm','armor','gloves','pants','belt'].map(eqCell).join('')}</div>
+      <div class="eqhero"><canvas width="152" height="200" data-hero="${H.lv}" aria-label="Ярл"></canvas><b>${esc(S.name)}</b><span class="muted sm">ур. ${H.lv}</span></div>
+      <div class="eqcol">${['cloak','weapon','amulet','ring1','ring2'].map(eqCell).join('')}</div></div>
+    <div class="eqst"><span>Атака ${pc(tot.atk)}</span><span>Защита ${pc(tot.def)}</span><span>Ноша ${pc(tot.loot)}</span><span>Добыча ${pc(tot.eco)}</span></div>
+    <div class="eqdet">${det}</div>
+    <div class="subtabs" style="margin:8px 0">${tabs.map(t=>`<button class="btn small ${t[0]===f?'on':'ghost'}" data-act="eqf" data-arg="${t[0]}">${t[1]}</button>`).join('')}<span class="lv" style="margin-left:auto">${E.inv.length}/${Core.EQMAX}</span></div>
+    <div class="eqgrid">${cells}</div>
+    ${mg.length?`<p class="sm muted" style="margin:8px 0 2px">Слияние: три одинаковых предмета дают один следующей редкости.</p>`+mg.map(g=>{const [sl,r]=g.split(':');return `<button class="btn small" style="margin:3px" data-act="merge" data-arg="${g}">${Core.SLOTS[sl].n}: 3 ${Core.RARN[r].toLowerCase()}х → ${Core.RARN[+r+1].toLowerCase()}</button>`;}).join(''):''}
+    <div class="eqforge"><div style="min-width:0"><b>Кузница</b><p class="sm muted" style="margin:0">Куёт случайный предмет. Нужна Палата ярла 3.</p><div class="costs" style="margin:4px 0 0">${Object.keys(fc).map(k=>cpHTML(k,fc[k])).join('')}</div></div><button class="btn small ${can?'':'off'}" data-act="forge">Ковать</button></div></div>`;
+  $('modal').hidden=false;ui.eqOpen=true;
+  try{window.Art&&Art.paintIn&&Art.paintIn($('modal'));}catch(e){}
 }
 const TL={atk:'Атака',def:'Защита',eco:'Экономика',bld:'Стройка',fast:'Походы'};
 const KIND={node:'Ресурсная точка',camp:'Разбойники',jarl:'Ярл',player:'Игрок'};
@@ -1326,7 +1369,7 @@ function uSheet(k){
     <div class="tblw"><table class="tbl"><thead><tr><th>Ст.</th><th>Название</th><th>Атака / защита / ноша</th><th>Улучшение до ступени</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
   $('modal').hidden=false;
 }
-function closeModal(){ui.topOpen=false;ui.modal=null;$('modal').hidden=true;$('modal').innerHTML='';}
+function closeModal(){ui.topOpen=false;ui.eqOpen=false;ui.modal=null;$('modal').hidden=true;$('modal').innerHTML='';}
 
 /* ---------- события ---------- */
 async function loadRank(){
@@ -1342,6 +1385,9 @@ function onAct(act,arg){
     case 'wprof':ui.tab='chat';ui.sub='world';ui.soc.peer=null;render();loadSoc();openProf({id:arg});return;
     case 'reply':{const el=$('wmsg');if(el){const v=el.value.replace(/^[^,]{1,16}, /,'');el.value=arg+', '+v;el.focus();}return;}
     case 'me':meSheet();return;
+    case 'eq':ui.eqSel=null;eqSheet();return;
+    case 'eqf':ui.eqF=arg;eqSheet();return;
+    case 'eqsel':{const [a,v]=String(arg).split(':');ui.eqSel=a==='i'?{id:v}:{slot:v};eqSheet();return;}
     case 'frame':saveAv({fr:Number(arg)});return;
     case 'avclr':saveAv({clear:true});return;
     case 'top':topSheet();return;

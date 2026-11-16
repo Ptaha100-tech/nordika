@@ -136,13 +136,21 @@ const SLOTS = {
   weapon: { n: 'Оружие',  stat: 'atk',  base: 3, w: 'к атаке всех воинов',      names: ['Дубовый топор', 'Стальная секира', 'Клинок ярла'] },
   armor:  { n: 'Броня',   stat: 'def',  base: 3, w: 'к защите всех воинов',     names: ['Кожаная броня', 'Кольчуга', 'Доспех берсерка'] },
   helm:   { n: 'Шлем',    stat: 'loot', base: 4, w: 'к ноше в походах',         names: ['Кожаный шлем', 'Шлем с наносником', 'Рогатый шлем'] },
-  amulet: { n: 'Амулет',  stat: 'eco',  base: 3, w: 'к добыче в городе',        names: ['Костяной амулет', 'Молот Тора', 'Руна Одина'] }
+  amulet: { n: 'Амулет',  stat: 'eco',  base: 3, w: 'к добыче в городе',        names: ['Костяной амулет', 'Молот Тора', 'Руна Одина'] },
+  gloves: { n: 'Перчатки', stat: 'atk', base: 2, w: 'к атаке всех воинов',      names: ['Кожаные рукавицы', 'Стальные перчатки', 'Перчатки берсерка'] },
+  pants:  { n: 'Штаны',   stat: 'def',  base: 2, w: 'к защите всех воинов',     names: ['Шерстяные штаны', 'Кольчужные поножи', 'Поножи ярла'] },
+  cloak:  { n: 'Плащ',    stat: 'def',  base: 2, w: 'к защите всех воинов',     names: ['Тканый плащ', 'Волчий плащ', 'Медвежья шкура'] },
+  belt:   { n: 'Пояс',    stat: 'loot', base: 3, w: 'к ноше в походах',         names: ['Кожаный пояс', 'Пояс с пряжкой', 'Пояс великана'] },
+  ring:   { n: 'Кольцо',  stat: 'eco',  base: 2, w: 'к добыче в городе',        names: ['Медное кольцо', 'Серебряное кольцо', 'Золотое кольцо'] }
 };
+/* места на ярле: два кольца делят один тип предметов */
+const EQS = ['helm', 'cloak', 'armor', 'gloves', 'pants', 'belt', 'weapon', 'amulet', 'ring1', 'ring2'];
+const slotType = k => (k === 'ring1' || k === 'ring2') ? 'ring' : k;
 const SLOTK = Object.keys(SLOTS), RARN = ['Обычное', 'Редкое', 'Эпическое'], EQMAX = 30, EQ_IL = 5;
 const itemPct = it => Math.round(SLOTS[it.slot].base * [1, 1.7, 2.6][it.r] * (1 + 0.2 * (it.il - 1)) * 10) / 10;
 function eqB(st, stat) {
   if (!st || !st.eq) return 0; let v = 0;
-  SLOTK.forEach(k => { const it = st.eq.s[k]; if (it && SLOTS[k].stat === stat) v += itemPct(it) / 100; });
+  EQS.forEach(k => { const it = st.eq.s[k]; if (it && SLOTS[slotType(k)].stat === stat) v += itemPct(it) / 100; });
   return v;
 }
 const itemName = it => SLOTS[it.slot].names[it.r];
@@ -165,8 +173,8 @@ function forge() {
 }
 function equip(id) {
   const i = S.eq.inv.findIndex(x => x.id === id); if (i < 0) return;
-  const it = S.eq.inv[i], old = S.eq.s[it.slot];
-  S.eq.inv.splice(i, 1); S.eq.s[it.slot] = it; if (old) S.eq.inv.push(old);
+  const it = S.eq.inv[i], sl = it.slot === 'ring' ? (!S.eq.s.ring1 ? 'ring1' : !S.eq.s.ring2 ? 'ring2' : 'ring1') : it.slot, old = S.eq.s[sl];
+  S.eq.inv.splice(i, 1); S.eq.s[sl] = it; if (old) S.eq.inv.push(old);
 }
 function unequip(slot) {
   const it = S.eq.s[slot]; if (!it || S.eq.inv.length >= EQMAX) return;
@@ -266,7 +274,7 @@ function score(st) {
   for (const k in U) s += (st.troops[k] || 0) * (U[k].atk + U[k].def) / 2;
   for (const k in st.tech) s += st.tech[k] * 50;
   s += heroOf(st).lv * 30;
-  if (st.eq) SLOTK.forEach(k => { const it = st.eq.s[k]; if (it) s += 15 * (it.r + 1) * it.il; });
+  if (st.eq) EQS.forEach(k => { const it = st.eq.s[k]; if (it) s += 15 * (it.r + 1) * it.il; });
   for (const k in U) s += (tierOf(st, k) - 1) * 60;
   return Math.round(s);
 }
@@ -764,7 +772,7 @@ function act(a, arg) {
     case 'revenge': if (typeof arg === 'string') revenge(arg); break;
     case 'forge': forge(); break;
     case 'equip': if (typeof arg === 'string') equip(arg); break;
-    case 'unequip': if (typeof arg === 'string' && SLOTS[arg]) unequip(arg); break;
+    case 'unequip': if (typeof arg === 'string' && EQS.includes(arg)) unequip(arg); break;
     case 'scrap': if (typeof arg === 'string') scrap(arg); break;
     case 'merge': if (typeof arg === 'string') mergeItems(arg); break;
   }
@@ -789,7 +797,7 @@ function fmtT(sec) {
 }
 
 const API = {
-  armyAtk, newItem, giveItem, SLOTS, SLOTK, RARN, EQMAX, itemPct, itemName, forgeCost, forgeLvl, scrapOf, eqB,
+  armyAtk, newItem, giveItem, SLOTS, SLOTK, EQS, slotType, RARN, EQMAX, itemPct, itemName, forgeCost, forgeLvl, scrapOf, eqB,
   RES, RI, B, BORDER, U, WEAK, TECH, QUESTS, MAXL, TMAX, CFG, HOOK, NODE, TIERN, TIER_NEED, MAXT, HSK, MAXHL, MAXSK,
   get S() { return S; },
   use, newState, update, produce, settle, battle, act, score, verdict,
