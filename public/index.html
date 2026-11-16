@@ -405,7 +405,7 @@ canvas[data-hero]{transform-origin:50% 90%;animation:heroLife 5s ease-in-out inf
 
 <script src="/core.js"></script>
 <script src="/audio.js"></script>
-<script>/*PICS*/window.PIC={};[['herop',5],['hall',6],['farm',6],['sawmill',6],['quarry',6],['ironmine',6],['storehouse',6],['vault',6],['barracks',6],['oracle',6],['silvermine',6],['plot',1],['spear',7],['archer',7],['cav',7],['hero',7]].forEach(function(a){PIC[a[0]]=[];for(var i=1;i<=a[1];i++)PIC[a[0]].push('/img/'+a[0]+i+'.webp');});</script>
+<script>/*PICS*/window.PIC={};[['herop',5],['hall',6],['farm',6],['sawmill',6],['quarry',6],['ironmine',6],['storehouse',6],['vault',6],['barracks',6],['oracle',6],['silvermine',6],['plot',1],['spear',7],['archer',7],['cav',7],['hero',7]].forEach(function(a){PIC[a[0]]=[];for(var i=1;i<=a[1];i++)PIC[a[0]].push('/img/'+a[0]+i+'.webp'+(/^(spear|archer|cav)$/.test(a[0])?'?v=2':''));});</script>
 <script src="/art.js"></script>
 <script>
 'use strict';
