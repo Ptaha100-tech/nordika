@@ -340,6 +340,14 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--frost);outline-
 .subtabs .btn{padding:6px 4px;font-size:13px}
 .crow .btn.small{padding:7px 12px;font-size:13px}
 .crow input{padding:8px 10px;font-size:16px}
+
+/* вкладка «Чат»: только чат, на весь экран */
+#app.chatfull #head .hgrid,#app.chatfull #head .res{display:none}
+#app.chatfull #head{padding-top:4px}
+#app.chatlock #view{overflow:hidden;padding-bottom:8px}
+#app.chatlock #list{flex:1;min-height:0}
+#app.chatlock .cfull{flex:1;min-height:0;display:flex;flex-direction:column;margin:0}
+#app.chatlock .cfull .cbox{flex:1;min-height:0;max-height:none}
 </style>
 </head>
 <body>
@@ -1013,9 +1021,8 @@ function viewSocial(){
   if(!d)return h+'<p class="muted sm">Загрузка…</p>';
   if(sub==='world'){
     const mut=d.muted?`<p class="note" style="color:var(--bad,#e66)">Вам запрещено писать ещё ${fmtT(d.muted/1000)}.</p>`:'';
-    return h+`<section class="card"><h2>Общий чат</h2><div id="wbox" class="cbox" style="max-height:340px">${worldHTML(d)}</div>${mut}
-      <div class="crow"><input id="wmsg" data-keep maxlength="200" placeholder="Сообщение всем" autocomplete="off" enterkeyhint="send"><button class="btn small" data-act="wsay">Отправить</button></div>
-      <p class="note">Нажмите на имя, чтобы открыть профиль. Ссылки и брань запрещены.</p></section>`;
+    return h+`<section class="card cfull"><div id="wbox" class="cbox">${worldHTML(d)}</div>${mut}
+      <div class="crow"><input id="wmsg" data-keep maxlength="200" placeholder="Сообщение всем" autocomplete="off" enterkeyhint="send"><button class="btn small" data-act="wsay">Отправить</button></div></section>`;
   }
   if(sub==='friends'){
     const rq=d.reqs.map(r=>`<div class="hrow"><div><b>${esc(r.name)}</b><p class="sm muted">Палата ${r.hall} хочет дружить</p></div><div style="display:flex;gap:6px"><button class="btn small" data-act="faccept" data-arg="${r.pid}">Принять</button><button class="btn small ghost" data-act="fdecline" data-arg="${r.pid}">Нет</button></div></div>`).join('');
@@ -1027,15 +1034,15 @@ function viewSocial(){
   if(sub==='clan'){
     const c=ui.clan&&ui.clan.clan;
     if(!c)return h+'<p class="muted sm">Вы не в клане. Вступите в клан во вкладке «Клан».</p>';
-    return h+`<section class="card"><h2><span class="tag4">${esc(c.tag)}</span>Чат клана</h2><div id="cbox" class="cbox" style="max-height:340px">${chatHTML(c)}</div>
+    return h+`<section class="card cfull"><div id="cbox" class="cbox">${chatHTML(c)}</div>
       <div class="crow"><input id="cmsg" data-keep maxlength="200" placeholder="Сообщение клану" autocomplete="off" enterkeyhint="send"><button class="btn small" data-act="csay">Отправить</button></div></section>`;
   }
   // личные
   if(ui.soc.peer&&!d.thread)return h+'<p class="muted sm">Загрузка…</p>';
   if(ui.soc.peer&&d.thread){
     const t=d.thread;
-    return h+`<section class="card"><div class="trow2"><h2><i class="online ${t.online?'':'off'}"></i>${esc(t.name)}</h2><button class="btn small ghost" data-act="dmback">Назад</button></div>
-      <div id="dbox" class="cbox" style="max-height:320px">${dmHTML(t,d.me)}</div>
+    return h+`<section class="card cfull"><div class="trow2"><h2><i class="online ${t.online?'':'off'}"></i>${esc(t.name)}</h2><button class="btn small ghost" data-act="dmback">Назад</button></div>
+      <div id="dbox" class="cbox">${dmHTML(t,d.me)}</div>
       <div class="crow"><input id="dmsg" data-keep maxlength="200" placeholder="Личное сообщение" autocomplete="off" enterkeyhint="send"><button class="btn small" data-act="dsay">Отправить</button></div>
       <div class="acts" style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap"><button class="btn small ghost" data-act="prof" data-arg="${t.pid}">Профиль</button></div></section>`;
   }
@@ -1285,6 +1292,8 @@ function render(bg){
   if(bg&&Date.now()-(ui.sat||0)<1500){clearTimeout(ui.rt);ui.rt=setTimeout(()=>render(true),1600);live();return;}   // не перерисовываем, пока человек листает
   const ae=document.activeElement;
   if((ui.tab==='clan'||ui.tab==='chat')&&ae&&ae.hasAttribute&&ae.hasAttribute('data-keep')){live();return;}   // не мешаем печатать
+  const ap=$('app');ap.classList.toggle('chatfull',ui.tab==='chat');
+  ap.classList.toggle('chatlock',ui.tab==='chat'&&(ui.sub==='world'||ui.sub==='clan'||(ui.sub==='dm'&&!!ui.soc.peer)));
   const v=$('view'),top=v.scrollTop,list=$('list');
   const bs={};['cbox','wbox','dbox'].forEach(i=>{const x=$(i);if(x)bs[i]={top:x.scrollTop,bot:x.scrollTop+x.clientHeight>=x.scrollHeight-20};});   // запоминаем, где читал чат
   const keep={};list.querySelectorAll('[data-keep]').forEach(el=>{keep[el.id]=el.value;});
