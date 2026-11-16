@@ -433,7 +433,7 @@ function apply(j){
   const fresh=S.log.filter(e=>e.t>seenLog);
   if(!first&&window.Snd&&fresh.some(e=>e.k==='bad'&&/разграбил|напал|набег/i.test(e.txt)))Snd.sfx('alarm');
   if(!first){fresh.slice(0,2).reverse().forEach(e=>toast(e.txt.length>70?e.txt.slice(0,67)+'…':e.txt));}
-  if(S.log.length)seenLog=Math.max(seenLog,S.log[0].t);
+  for(const e of S.log)if(e.t>seenLog)seenLog=e.t;
   lastSync=Date.now();
 }
 async function sync(){
