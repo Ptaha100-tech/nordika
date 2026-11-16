@@ -348,6 +348,13 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--frost);outline-
 #app.chatlock #list{flex:1;min-height:0}
 #app.chatlock .cfull{flex:1;min-height:0;display:flex;flex-direction:column;margin:0}
 #app.chatlock .cfull .cbox{flex:1;min-height:0;max-height:none}
+
+.lkg{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.lk{background:var(--surface2);border:2px solid var(--line);border-radius:8px;padding:6px 4px 8px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;color:var(--fg)}
+.lk.on{border-color:var(--accent);box-shadow:0 0 10px #f2cd7544}
+.lk b{font-size:12px;font-weight:600}
+.lki{display:flex;width:100%;height:120px;align-items:flex-end;justify-content:center;background:radial-gradient(ellipse at 50% 30%,#3a2e24,#14100d);border-radius:5px;overflow:hidden}
+.lki img,.lki canvas{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain}
 </style>
 </head>
 <body>
@@ -383,7 +390,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--frost);outline-
 
 <script src="/core.js"></script>
 <script src="/audio.js"></script>
-<script>/*PICS*/window.PIC={};[['hall',6],['farm',6],['sawmill',6],['quarry',6],['ironmine',6],['storehouse',6],['vault',6],['barracks',6],['oracle',6],['silvermine',6],['plot',1],['spear',7],['archer',7],['cav',7],['hero',7]].forEach(function(a){PIC[a[0]]=[];for(var i=1;i<=a[1];i++)PIC[a[0]].push('/img/'+a[0]+i+'.webp');});</script>
+<script>/*PICS*/window.PIC={};[['herov',5],['hall',6],['farm',6],['sawmill',6],['quarry',6],['ironmine',6],['storehouse',6],['vault',6],['barracks',6],['oracle',6],['silvermine',6],['plot',1],['spear',7],['archer',7],['cav',7],['hero',7]].forEach(function(a){PIC[a[0]]=[];for(var i=1;i<=a[1];i++)PIC[a[0]].push('/img/'+a[0]+i+'.webp');});</script>
 <script src="/art.js"></script>
 <script>
 'use strict';
@@ -595,6 +602,7 @@ function viewTroops(){
 function heroHTML(){
   const H=heroOf(S),maxed=H.lv>=MAXHL,need=xpNeed(H.lv);
   let h=`<article class="card bld"><canvas class="pic tall" width="152" height="200" data-hero="${H.lv}" aria-label="Ярл"></canvas><div class="bb"><div class="bt"><h3>Ярл ${esc(S.name)}</h3><span class="lv">Ур. ${H.lv}</span></div>
+    <button class="btn small ghost" data-act="looks" type="button" style="margin:2px 0 6px">Сменить облик</button>
     <div class="bar" style="margin:6px 0 2px"><i style="width:${maxed?100:Math.min(100,H.xp/need*100)}%"></i></div>
     <p class="bd">${maxed?'Высший уровень':`Опыт ${Math.floor(H.xp)} из ${need}`}${H.sp?` · <b style="color:var(--accent)">очков навыков: ${H.sp}</b>`:''}</p></div></article>`;
   h+=`<section class="card"><h2>Навыки ярла</h2>`;
@@ -964,6 +972,15 @@ function bossHTML(){
     +bossCard(j.world,'world',j.left.w,j.atk)+bossCard(j.clan,'clan',j.left.c,j.atk);
 }
 /* ---------- свой профиль ---------- */
+function looksSheet(){
+  const cur=(S.hero.look)|0,L=Core.LOOKS;
+  const one=(n,t)=>`<button class="lk ${cur===n?'on':''}" data-act="look" data-arg="${n}" type="button">${n?`<span class="lki"><img src="img/herov${n}.webp" alt=""></span>`:`<span class="lki"><canvas width="152" height="200" data-hero="${S.hero.lv}" data-std="1"></canvas></span>`}<b>${t}</b></button>`;
+  $('modal').innerHTML=`<div class="sheet"><div class="trow2"><h3>Облик ярла</h3><button class="btn small ghost" data-act="sheetx">Закрыть</button></div>
+    <p class="sm muted">Выберите, как выглядит ваш ярл. Облик виден вам в игре, на силу он не влияет.</p>
+    <div class="lkg">${one(0,'По уровню')}${L.map((t,i)=>one(i+1,t)).join('')}</div></div>`;
+  $('modal').hidden=false;
+  try{const cv=$('modal').querySelector('canvas[data-std]');if(cv){const h=S.hero.look;S.hero.look=0;Art.drawHero(cv,S.hero.lv);S.hero.look=h;}}catch(e){}
+}
 async function meSheet(){
   let p=null;try{p=await call('GET','/api/profile?id='+encodeURIComponent(S.pid));}catch(e){}
   const away={spear:0,archer:0,cav:0};S.marches.forEach(m=>{for(const k in m.send)away[k]+=m.send[k];});
@@ -1450,6 +1467,8 @@ function onAct(act,arg){
     case 'wprof':ui.tab='chat';ui.sub='world';ui.soc.peer=null;render();loadSoc();openProf({id:arg});return;
     case 'reply':{const el=$('wmsg');if(el){const v=el.value.replace(/^[^,]{1,16}, /,'');el.value=arg+', '+v;el.focus();}return;}
     case 'me':meSheet();return;
+    case 'looks':looksSheet();return;
+    case 'look':act2('look',Number(arg)).then(()=>{if(!$('modal').hidden)looksSheet();});return;
     case 'eq':ui.eqSel=null;eqSheet();return;
     case 'eqsort':ui.eqSort=arg;eqSheet();return;
     case 'eqf':ui.eqF=arg;eqSheet();return;

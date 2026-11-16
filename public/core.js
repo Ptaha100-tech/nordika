@@ -147,6 +147,7 @@ const SLOTS = {
 /* места на ярле: два кольца делят один тип предметов */
 const EQS = ['helm', 'cloak', 'armor', 'gloves', 'pants', 'belt', 'weapon', 'amulet', 'ring1', 'ring2'];
 const slotType = k => (k === 'ring1' || k === 'ring2') ? 'ring' : k;
+const LOOKS = ['Берсерк', 'Щитоносец', 'Копейщик', 'Секирщик', 'Элитный воин'];
 const SLOTK = Object.keys(SLOTS), RARN = ['Обычное', 'Редкое', 'Эпическое'], EQMAX = 30, EQ_IL = 5, BAG_STEP = 5, BAG_COST = [20, 30, 45, 65, 90];
 const eqCap = st => EQMAX + BAG_STEP * ((st && st.eq && st.eq.bag) || 0);
 const itemPct = it => Math.round(SLOTS[it.slot].base * [1, 1.7, 2.6][it.r] * (1 + 0.2 * (it.il - 1)) * 10) / 10;
@@ -229,6 +230,7 @@ function ensure(st) {
   if (!st.eq) st.eq = { s: { weapon: null, armor: null, helm: null, amulet: null }, inv: [] };
   if (!st.tier) st.tier = { spear: 1, archer: 1, cav: 1 };
   if (!st.hero) st.hero = { lv: 1, xp: 0, sp: 0, sk: { atk: 0, def: 0, loot: 0 } };
+  if (st.hero.look === undefined) st.hero.look = 0;
   if (st.upg === undefined) st.upg = null;
   if (st.gems === undefined) { st.gems = 0; st.vip = 0; st.daily = 0; st.bought = {}; }
 }
@@ -772,6 +774,7 @@ function act(a, arg) {
     case 'claim': if (typeof arg === 'string') claim(arg); break;
     case 'intro': S.introDone = true; break;
     case 'bag': buyBag(); break;
+    case 'look': { const n = Math.floor(Number(arg)); if (n >= 0 && n <= LOOKS.length) S.hero.look = n; break; }
     case 'buy': if (typeof arg === 'string') buy(arg); break;
     case 'daily': claimDaily(); break;
     case 'streak': claimStreak(); break;
@@ -804,7 +807,7 @@ function fmtT(sec) {
 }
 
 const API = {
-  armyAtk, newItem, giveItem, SLOTS, SLOTK, EQS, slotType, EQ_IL, RARN, EQMAX, BAG_COST, BAG_STEP, eqCap, itemPct, itemName, forgeCost, forgeLvl, scrapOf, eqB,
+  armyAtk, newItem, giveItem, SLOTS, SLOTK, LOOKS, EQS, slotType, EQ_IL, RARN, EQMAX, BAG_COST, BAG_STEP, eqCap, itemPct, itemName, forgeCost, forgeLvl, scrapOf, eqB,
   RES, RI, B, BORDER, U, WEAK, TECH, QUESTS, MAXL, TMAX, CFG, HOOK, NODE, TIERN, TIER_NEED, MAXT, HSK, MAXHL, MAXSK,
   get S() { return S; },
   use, newState, update, produce, settle, battle, act, score, verdict,

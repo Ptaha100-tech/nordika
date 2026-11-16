@@ -360,6 +360,8 @@ function drawHero(cv,lv){
   c.setTransform(1,0,0,1,0,0);c.clearRect(0,0,W,H);
   tile(c,W,H);
   let st=0;STAGE_LV.forEach((v,k)=>{if(lv>=v)st=k;});
+  const look=(window.Core&&Core.S&&Core.S.hero&&Core.S.hero.look)|0;
+  if(look>0&&figPic(cv,'herov',look-1,()=>drawHero(cv,lv)))return;
   if(figPic(cv,'hero',st,()=>drawHero(cv,lv)))return;
   c.save();c.translate(W*0.5,H*0.9);const s=W/34;c.scale(s,s);
   c.fillStyle='#7a2a2a';c.beginPath();c.moveTo(-4,-17);c.lineTo(-9,-1);c.lineTo(2,-2);c.lineTo(4,-17);c.closePath();c.fill();
