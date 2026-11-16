@@ -489,7 +489,7 @@ function jobsHTML(scope){
   const j=[];
   if(scope==='city'&&S.q)j.push(jobHTML('Стройка',`${B[S.q.id].n} → ур. ${S.q.to}`,S.q,'q'));
   if(scope==='troops'||scope==='city'){
-    if(S.train)j.push(jobHTML('Казарма',`${S.train.n} × ${U[S.train.type].n}`,S.train,'train'));
+    if(S.train)j.push(jobHTML('Казарма',`${S.train.n} × ${unitName(S.train.type,tierOf(S,S.train.type))}`,S.train,'train'));
     if(S.upg)j.push(jobHTML('Казарма',`${unitName(S.upg.key,S.upg.to)} (ступень ${S.upg.to})`,S.upg,'upg'));
     if(S.study)j.push(jobHTML('Оракул',`${TECH[S.study.key].n} → ур. ${S.study.to}`,S.study,'study'));
   }
