@@ -557,7 +557,7 @@ async function api(req, res, url) {
     touchState(u);
     const r = bossHit(u, b.t === 'clan' ? 'clan' : 'world');
     if (r.error) return json(res, 400, { error: r.error });
-    return json(res, 200, Object.assign({ view: bossView(u), state: u.state }, r));
+    return json(res, 200, Object.assign({ view: bossView(u), state: u.state, cfg: { t: Core.CFG.t }, now: Date.now(), inc: incomingOf(u.id) }, r));
   }
   if (req.method === 'GET' && url === '/api/events') {
     Core.use(u.state); Core.wkSync(u.state);

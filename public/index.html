@@ -578,7 +578,7 @@ function heroHTML(){
   return h+eqHTML();
 }
 const RC=['var(--fg)','#6fa8ff','#c78bff'];
-function itemLine(it){return `<b style="color:${RC[it.r]}">${Core.itemName(it)}</b> <span class="muted sm">${Core.RARN[it.r].toLowerCase()}, ур. ${it.il}</span><p class="sm muted" style="margin:0">+${Core.itemPct(it)}% ${Core.SLOTS[it.slot].w}</p>`;}
+function itemLine(it){return `<b style="color:${RC[it.r]}">${Core.itemName(it)}</b> <span class="muted sm">${Core.RARN[it.r].toLowerCase()}, ур. ${it.il}</span><p class="sm muted" style="margin:0">+${Core.itemPct(it)}% ${Core.SLOTS[it.slot].w}</p><p class="sm muted" style="margin:0">Уровень предмета ${it.il} из ${Core.EQ_IL}: каждый уровень добавляет +20% к бонусу${it.il<Core.EQ_IL?`, на ${it.il+1}-м уровне было бы +${Core.itemPct({slot:it.slot,r:it.r,il:it.il+1})}%`:''}.</p>`;}
 const EQG={helm:'⛑',cloak:'🧥',armor:'🛡',gloves:'🧤',pants:'👖',belt:'🎗',weapon:'⚔',amulet:'🧿',ring:'💍'};
 const EQSN={helm:'Шлем',cloak:'Плащ',armor:'Броня',gloves:'Перчатки',pants:'Штаны',belt:'Пояс',weapon:'Оружие',amulet:'Амулет',ring1:'Кольцо',ring2:'Кольцо'};
 function eqIcon(it,k){
@@ -597,7 +597,7 @@ function eqSheet(){
   const H=heroOf(S),f=ui.eqF||'all',sel=ui.eqSel;
   const tot={atk:Core.eqB(S,'atk'),def:Core.eqB(S,'def'),loot:Core.eqB(S,'loot'),eco:Core.eqB(S,'eco')};
   const pc=v=>'+'+Math.round(v*1000)/10+'%';
-  const inv=E.inv.slice().sort((a,b)=>b.r-a.r||b.il-a.il).filter(it=>f==='all'||(f==='w'&&['weapon','gloves','ring','amulet'].includes(it.slot))||(f==='a'&&['armor','helm','pants','cloak','belt'].includes(it.slot)));
+  const so=ui.eqSort||'r',EQO=Object.keys(Core.SLOTS),inv=E.inv.slice().sort((a,b)=>so==='s'?EQO.indexOf(a.slot)-EQO.indexOf(b.slot)||b.r-a.r||b.il-a.il:so==='l'?b.il-a.il||b.r-a.r:so==='p'?Core.itemPct(b)-Core.itemPct(a):b.r-a.r||b.il-a.il).filter(it=>f==='all'||(f==='w'&&['weapon','gloves','ring','amulet'].includes(it.slot))||(f==='a'&&['armor','helm','pants','cloak','belt'].includes(it.slot)));
   let cells=inv.map(it=>`<button class="eqs r${it.r} t-${it.slot}${it.r} ${sel&&sel.id===it.id?'sel':''}" data-act="eqsel" data-arg="i:${it.id}" type="button">${eqIcon(it)}<i class="eqil">${it.il}</i></button>`).join('');
   for(let n=inv.length;n<Math.max(15,Math.ceil(inv.length/5)*5);n++)cells+='<div class="eqs empty"></div>';
   let det='<p class="muted sm">Нажмите на предмет, чтобы увидеть бонус.</p>';
@@ -616,9 +616,10 @@ function eqSheet(){
     <div class="eqdet">${det}</div>
     <div class="eqhd"><span>Сумка</span><span class="lv">${E.inv.length}/${Core.EQMAX}</span></div>
     <div class="subtabs" style="margin:6px 0">${tabs.map(t=>`<button class="btn small ${t[0]===f?'on':'ghost'}" data-act="eqf" data-arg="${t[0]}">${t[1]}</button>`).join('')}</div>
+    <div class="subtabs sm" style="margin:2px 0 6px;align-items:center"><span class="muted sm">Порядок:</span>${[['r','редкость'],['s','слот'],['l','уровень'],['p','бонус']].map(t=>`<button class="btn small ${t[0]===so?'on':'ghost'}" data-act="eqsort" data-arg="${t[0]}">${t[1]}</button>`).join('')}</div>
     <div class="eqgrid">${cells}</div>
     ${mg.length?`<p class="sm muted" style="margin:8px 0 2px">Слияние: три одинаковых предмета дают один следующей редкости.</p>`+mg.map(g=>{const [sl,r]=g.split(':');return `<button class="btn small" style="margin:3px" data-act="merge" data-arg="${g}">${Core.SLOTS[sl].n}: 3 ${Core.RARN[r].toLowerCase()}х → ${Core.RARN[+r+1].toLowerCase()}</button>`;}).join(''):''}
-    <div class="eqforge"><div style="min-width:0"><b>Кузница</b><p class="sm muted" style="margin:0">Куёт случайный предмет. Нужна Палата ярла 3.</p><div class="costs" style="margin:4px 0 0">${Object.keys(fc).map(k=>cpHTML(k,fc[k])).join('')}</div></div><button class="btn small ${can?'':'off'}" data-act="forge">Ковать</button></div>
+    <div class="eqforge"><div style="min-width:0"><b>Кузница</b><p class="sm muted" style="margin:0">Куёт случайный предмет (чаще обычный, реже редкий и эпический). Нужна Палата ярла 3. Уровень предмета зависит от Палаты ярла: сейчас куётся ур. ${Core.forgeLvl()} из ${Core.EQ_IL}. Палата 5 даёт ур. 2, Палата 10 ур. 3, Палата 15 ур. 4, Палата 20 ур. 5. Три одинаковых предмета можно слить в один следующей редкости.</p><div class="costs" style="margin:4px 0 0">${Object.keys(fc).map(k=>cpHTML(k,fc[k])).join('')}</div></div><button class="btn small ${can?'':'off'}" data-act="forge">Ковать</button></div>
     <button class="eqx" data-act="sheetx" type="button">Назад</button></div>`;
   $('modal').hidden=false;ui.eqOpen=true;
   try{window.Art&&Art.paintIn&&Art.paintIn($('modal'));}catch(e){}
@@ -906,7 +907,7 @@ async function loadBoss(){
 let bbusy=false;
 async function bossHit(t){
   if(bbusy)return;bbusy=true;
-  try{const j=await call('POST','/api/boss/hit',{t});apply(j.state);ui.boss=j.view;toast(`Удар: ${fmt(j.dmg)} урона. Потери: ${j.lost}${j.killed?'. Босс повержен!':''}`);Snd&&Snd.sfx(j.killed?'win':'horn');render();}
+  try{const j=await call('POST','/api/boss/hit',{t});apply(j);ui.boss=j.view;toast(`Удар: ${fmt(j.dmg)} урона. Потери: ${j.lost}${j.killed?'. Босс повержен!':''}`);Snd&&Snd.sfx(j.killed?'win':'horn');render();}
   catch(e){toast(e.message||'Не получилось');}
   bbusy=false;
 }
@@ -1418,6 +1419,7 @@ function onAct(act,arg){
     case 'reply':{const el=$('wmsg');if(el){const v=el.value.replace(/^[^,]{1,16}, /,'');el.value=arg+', '+v;el.focus();}return;}
     case 'me':meSheet();return;
     case 'eq':ui.eqSel=null;eqSheet();return;
+    case 'eqsort':ui.eqSort=arg;eqSheet();return;
     case 'eqf':ui.eqF=arg;eqSheet();return;
     case 'eqsel':{const [a,v]=String(arg).split(':');ui.eqSel=a==='i'?{id:v}:{slot:v};eqSheet();return;}
     case 'frame':saveAv({fr:Number(arg)});return;

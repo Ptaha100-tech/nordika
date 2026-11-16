@@ -797,7 +797,7 @@ function fmtT(sec) {
 }
 
 const API = {
-  armyAtk, newItem, giveItem, SLOTS, SLOTK, EQS, slotType, RARN, EQMAX, itemPct, itemName, forgeCost, forgeLvl, scrapOf, eqB,
+  armyAtk, newItem, giveItem, SLOTS, SLOTK, EQS, slotType, EQ_IL, RARN, EQMAX, itemPct, itemName, forgeCost, forgeLvl, scrapOf, eqB,
   RES, RI, B, BORDER, U, WEAK, TECH, QUESTS, MAXL, TMAX, CFG, HOOK, NODE, TIERN, TIER_NEED, MAXT, HSK, MAXHL, MAXSK,
   get S() { return S; },
   use, newState, update, produce, settle, battle, act, score, verdict,
