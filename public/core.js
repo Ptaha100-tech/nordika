@@ -411,6 +411,9 @@ function finishStudy() {
 }
 function fmtRes(o) { return Object.keys(o).filter(k => o[k] > 0 && RI[k]).map(k => `${RI[k].n} ${fmt(o[k])}`).join(' · ') || 'ничего'; }
 function fmtComp(c) { return Object.keys(U).filter(k => (c[k] || 0) > 0).map(k => `${S ? unitName(k, tierOf(S, k)) : U[k].pl} ${c[k]}`).join(' · '); }
+/* Разведка не выдаёт точных цифр: только приблизительно */
+function approxN(n) { if (n <= 0) return 0; if (n < 10) return 10; const st = n < 100 ? 10 : n < 500 ? 50 : n < 2000 ? 100 : n < 10000 ? 500 : 1000; return Math.max(st, Math.round(n / st) * st); }
+function fmtApprox(c) { return Object.keys(U).filter(k => (c[k] || 0) > 0).map(k => `${S ? unitName(k, tierOf(S, k)) : U[k].pl} ~${approxN(c[k])}`).join(' · '); }
 const carryOf = (s, st) => { st = st || S; return Math.round(Object.keys(U).reduce((a, k) => a + (s[k] || 0) * U[k].carry * tmul(tierOf(st, k)), 0) * lootB(st)); };
 
 function resolveMarch(m) {
@@ -794,7 +797,7 @@ const API = {
   posOf, tgtPos, isLand, SHOP, scoutCost, isVip, buy, claimDaily, dailyLeft, streakInfo, claimStreak, STREAK, CONTESTS, PRIZES, PRIZE_PART, weekId, weekEnd, contestOf, wkScoreOf, wkSync, dayId,
   jobInfo, helpJob, chargeClan, CLAN_COST, CLAN_HALL, jobObj,
   tierOf, heroOf, tmul, tiersOf, botTiers, atkB, defB, lootB, unitName, xpNeed, tierCost, tierSecs,
-  refreshTargets, topUpPlayers, addLogTo, fmt, fmtT, fmtRes, fmtComp, carryOf,
+  refreshTargets, topUpPlayers, addLogTo, fmt, fmtT, fmtRes, fmtComp, fmtApprox, carryOf,
   setNow(f) { nowMs = f; }, now() { return nowMs(); },
   onToast(f) { toastFn = f; }
 };

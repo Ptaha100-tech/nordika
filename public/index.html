@@ -310,7 +310,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--frost);outline-
 <script src="/art.js"></script>
 <script>
 'use strict';
-const {RES,RI,B,BORDER,U,WEAK,TECH,QUESTS,MAXL,TMAX,lvl,slots,cap,rate,prodAt,upCost,upSecs,canUp,canAfford,maxBatch,trainSecs,techCost,techSecs,gatherSecs,marchSecs,fmt,fmtT,fmtRes,fmtComp,verdict,battle,carryOf,TIERN,TIER_NEED,MAXT,HSK,MAXHL,MAXSK,tierOf,heroOf,tmul,unitName,xpNeed,tierCost,tierSecs}=Core;
+const {fmtApprox,RES,RI,B,BORDER,U,WEAK,TECH,QUESTS,MAXL,TMAX,lvl,slots,cap,rate,prodAt,upCost,upSecs,canUp,canAfford,maxBatch,trainSecs,techCost,techSecs,gatherSecs,marchSecs,fmt,fmtT,fmtRes,fmtComp,verdict,battle,carryOf,TIERN,TIER_NEED,MAXT,HSK,MAXHL,MAXSK,tierOf,heroOf,tmul,unitName,xpNeed,tierCost,tierSecs}=Core;
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const sum=o=>Object.values(o).reduce((x,y)=>x+(y||0),0);
@@ -559,7 +559,7 @@ function viewMap(){
     const loot=t.kind==='player'?'<p class="bd">Можно забрать до четверти запасов за вычетом того, что прячет Хранилище.</p>':`<div class="costs" style="margin-bottom:0">${Object.keys(t.loot).map(k=>cpHTML(k,t.loot[k])).join('')}</div>`;
     h+=`<article class="card tg ${t.kind}"><div class="trow2"><span class="kind">${KIND[t.kind]} · ур. ${t.level}</span><span class="pill ${sh?'mute':v.c}">${sh?'Под щитом':v.t}</span></div>
       <h3 style="margin-top:2px">${esc(t.name)}</h3>
-      ${t.kind==='node'?'':`<p class="bd">${t.kind==='player'?'Разведка'+(t.seenAt?' ('+ago(t.seenAt)+'): ':': '):''}${fmtComp(t.comp)||'войск не видно'}</p>`}${loot}
+      ${t.kind==='node'?'':`<p class="bd">${t.kind==='player'?'Разведка'+(t.seenAt?' ('+ago(t.seenAt)+'): ':': '):''}${(t.kind==='player'?fmtApprox:fmtComp)(t.comp)||'войск не видно'}</p>`}${loot}
       <div class="tgb"><span class="muted sm">Расстояние ${t.dist} лиг · в пути ${fmtT(marchSecs(t.dist))} в одну сторону${t.kind==='node'?` · сбор ${fmtT(gatherSecs())} · всего в поле ${fmtT(marchSecs(t.dist)*2+gatherSecs())}`:''}</span><span class="tgbtn">${t.kind==='player'?(()=>{const sc=Core.scoutCost(t);return `<button class="btn ghost ${(S.res.food>=sc.food&&S.res.wood>=sc.wood)?'':'off'}" data-act="scout" data-arg="${t.id}">Разведать · ${fmt(sc.food)}<i class="rn" style="color:var(--food)">${RI.food.r}</i> ${fmt(sc.wood)}<i class="rn" style="color:var(--wood)">${RI.wood.r}</i></button>`;})():''}<button class="btn ${free>0&&sum(S.troops)?'':'off'}" data-act="atk" data-arg="${t.id}">${t.kind==='node'?'Собрать':'Напасть'}</button></span></div></article>`;
   });
   return h;
