@@ -136,8 +136,11 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--frost);outline-
 .stat{background:var(--surface2);border-radius:4px;padding:8px 6px;text-align:center}
 .stat b{display:block;font:700 22px/1.1 var(--display);font-variant-numeric:tabular-nums}
 .stat span{font-size:12px;color:var(--muted)}
+.tnin{width:64px;text-align:center;font:700 18px var(--display);background:var(--surface2);color:var(--fg);border:1px solid var(--line);border-radius:4px;padding:6px 2px;min-width:0}
+.eqck{position:absolute;right:2px;top:0;color:#9bf09b;font-size:16px;text-shadow:0 1px 3px #000;z-index:3}.eqmulti{padding:8px;border:1px dashed #6b4a36;border-radius:6px;margin:6px 0}
+.subtabs.cht{display:flex;gap:5px;margin-bottom:6px}.subtabs.cht .btn{flex:1;min-height:30px;padding:3px 4px;font-size:12px}
 .stats.sm{grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:5px}.stats.sm .stat{padding:4px 5px}.stats.sm .stat b{font-size:15px}.stats.sm .stat span{font-size:10.5px;line-height:1.2;display:block}
-.stepper{display:flex;align-items:center;gap:8px;margin:8px 0}
+.stepper{display:flex;align-items:center;gap:4px;margin:8px 0;flex-wrap:wrap}.stepper .btn{padding:4px 6px;min-width:0}
 .stepper b{min-width:2.4em;text-align:center;font-size:18px;font-variant-numeric:tabular-nums}
 .trow2{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
 
@@ -640,7 +643,7 @@ function viewTroops(){
     if(!ok)h+=`<p class="note">Нужна Казарма ур. ${u.need}</p>`;
     else{
       if(mt>1)h+=`<div class="subtabs" style="margin:4px 0">${Array.from({length:mt},(_,i)=>`<button class="btn small ${i+1===tr?'':'ghost'}" data-act="tsel" data-arg="${k}:${i+1}" type="button">Ст.${i+1}</button>`).join('')}</div>`;
-      h+=`<div class="stepper"><button class="btn ghost small" data-act="tn" data-arg="${k}:-5">−5</button><button class="btn ghost small" data-act="tn" data-arg="${k}:-1">−1</button><b>${n}</b><button class="btn ghost small" data-act="tn" data-arg="${k}:1">+1</button><button class="btn ghost small" data-act="tn" data-arg="${k}:5">+5</button></div>`;
+      h+=`<div class="stepper"><button class="btn ghost small" data-act="tn" data-arg="${k}:-5">−5</button><button class="btn ghost small" data-act="tn" data-arg="${k}:-1">−1</button><input class="tnin" type="number" inputmode="numeric" min="1" max="${maxBatch()}" value="${n}" data-tn="${k}" aria-label="Сколько обучить"><button class="btn ghost small" data-act="tn" data-arg="${k}:1">+1</button><button class="btn ghost small" data-act="tn" data-arg="${k}:5">+5</button><button class="btn ghost small" data-act="tnmax" data-arg="${k}">Макс</button></div>`;
       h+=costHTML(c);
       h+=S.train?`<p class="note">Казарма занята</p>`:`<button class="btn" data-act="train" data-arg="${k}" data-gate="1">Обучить ${n} · ${fmtT(trainSecs(k,n,tr))}</button>`;
       if(tr>1){
@@ -733,12 +736,16 @@ function forgeSheet(){
   const E=S.eq,fc=Core.forgeCost(),can=lvl('hall')>=3&&E.inv.length<Core.eqCap(S)&&S.res.wood>=fc.wood&&S.res.iron>=fc.iron&&S.res.silver>=fc.silver;
   const H=heroOf(S),f=ui.eqF||'all',sel=ui.eqSel;
   const so=ui.eqSort||'r',EQO=Object.keys(Core.SLOTS),inv=E.inv.slice().sort((a,b)=>so==='s'?EQO.indexOf(a.slot)-EQO.indexOf(b.slot)||b.r-a.r||b.il-a.il:so==='l'?b.il-a.il||b.r-a.r:so==='p'?Core.itemPct(b)-Core.itemPct(a):b.r-a.r||b.il-a.il).filter(it=>f==='all'||(f==='w'&&['weapon','gloves','ring','amulet'].includes(it.slot))||(f==='a'&&['armor','helm','pants','cloak','belt'].includes(it.slot)));
-  let cells=inv.map(it=>`<button class="eqs r${it.r} t-${it.slot}${it.r} ${sel&&sel.id===it.id?'sel':''}" data-act="eqsel" data-arg="i:${it.id}" type="button">${eqIcon(it)}<i class="eqil">${it.il}</i></button>`).join('');
+  const pk=ui.eqPick||(ui.eqPick={}),mm=!!ui.eqMulti;
+  Object.keys(pk).forEach(id=>{if(!E.inv.some(x=>x.id===id))delete pk[id];});
+  let cells=inv.map(it=>`<button class="eqs r${it.r} t-${it.slot}${it.r} ${(mm?pk[it.id]:sel&&sel.id===it.id)?'sel':''}" data-act="eqsel" data-arg="i:${it.id}" type="button">${eqIcon(it)}<i class="eqil">${it.il}</i>${mm&&pk[it.id]?'<b class="eqck">✓</b>':''}</button>`).join('');
   for(let n=inv.length;n<Math.max(15,Math.ceil(inv.length/5)*5);n++)cells+='<div class="eqs empty"></div>';
   const pcw=v=>v;
   let det='<p class="muted sm">Нажмите на предмет в сумке, чтобы увидеть бонус.</p>';
   if(sel&&sel.id){const it=E.inv.find(x=>x.id===sel.id);if(it){const k=it.slot==='ring'?(!E.s.ring1?'ring1':!E.s.ring2?'ring2':'ring1'):it.slot,cur=E.s[k],sc=Core.scrapOf(it);
     det=`${itemLine(it)}${cur?`<p class="sm" style="margin:2px 0;color:${Core.itemPct(it)>Core.itemPct(cur)?'var(--good,#7ad07a)':'var(--muted)'}">Сейчас надето: +${Core.itemPct(cur)}%</p>`:''}<div class="eqb"><button class="btn small" data-act="equip" data-arg="${it.id}">Надеть</button><button class="btn small ghost" data-act="scrap" data-arg="${it.id}">Разобрать (${fmtRes(sc)})</button></div>`;}}
+  const pids=Object.keys(pk).filter(id=>pk[id]),ptot={iron:0,silver:0};pids.forEach(id=>{const it=E.inv.find(x=>x.id===id);if(it){const r=Core.scrapOf(it);ptot.iron+=r.iron;ptot.silver+=r.silver;}});
+  const multiBar=mm?`<div class="eqmulti"><p class="sm" style="margin:0 0 6px">Выбрано: <b>${pids.length}</b>${pids.length?` · получите ${fmtRes(ptot)}`:''}</p><div class="subtabs" style="margin:0 0 6px"><button class="btn small ghost" data-act="eqpickall" data-arg="c" type="button">Все обычные</button><button class="btn small ghost" data-act="eqpickall" data-arg="v" type="button">Все показанные</button><button class="btn small ghost" data-act="eqpickall" data-arg="0" type="button">Сбросить</button></div>${pids.length?(ui.eqConf?`<button class="btn small" data-act="scrapmany" type="button">Подтвердить: разобрать ${pids.length}</button> <button class="btn small ghost" data-act="eqconf" data-arg="0" type="button">Отмена</button>`:`<button class="btn small" data-act="eqconf" data-arg="1" type="button">Разобрать выбранные (${pids.length})</button>`):''}</div>`:'';
   const grp={};E.inv.forEach(it=>{if(it.r<2){const g=it.slot+':'+it.r;grp[g]=(grp[g]||0)+1;}});
   const mg=Object.keys(grp).filter(g=>grp[g]>=3);
   const tabs=[['all','Все'],['w','Оружие'],['a','Броня']];
@@ -749,6 +756,7 @@ function forgeSheet(){
     ${(E.bag||0)<Core.BAG_COST.length?`<button class="btn small ghost" style="display:block;margin:6px auto 0" data-act="bag" type="button">Расширить сумку на ${Core.BAG_STEP} мест · ${Core.BAG_COST[E.bag||0]} рунных камней</button>`:''}
     <div class="subtabs" style="margin:6px 0">${tabs.map(t=>`<button class="btn small ${t[0]===f?'on':'ghost'}" data-act="eqf" data-arg="${t[0]}">${t[1]}</button>`).join('')}</div>
     <div class="subtabs sm" style="margin:2px 0 6px;align-items:center"><span class="muted sm">Порядок:</span>${[['r','редкость'],['s','слот'],['l','уровень'],['p','бонус']].map(t=>`<button class="btn small ${t[0]===so?'on':'ghost'}" data-act="eqsort" data-arg="${t[0]}">${t[1]}</button>`).join('')}</div>
+    <div class="subtabs" style="margin:6px 0"><button class="btn small ${mm?'on':'ghost'}" data-act="eqmulti" type="button">${mm?'Готово':'Выбрать несколько для разбора'}</button></div>${multiBar}
     <div class="eqgrid">${cells}</div>
     ${mg.length?`<p class="sm muted" style="margin:8px 0 2px">Слияние: три одинаковых предмета дают один следующей редкости.</p>`+mg.map(g=>{const [sl,r]=g.split(':');return `<button class="btn small" style="margin:3px" data-act="merge" data-arg="${g}">${Core.SLOTS[sl].n}: 3 ${Core.RARN[r].toLowerCase()}х → ${Core.RARN[+r+1].toLowerCase()}</button>`;}).join(''):''}
     <button class="btn ghost" style="display:block;margin:8px auto 0" data-act="eq" type="button">Снаряжение ярла</button>
@@ -1153,7 +1161,7 @@ function viewSocial(){
   const un=d?d.unread:0,fr=d?d.reqs.length:0;
   const hasClan=!!(ui.clan&&ui.clan.clan);
   const tabs=[['world','Мир'],...(hasClan?[['clan','Клан']]:[]),['friends','Друзья'+(fr?`<span class="bdg">${fr}</span>`:'')],['dm','Личные'+(d&&d.threads.some(x=>x.unread)?`<span class="bdg">${d.threads.reduce((s,x)=>s+x.unread,0)}</span>`:'')]];
-  let h=`<div class="subtabs">${tabs.map(t=>`<button class="btn ${t[0]===sub?'on':'ghost'}" data-act="sub" data-arg="${t[0]}">${t[1]}</button>`).join('')}</div>`+profCard();
+  let h=`<div class="subtabs cht">${tabs.map(t=>`<button class="btn ${t[0]===sub?'on':'ghost'}" data-act="sub" data-arg="${t[0]}">${t[1]}</button>`).join('')}</div>`+profCard();
   if(!d)return h+'<p class="muted sm">Загрузка…</p>';
   if(sub==='world'){
     const mut=d.muted?`<p class="note" style="color:var(--bad,#e66)">Вам запрещено писать ещё ${fmtT(d.muted/1000)}.</p>`:'';
@@ -1508,7 +1516,7 @@ function render(bg){
   if(!S)return;
   if(bg&&Date.now()-(ui.sat||0)<1500){clearTimeout(ui.rt);ui.rt=setTimeout(()=>render(true),1600);live();return;}   // не перерисовываем, пока человек листает
   const ae=document.activeElement;
-  if((ui.tab==='clan'||ui.tab==='chat')&&ae&&ae.hasAttribute&&ae.hasAttribute('data-keep')){live();return;}   // не мешаем печатать
+  if(((ui.tab==='clan'||ui.tab==='chat')&&ae&&ae.hasAttribute&&ae.hasAttribute('data-keep'))||(ae&&ae.dataset&&ae.dataset.tn)){live();return;}   // не мешаем печатать
   const ap=$('app');ap.classList.toggle('chatfull',ui.tab==='chat');
   ap.classList.toggle('chatlock',ui.tab==='chat'&&(ui.sub==='world'||ui.sub==='clan'||(ui.sub==='dm'&&!!ui.soc.peer)));
   const v=$('view'),top=v.scrollTop,list=$('list');
@@ -1681,7 +1689,11 @@ function onAct(act,arg){
     case 'fgopen':ui.eqSel=null;forgeSheet();return;
     case 'eqsort':ui.eqSort=arg;forgeSheet();return;
     case 'eqf':ui.eqF=arg;forgeSheet();return;
-    case 'eqsel':{const [a,v]=String(arg).split(':');ui.eqSel=a==='i'?{id:v}:{slot:v};if(ui.fgOpen)forgeSheet();else eqSheet();return;}
+    case 'eqmulti':ui.eqMulti=!ui.eqMulti;ui.eqPick={};ui.eqConf=false;forgeSheet();return;
+    case 'eqconf':ui.eqConf=arg==='1';forgeSheet();return;
+    case 'eqpickall':{const pk=ui.eqPick=ui.eqPick||{};ui.eqConf=false;if(arg==='0')ui.eqPick={};else{const f=ui.eqF||'all';S.eq.inv.filter(it=>arg==='v'?(f==='all'||(f==='w'&&['weapon','gloves','ring','amulet'].includes(it.slot))||(f==='a'&&['armor','helm','pants','cloak','belt'].includes(it.slot))):it.r<1).forEach(it=>{pk[it.id]=true;});}forgeSheet();return;}
+    case 'scrapmany':{const ids=Object.keys(ui.eqPick||{}).filter(k=>ui.eqPick[k]);ui.eqPick={};ui.eqConf=false;if(ids.length)act2('scrapmany',ids);return;}
+    case 'eqsel':{const [a,v]=String(arg).split(':');if(ui.eqMulti&&ui.fgOpen&&a==='i'){const pk=ui.eqPick=ui.eqPick||{};pk[v]=!pk[v];ui.eqConf=false;forgeSheet();return;}ui.eqSel=a==='i'?{id:v}:{slot:v};if(ui.fgOpen)forgeSheet();else eqSheet();return;}
     case 'frame':saveAv({fr:Number(arg)});return;
     case 'avclr':saveAv({clear:true});return;
     case 'top':topSheet();return;
@@ -1716,6 +1728,7 @@ function onAct(act,arg){
     case 'cask':cact('ask',{kind:arg});return;
     case 'chelp':cact('help',{id:arg});return;
     case 'chelpall':cact('helpall');return;
+    case 'tnmax':{const k=arg,tr=Math.max(1,Math.min(Core.maxTier(),ui.tt[k]||Core.maxTier()));let best=1;for(let n=1;n<=maxBatch();n++){if(canAfford(Core.costOf(k,tr,n)))best=n;else break;}ui.tn[k]=best;render();return;}
     case 'tn':{const[k,d]=arg.split(':');ui.tn[k]=Math.max(1,Math.min(maxBatch(),ui.tn[k]+parseInt(d,10)));render();return;}
     case 'atk':openModal(arg);return;
     case 'step':{const[k,d]=arg.split(':');const el=$('sn-'+k);if(el){el.value=Math.max(0,Math.min(S.troops[k],(parseInt(el.value,10)||0)+parseInt(d,10)));modalPreview();}return;}
@@ -1738,6 +1751,7 @@ function onAct(act,arg){
   }
 }
 function act2(a,arg){return act(a,arg);}
+document.addEventListener('change',e=>{const t=e.target;if(t&&t.dataset&&t.dataset.tn){const k=t.dataset.tn;ui.tn[k]=Math.max(1,Math.min(maxBatch()||1,parseInt(t.value,10)||1));render();}});
 function boot(){
   document.querySelectorAll('img[data-l]').forEach(i=>{i.src=(window.LOGO&&LOGO[i.dataset.l])||('/img/'+i.dataset.l+'.webp?v=2');});
   buildStatic();

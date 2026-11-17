@@ -196,6 +196,17 @@ function scrap(id) {
   for (const k in g) S.res[k] = Math.max(S.res[k], Math.min(cap(), S.res[k] + g[k]));
   toast('Разобрано: ' + fmtRes(g));
 }
+function scrapMany(ids) {
+  if (!Array.isArray(ids)) return;
+  const g = { iron: 0, silver: 0 }; let n = 0;
+  ids.slice(0, 200).forEach(id => {
+    const i = S.eq.inv.findIndex(x => x.id === id); if (i < 0) return;
+    const r = scrapOf(S.eq.inv[i]); S.eq.inv.splice(i, 1); g.iron += r.iron; g.silver += r.silver; n++;
+  });
+  if (!n) return;
+  for (const k in g) S.res[k] = Math.max(S.res[k], Math.min(cap(), S.res[k] + g[k]));
+  toast(`Разобрано предметов: ${n}. ${fmtRes(g)}`);
+}
 function mergeItems(arg) {
   const [slot, r0] = String(arg).split(':'), r = Number(r0);
   if (!SLOTS[slot] || !(r >= 0 && r < 2)) return;
@@ -827,6 +838,7 @@ function act(a, arg) {
     case 'equip': if (typeof arg === 'string') equip(arg); break;
     case 'unequip': if (typeof arg === 'string' && EQS.includes(arg)) unequip(arg); break;
     case 'scrap': if (typeof arg === 'string') scrap(arg); break;
+    case 'scrapmany': scrapMany(arg); break;
     case 'merge': if (typeof arg === 'string') mergeItems(arg); break;
   }
 }
