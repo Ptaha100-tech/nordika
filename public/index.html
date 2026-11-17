@@ -1031,22 +1031,24 @@ async function loadBoss(){
 let bbusy=false;
 async function bossHit(t){
   if(bbusy)return;bbusy=true;
-  try{const j=await call('POST','/api/boss/hit',{t});apply(j);ui.boss=j.view;toast(`Удар: ${fmt(j.dmg)} урона. Потери: ${j.lost}${j.killed?'. Босс повержен!':''}`);Snd&&Snd.sfx(j.killed?'win':'horn');render();}
+  try{const j=await call('POST','/api/boss/hit',{t});apply(j);ui.boss=j.view;closeModal();toast(`Удар: ${fmt(j.dmg)} урона. Потери: ${j.lost}${j.killed?'. Босс повержен!':''}`);Snd&&Snd.sfx(j.killed?'win':'horn');render();}
   catch(e){toast(e.message||'Не получилось');}
   bbusy=false;
 }
-const BOSSIMG={'Йотун Хримтурс':1,'Ледяной тролль':1,'Гром-Берсерк':2,'Лесной великан':2,'Волк Фенрир':2,'Каменный исполин':2,'Хель, владычица мёртвых':3,'Болотная ведьма':3,'Сурт, огненный ярл':4,'Дракон Нидхёгг':4,'Змей Йормунганд':5,'Змей-хранитель':5};
+const BOSSIMG={'Ледяной страж':1,'Берсерк Хрольв':2,'Вещая Вороница':3,'Огненный мореход':4,'Змей фьорда':5,'Йотун Хримтурс':1,'Ледяной тролль':1,'Гром-Берсерк':2,'Лесной великан':2,'Волк Фенрир':2,'Каменный исполин':2,'Хель, владычица мёртвых':3,'Болотная ведьма':3,'Сурт, огненный ярл':4,'Дракон Нидхёгг':4,'Змей Йормунганд':5,'Змей-хранитель':5};
 function bossArt(name){const n=BOSSIMG[name]||(1+[...String(name)].reduce((a,c)=>a+c.charCodeAt(0),0)%5);return `<div class="bossart ba${n}"><img src="img/boss${n}.webp?v=1" alt="${esc(name)}"></div>`;}
 function bossCard(b,type,left,atk){
   if(!b)return '';
-  if(b.none)return `<section class="card"><h3>${type==='clan'?'Клановый босс':'Мировой босс'}</h3><p class="muted sm">${b.none}</p></section>`;
+  const TT=type==='clan'?'Клановый босс':type==='daily'?'Дневной босс':'Мировой босс';
+  if(b.none)return `<section class="card"><h3>${TT}</h3><p class="muted sm">${b.none}</p></section>`;
   const pct=b.max?Math.max(0,b.hp/b.max*100):0,active=b.state==='active'&&b.hp>0;
   const top=b.top.length?b.top.map((r,i)=>`<p class="sm" style="margin:2px 0">${i+1}. ${esc(r.name)} — <b>${fmt(r.v)}</b></p>`).join(''):'<p class="muted sm">Пока никто не бил.</p>';
   let st='';
   if(type==='world'&&b.state!=='active'){st=b.state==='wait'?'Новый босс появится в ближайшую минуту.':`${b.killed?'Босс повержен.':'Босс ушёл.'} Следующий придёт через ${fmtT(Math.max(0,(b.nextAt-Date.now())/1000))}.`;}
+  else if(type==='daily'&&!active)st=b.killed?'Босс повержен. Завтра придёт новый.':'Бой окончен.';
   else if(!active&&type==='clan')st=b.killed?'Босс повержен. Новый появится в понедельник.':'Бой окончен.';
   else st=`До конца: ${fmtT(Math.max(0,(b.end-Date.now())/1000))}`;
-  return `<section class="card">${bossArt(b.name)}<h3>${type==='clan'?'Клановый босс':'Мировой босс'}: ${esc(b.name)}</h3>
+  return `<section class="card">${bossArt(b.name)}<h3>${TT}: ${esc(b.name)}</h3>
     <div class="bar" style="margin:6px 0 2px"><i style="width:${pct}%;background:var(--bad,#c0504d);transition:none"></i></div>
     <p class="sm"><b>${fmt(b.hp)}</b> из ${fmt(b.max)} · <span class="muted">${st}</span></p>
     ${top}<p class="sm muted">Ваш урон: ${fmt(b.me.v)}${b.me.rank?' · место '+b.me.rank:''}</p>
@@ -1055,8 +1057,8 @@ function bossCard(b,type,left,atk){
 function bossHTML(){
   const j=ui.boss;
   if(!j){return '<p class="muted sm">Загрузка…</p>';}
-  return `<p class="note" style="margin:0 0 8px">Боссов бьёт вся дружина сразу. Удар равен общей атаке вашего войска и стоит ${j.loss}% бойцов. Два удара в день по каждому боссу. Награды: ресурсы, рунные камни, ускорения и снаряжение.</p>`
-    +bossCard(j.world,'world',j.left.w,j.atk)+bossCard(j.clan,'clan',j.left.c,j.atk);
+  return `<p class="note" style="margin:0 0 8px">Боссов бьёт вся дружина сразу. Удар равен общей атаке вашего войска и стоит ${j.loss}% бойцов. Два удара в день по мировому и клановому боссу и один — по дневному. Награды: ресурсы, рунные камни, ускорения и снаряжение.</p>`
+    +bossCard(j.daily,'daily',j.left.d,j.atk)+bossCard(j.world,'world',j.left.w,j.atk)+bossCard(j.clan,'clan',j.left.c,j.atk);
 }
 /* ---------- свой профиль ---------- */
 function looksSheet(){
@@ -1244,9 +1246,10 @@ function tutHTML(){
   return `<section class="card tut"><small class="muted">Обучение · шаг ${i+1} из ${TUT.length}</small><h3>${x.t}</h3><p class="sm">${x.h}</p><div class="tr">${ui.tab!==x.tab?`<button class="btn" data-act="tab" data-arg="${x.tab}">Перейти</button>`:''}<button class="btn ghost" data-act="tutskip">Пропустить обучение</button></div></section>`;
 }
 /* ---------- карта мира ---------- */
-ui.wm=null;ui.wsel='';ui.wtsel='';
+ui.wm=null;ui.wsel='';ui.wtsel='';ui.wbsel='';
 async function loadWorld(){
   if(!S||ui.tab!=='map'||ui.msub!=='world')return;
+  try{ui.boss=await call('GET','/api/boss');}catch(e){}
   try{const j=await call('GET','/api/worldmap');ui.wm={j,at:Date.now()};if(ui.tab==='map'&&ui.msub==='world'){wmInfo();wmDraw();wmList();}}catch(e){}
 }
 function wmMe(){const j=ui.wm&&ui.wm.j;return j&&j.players.find(p=>p.me);}
@@ -1269,6 +1272,14 @@ function wmInfo(){
   <p class="bd">Палата ярла: ${p.hall} ур.${p.me?' (это вы)':` · расстояние ${dist} лиг, в пути ${fmtT(marchSecs(dist))}`}</p>
   ${p.me?'':`<div class="tr2"><button class="btn ghost" data-act="wprof" data-arg="${p.pid}">Профиль</button><button class="btn" data-act="wpvp">Напасть (ПВП)</button></div>`}`;
 }
+function wmPopup(){
+  let h='';const j=ui.wm&&ui.wm.j;
+  if(ui.wbsel&&ui.boss){const b=ui.boss[ui.wbsel],left=ui.boss.left[ui.wbsel==='world'?'w':ui.wbsel==='daily'?'d':'c'];h=bossCard(b,ui.wbsel,left,ui.boss.atk);}
+  else{wmInfo();const el=$('wi');h=el?el.innerHTML:'';}
+  if(!h)return;
+  $('modal').innerHTML=`<div class="sheet wpop">${h}<button class="btn ghost" data-act="sheetx" type="button" style="margin-top:8px;width:100%">Закрыть</button></div>`;
+  $('modal').hidden=false;
+}
 function wmList(){
   const el=$('wl');if(!el)return;const j=ui.wm&&ui.wm.j;if(!j){el.innerHTML='';return;}
   const tn=Core.now(),ms=j.marches.filter(m=>m.eta>tn||m.ph==='gather');
@@ -1279,7 +1290,16 @@ function wmList(){
   h+=`<h3>Отряды в пути</h3>`+(rest.length?rest.map(m=>`<p class="bd">${m.mine?'<b>Ваш отряд</b>':'Ярл '+esc(m.on)} ${m.ph==='back'?'возвращается домой':m.ph==='gather'?'собирает добычу':'идёт к цели'}${m.tn?': '+esc(m.tn):''} · ${fmtT(Math.max(0,m.eta-tn)/1000)}</p>`).join(''):'<p class="muted sm">Сейчас на карте тихо.</p>');
   el.innerHTML=h;
 }
-let wmAnim=0;
+let wmAnim=0,wmHit=[];
+const BPOS=[[52,26],[30,48],[66,60],[44,70],[22,72],[74,38],[58,44]];
+function wmBosses(){
+  const j=ui.boss;if(!j)return [];const out=[],used=new Set();
+  const add=(type,b,i,col,label)=>{if(!b||b.none||b.state==='wait'||b.max===undefined)return;let ix=((i%7)+7)%7;while(used.has(ix))ix=(ix+1)%7;used.add(ix);const q=BPOS[ix],sp=Core.snapLand(q[0],q[1]);out.push({type,b,x:sp.x,y:sp.y,n:BOSSIMG[b.name]||1,col,label});};
+  add('world',j.world,(j.world&&j.world.name?[...j.world.name].reduce((a,c)=>a+c.charCodeAt(0),0):0),'rgba(120,200,255,','Мировой босс');
+  add('daily',j.daily,(j.daily&&j.daily.name?[...j.daily.name].reduce((a,c)=>a+c.charCodeAt(0),0)+3:0),'rgba(255,170,70,','Дневной босс');
+  add('clan',j.clan,(j.clan&&j.clan.name?[...j.clan.name].reduce((a,c)=>a+c.charCodeAt(0),0)+5:0),'rgba(150,255,140,','Клановый босс');
+  return out;
+}
 const RM=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
 const WSP={};['mhall1','mhall2','mhall3','mhall4','mhall5','mcamp','mnode-wood','mnode-stone','mnode-silver','mnode-iron','mnode-food'].forEach(n=>{const i=new Image();i.src='/img/'+n+'.webp?v=1';WSP[n]=i;});
 const wmFx={mask:null,wave:null,tmp:null,clouds:[],cl:[]};
@@ -1337,7 +1357,7 @@ function wmDraw(){
   g.save();CL(true);g.restore();g.globalAlpha=1;
   if(!j)return;
   const me=wmMe(),myTag=me&&me.clan,lab=(txt,x,y,r)=>{g.font='600 11px system-ui,sans-serif';g.textAlign='center';g.fillStyle='#ece6d6';g.strokeStyle='rgba(0,0,0,.7)';g.lineWidth=3;const ly=y-r-6<14?y+r+13:y-r-6;g.strokeText(txt,x,ly);g.fillText(txt,x,ly);};
-  const sc=Math.min(2.4,1+(z-1)*.28);                         // значки чуть растут при приближении
+  const sc=Math.min(3.4,1+(z-1)*.5);                         // значки чуть растут при приближении
   // отряды
   j.marches.forEach(m=>{
     const col=m.mine?'#f2cd75':m.inc?'#ff6a55':'#8fb0c4',pu=m.inc?.6+.4*Math.sin(tt*6):1;
@@ -1353,34 +1373,46 @@ function wmDraw(){
   const hallTier=h=>h>=20?5:h>=15?4:h>=10?3:h>=5?2:1;
   const spr=(name,x,y,h,ph,glow)=>{
     const im=WSP[name];if(!im||!im.complete||!im.naturalWidth)return;
-    const bob=RM?0:Math.sin(tt*1.6+ph)*1.3,br=RM?1:1+Math.sin(tt*1.9+ph)*.012,w=h*im.naturalWidth/im.naturalHeight;
-    g.save();g.globalAlpha=.35;g.fillStyle='#000';g.beginPath();g.ellipse(x,y,w*.34,h*.1,0,0,7);g.fill();g.restore();
-    g.save();g.translate(x,y+bob);g.scale(1,br);g.drawImage(im,-w/2,-h,w,h);g.restore();
+    const bob=RM?0:Math.sin(tt*1.6+ph)*.35,br=RM?1:1+Math.sin(tt*1.9+ph)*.012,w=h*im.naturalWidth/im.naturalHeight;
+    g.save();g.globalAlpha=.4;g.fillStyle='#000';g.beginPath();g.ellipse(x,y+h*.03,w*.42,h*.13,0,0,7);g.fill();g.restore();
+    g.save();g.translate(x,y+h*.14+bob);g.scale(1,br);g.drawImage(im,-w/2,-h,w,h);g.restore();
     if(glow&&!RM){const f=.55+.45*Math.sin(tt*9+ph*3)*Math.sin(tt*5.3+ph);g.save();g.globalCompositeOperation='lighter';
-      [[-.22,-.42],[.24,-.5]].forEach((o,i)=>{const gx=x+o[0]*w,gy=y+o[1]*h,rr=h*.2,gr=g.createRadialGradient(gx,gy,0,gx,gy,rr);gr.addColorStop(0,'rgba(255,170,60,'+(.5*(i?f:1-f*.5))+')');gr.addColorStop(1,'rgba(255,120,20,0)');g.fillStyle=gr;g.beginPath();g.arc(gx,gy,rr,0,7);g.fill();});
+      [[-.22,-.42],[.24,-.5]].forEach((o,i)=>{const gx=x+o[0]*w,gy=y+h*.14+o[1]*h,rr=h*.2,gr=g.createRadialGradient(gx,gy,0,gx,gy,rr);gr.addColorStop(0,'rgba(255,170,60,'+(.5*(i?f:1-f*.5))+')');gr.addColorStop(1,'rgba(255,120,20,0)');g.fillStyle=gr;g.beginPath();g.arc(gx,gy,rr,0,7);g.fill();});
       g.restore();
-      for(let k=0;k<3;k++){const u=((tt*.35+k/3+ph)%1),px=x+(k-1)*w*.12+Math.sin(u*6+k)*3,py=y-h*.7-u*h*.5;g.fillStyle='rgba(210,205,200,'+(.28*(1-u))+')';g.beginPath();g.arc(px,py,1.5+u*3.2,0,7);g.fill();}
+      for(let k=0;k<3;k++){const u=((tt*.35+k/3+ph)%1),px=x+(k-1)*w*.12+Math.sin(u*6+k)*3,py=y-h*.55-u*h*.5;g.fillStyle='rgba(210,205,200,'+(.28*(1-u))+')';g.beginPath();g.arc(px,py,1.5+u*3.2,0,7);g.fill();}
     }
   };
   const hit=[];
   wmTargets().forEach(o=>{
     const x=X(o.x),y=Y(o.y),sel=o.t.id===ui.wtsel,camp=o.t.kind==='camp',nd=o.t.kind==='node',ph=o.t.level*1.7;
     if(x<-30||y<-30||x>W+30||y>W+40)return;
-    const h=(camp?30:nd?22:25)*sc;
+    const h=(camp?15:nd?11:12.5)*sc;
     if(sel){g.strokeStyle='#fff';g.lineWidth=1.5;g.beginPath();g.ellipse(x,y,h*.45,h*.14,0,0,7);g.stroke();}
-    spr(camp?'mcamp':nd?'mnode-'+(o.t.res||'wood'):'mhall'+hallTier(o.t.level),x,y,h,ph,camp||!nd);
+    spr(camp?'mcamp':nd?'mnode-'+(o.t.res||'wood'):'mhall'+hallTier(o.t.level),x,y,h,ph,camp||!nd);hit.push({k:'t',id:o.t.id,x,y,h});
     if(z>=3||sel)lab(o.t.name,x,y-h*.55,h*.45);
   });
   j.players.forEach(p=>{
-    const x=X(p.x),y=Y(p.y),tr=hallTier(p.hall),h=(22+tr*2)*sc;
+    const x=X(p.x),y=Y(p.y),tr=hallTier(p.hall),h=(10.5+tr)*sc;
     if(x<-30||y<-30||x>W+30||y>W+40)return;
     const col=p.me?'#f2cd75':(myTag&&p.clan===myTag)?'#7fb4ff':'#d97b6c';
     g.save();g.strokeStyle=col;g.globalAlpha=p.me?.9:.75;g.lineWidth=p.me?2:1.5;g.beginPath();g.ellipse(x,y,h*.5+(p.me?Math.sin(tt*2.4)*1.5:0),h*.16,0,0,7);g.stroke();g.restore();
     if(p.pid===ui.wsel){g.strokeStyle='#fff';g.lineWidth=1.5;g.beginPath();g.ellipse(x,y,h*.58,h*.2,0,0,7);g.stroke();}
-    spr('mhall'+tr,x,y,h,p.hall*.9,true);
+    spr('mhall'+tr,x,y,h,p.hall*.9,true);hit.push({k:'p',id:p.pid,x,y,h});
     if(p.online){g.fillStyle='#7ee07e';g.beginPath();g.arc(x+h*.42,y-h*.9,2.2,0,7);g.fill();}
     if(p.me||p.pid===ui.wsel||z>=2.2)lab(p.name,x,y-h*.55,h*.45);
   });
+  wmBosses().forEach((o,bi)=>{
+    const x=X(o.x),y=Y(o.y),h=22*sc;if(x<-40||y<-40||x>W+40||y>W+50)return;
+    const nm='mboss'+o.n;if(!WSP[nm]){const im=new Image();im.src='/img/boss'+o.n+'.webp?v=1';WSP[nm]=im;}
+    const pulse=RM?.4:.5+.5*Math.sin(tt*2+bi);
+    g.save();g.globalCompositeOperation='lighter';const gr=g.createRadialGradient(x,y-h*.4,0,x,y-h*.4,h*.9);gr.addColorStop(0,o.col+(.35+.25*pulse)+')');gr.addColorStop(1,o.col+'0)');g.fillStyle=gr;g.beginPath();g.arc(x,y-h*.4,h*.9,0,7);g.fill();g.restore();
+    g.save();g.strokeStyle='rgba(230,90,70,.9)';g.lineWidth=1.6;g.beginPath();g.ellipse(x,y+h*.05,h*.5,h*.16,0,0,7);g.stroke();g.restore();
+    spr(nm,x,y,h,bi*2.3,false);
+    const bw=h*.9,pc=Math.max(0,o.b.hp/o.b.max);g.fillStyle='rgba(0,0,0,.55)';g.fillRect(x-bw/2,y+h*.26,bw,3.2);g.fillStyle='#d9534f';g.fillRect(x-bw/2,y+h*.26,bw*pc,3.2);
+    hit.push({k:'b',id:o.type,x,y,h});
+    if(z>=1.6||ui.wbsel===o.type)lab(o.label,x,y-h*1.02,h*.3);
+  });
+  wmHit=hit;
   /* облака сверху и птицы */
   g.save();CL(false);g.restore();g.globalAlpha=1;
   if(!RM)for(let f=0;f<3;f++)for(let b=0;b<3;b++){
@@ -1402,11 +1434,11 @@ function wmInit(){
   const toMap=(cx,cy)=>{const r=rect(),s=r.width/100*ui.wz;return {x:(cx-r.left-r.width/2)/s+ui.wcx,y:(cy-r.top-r.height/2)/s+ui.wcy};};
   const zoomAt=(cx,cy,nz)=>{const before=toMap(cx,cy);ui.wz=Math.max(1,Math.min(8,nz));const r=rect(),s=r.width/100*ui.wz;ui.wcx=before.x-(cx-r.left-r.width/2)/s;ui.wcy=before.y-(cy-r.top-r.height/2)/s;wmClamp();wmDraw();};
   const pick=(cx,cy)=>{
-    const j=ui.wm&&ui.wm.j;if(!j)return;const q=toMap(cx,cy+13),k=rect().width/100*ui.wz;
-    let best=null,bd=1e9;j.players.forEach(p=>{const d=Math.hypot(p.x-q.x,p.y-q.y);if(d<bd){bd=d;best=p;}});
-    let bt=null,bdt=1e9;wmTargets().forEach(o=>{const d=Math.hypot(o.x-q.x,o.y-q.y);if(d<bdt){bdt=d;bt=o;}});
-    if(bt&&bdt*k<=16&&bdt<=bd){ui.wtsel=bt.t.id;ui.wsel='';}else{ui.wtsel='';ui.wsel=best&&bd*k<=18?best.pid:'';}
-    wmInfo();wmDraw();
+    const r=rect(),px=(cx-r.left)*(r.width?r.width/r.width:1),py=cy-r.top;let best=null,bd=1e9;
+    wmHit.forEach(o=>{const mx=o.x,my=o.y-o.h*.45,d=Math.hypot(px-mx,py-my),tol=Math.max(22,o.h*.8);if(d<=tol&&d<bd){bd=d;best=o;}});
+    ui.wtsel='';ui.wsel='';ui.wbsel='';
+    if(best){if(best.k==='t')ui.wtsel=best.id;else if(best.k==='p')ui.wsel=best.id;else ui.wbsel=best.id;}
+    wmInfo();wmDraw();if(best)wmPopup();
   };
   const dist2=()=>{const a=[...pts.values()];return Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y);};
   c.onpointerdown=e=>{c.setPointerCapture(e.pointerId);pts.set(e.pointerId,{x:e.clientX,y:e.clientY,sx:e.clientX,sy:e.clientY});moved=false;if(pts.size===2)g0={d:dist2(),z:ui.wz};};

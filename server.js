@@ -321,12 +321,38 @@ function clanSettle(c) {
     bossPay(u, `Клановый босс «${b.name}» повержен`, { res: { wood: 400, iron: 300, silver: 200 }, gems: 10 + (i === 0 ? 10 : 0), haste: 3, w: i === 0 ? [20, 60, 20] : [55, 38, 7] });
   });
 }
-function bossTick() { try { worldBoss(); for (const c of Object.values(cstore.clans || {})) clanBoss(c); } catch (e) { console.error('boss', e.message); } }
+const DBOSS = ['Ледяной страж', 'Берсерк Хрольв', 'Вещая Вороница', 'Огненный мореход', 'Змей фьорда'];
+const DAILY_HITS = 1;
+function dailySettle(b) {
+  if (b.settled) return; b.settled = true; b.killed = b.hp <= 0;
+  const rows = topRows(b.dmg); b.top = rows.slice(0, 3).map(r => ({ name: r.name, v: r.v }));
+  rows.forEach((r, i) => {
+    const u = users.get(r.pid); if (!u) return;
+    const res = b.killed ? { wood: 120, iron: 90, silver: 60 } : { wood: 40, iron: 30, silver: 20 };
+    bossPay(u, `Дневной босс «${b.name}»${b.killed ? ' повержен' : ' ушёл'}${i === 0 ? ': 1-е место' : ''}`, { res, gems: b.killed ? (i === 0 ? 6 : 2) : 0, haste: b.killed ? 1 : 0, w: b.killed && i === 0 ? [40, 50, 10] : null });
+  });
+  saveEvs();
+}
+function dailyBoss() {
+  const now = Date.now(), d = Core.dayId(now); let b = evs.daily;
+  if (b && b.d !== d && !b.settled) dailySettle(b);
+  if (!b || b.d !== d) {
+    let n = 0; for (const u of users.values()) if (!u.banned && u.state.t > now - 7 * 86400000) n++;
+    n = Math.max(1, Math.min(200, n)); const max = 3000 + 2000 * n, i = d % DBOSS.length;
+    evs.daily = b = { d, i, name: DBOSS[i], hp: max, max, dmg: {}, settled: false }; saveEvs();
+  }
+  if (!b.settled && b.hp <= 0) dailySettle(b);
+  return b;
+}
+function bossTick() { try { worldBoss(); dailyBoss(); for (const c of Object.values(cstore.clans || {})) clanBoss(c); } catch (e) { console.error('boss', e.message); } }
 function bossView(u) {
   const now = Date.now(), st = u.state, day = Core.dayId(now), bt = (st.boss && st.boss.d === day) ? st.boss : { d: day, w: 0, c: 0 };
   const wb = worldBoss(), rows = topRows(wb.dmg), me = rows.findIndex(r => r.pid === u.id);
   const out = { now, left: { w: Math.max(0, BOSS_HITS - bt.w), c: Math.max(0, BOSS_HITS - bt.c) }, atk: Math.round(Core.armyAtk(st)), loss: BOSS_LOSS * 100,
     world: { name: wb.name, hp: Math.max(0, Math.round(wb.hp)), max: wb.max, end: wb.end, state: wb.settled ? (now >= wb.nextAt ? 'wait' : 'done') : 'active', killed: !!wb.killed, nextAt: wb.nextAt || 0, top: rows.slice(0, 5), me: { v: me < 0 ? 0 : rows[me].v, rank: me < 0 ? 0 : me + 1 }, lastTop: wb.top || [] } };
+  const db = dailyBoss(), dr = topRows(db.dmg), dm = dr.findIndex(r => r.pid === u.id), dend = (Core.dayId(now) + 1) * 86400000 - 3 * 3600000;
+  out.left.d = Math.max(0, DAILY_HITS - (bt.dd || 0));
+  out.daily = { name: db.name, hp: Math.max(0, Math.round(db.hp)), max: db.max, end: dend, state: db.settled ? 'done' : 'active', killed: db.hp <= 0, top: dr.slice(0, 5), me: { v: dm < 0 ? 0 : dr[dm].v, rank: dm < 0 ? 0 : dm + 1 } };
   const c = Clan.clanOf(cstore, u.id);
   if (!c) out.clan = { none: 'Вступите в клан, чтобы бить кланового босса.' };
   else { const b = clanBoss(c); if (!b) out.clan = { none: 'Клановый босс появляется, когда в клане два игрока и больше.' };
@@ -337,20 +363,21 @@ function bossHit(u, type) {
   const st = u.state; Core.use(st);
   if (st.b.hall < 3) return { error: 'Бить босса можно с Палаты ярла 3.' };
   const now = Date.now(), day = Core.dayId(now);
-  if (!st.boss || st.boss.d !== day) st.boss = { d: day, w: 0, c: 0 };
-  const key = type === 'clan' ? 'c' : 'w';
-  if (st.boss[key] >= BOSS_HITS) return { error: 'Сегодня удары уже потрачены (2 в день).' };
+  if (!st.boss || st.boss.d !== day) st.boss = { d: day, w: 0, c: 0, dd: 0 };
+  const key = type === 'clan' ? 'c' : type === 'daily' ? 'dd' : 'w';
+  if ((st.boss[key] || 0) >= (type === 'daily' ? DAILY_HITS : BOSS_HITS)) return { error: type === 'daily' ? 'Сегодня удар по дневному боссу уже потрачен.' : 'Сегодня удары уже потрачены (2 в день).' };
   let b, c = null;
   if (type === 'clan') { c = Clan.clanOf(cstore, u.id); if (!c) return { error: 'Вы не в клане.' }; b = clanBoss(c); if (!b || b.settled) return { error: 'Босс сейчас недоступен.' }; }
+  else if (type === 'daily') { b = dailyBoss(); if (b.settled) return { error: 'Дневной босс сегодня уже ушёл.' }; }
   else { b = worldBoss(); if (b.settled || now >= b.end) return { error: 'Мирового босса сейчас нет.' }; }
   if (b.hp <= 0) return { error: 'Босс уже повержен.' };
   const base = Core.armyAtk(st); if (base < 1) return { error: 'Нет войск для удара.' };
   const dmg = Math.round(base * (0.9 + Math.random() * 0.2));
   const lost = {}; for (const k of Object.keys(st.troops)) { const n = st.troops[k] || 0, l = Math.min(n, Math.ceil(n * BOSS_LOSS)); if (l > 0) { st.troops[k] = n - l; lost[k] = l; } }
-  st.boss[key]++;
+  st.boss[key] = (st.boss[key] || 0) + 1;
   b.hp -= dmg; b.dmg[u.id] = (b.dmg[u.id] || 0) + dmg;
   Core.addLogTo(st, `Удар по боссу «${b.name}»: ${dmg} урона. Потери: ${Core.fmtComp(lost) || 'нет'}.`, 'info');
-  if (type === 'clan') { if (b.hp <= 0) clanSettle(c); cdirty = true; } else if (b.hp <= 0) { worldSettle(b); saveEvs(); } else saveEvs();
+  if (type === 'clan') { if (b.hp <= 0) clanSettle(c); cdirty = true; } else if (type === 'daily') { if (b.hp <= 0) dailySettle(b); else saveEvs(); } else if (b.hp <= 0) { worldSettle(b); saveEvs(); } else saveEvs();
   markDirty(u);
   return { ok: true, dmg, lost: Core.fmtComp(lost) || 'нет', killed: b.hp <= 0 };
 }
@@ -622,7 +649,7 @@ async function api(req, res, url) {
     if (limited('boss:' + u.id, 6, 10000)) return json(res, 429, { error: 'Слишком быстро.' });
     let b; try { b = await readBody(req); } catch (e) { return json(res, 400, { error: 'Некорректный запрос' }); }
     touchState(u);
-    const r = bossHit(u, b.t === 'clan' ? 'clan' : 'world');
+    const r = bossHit(u, b.t === 'clan' ? 'clan' : b.t === 'daily' ? 'daily' : 'world');
     if (r.error) return json(res, 400, { error: r.error });
     return json(res, 200, Object.assign({ view: bossView(u), state: u.state, cfg: { t: Core.CFG.t }, now: Date.now(), inc: incomingOf(u.id) }, r));
   }
