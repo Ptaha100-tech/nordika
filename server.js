@@ -486,7 +486,7 @@ function cleanName(s) { return typeof s === 'string' ? s.trim().replace(/\s+/g, 
 
 let rankCache = { at: 0, list: [] };
 function ranking() {
-  if (Date.now() - rankCache.at < 20000) return rankCache.list;
+  if (Date.now() - rankCache.at < 3000) return rankCache.list;
   const list = [];
   for (const u of users.values()) list.push({ id: u.id, name: u.name, hall: u.state.b.hall, score: Core.score(u.state), tag: sctx.tagOf(u.id) });
   list.sort((a, b) => b.score - a.score);
@@ -667,7 +667,7 @@ async function api(req, res, url) {
     const list = ranking(), idx = list.findIndex(x => x.id === id), c = Clan.clanOf(cstore, id);
     return json(res, 200, { pid: id, name: t.name, hall: t.state.b.hall, score: Core.score(t.state), rank: idx + 1, total: list.length,
       clan: c ? { tag: c.tag, name: c.name } : null, online: sctx.online(id), seen: (t.seen || 0), av: t.avatar || '', fr: t.frame || 0, me: id === u.id,
-      hero: ((t.state.hero && t.state.hero.lv) || 1), stat: { wins: t.state.stat.wins || 0, pvpWins: t.state.stat.pvpWins || 0, campWins: t.state.stat.campWins || 0, defWins: t.state.stat.defWins || 0, trained: t.state.stat.trained || 0 },
+      hero: ((t.state.hero && t.state.hero.lv) || 1), look: ((t.state.hero && t.state.hero.look) || 1), eq: Object.fromEntries(Object.entries((t.state.eq && t.state.eq.s) || {}).filter(([, it]) => it).map(([k, it]) => [k, { slot: it.slot, r: it.r, il: it.il }])), stat: { wins: t.state.stat.wins || 0, pvpWins: t.state.stat.pvpWins || 0, campWins: t.state.stat.campWins || 0, defWins: t.state.stat.defWins || 0, trained: t.state.stat.trained || 0 },
       friend: (sstore.friends[u.id] || []).includes(id), blocked: (sstore.blocks[u.id] || []).includes(id) });
   }
   if (req.method === 'POST' && url === '/api/logout') {

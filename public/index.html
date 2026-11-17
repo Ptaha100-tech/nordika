@@ -370,6 +370,7 @@ canvas[data-hero]{transform-origin:50% 90%;animation:heroLife 5s ease-in-out inf
 .eqhero{overflow:hidden}
 .eqpt.full{transform-origin:50% 80%;animation:heroLife 6s ease-in-out infinite}
 @media (prefers-reduced-motion:reduce){canvas[data-u],canvas[data-hero],.eqpt.full{animation:none!important}}
+.shortc{display:flex;gap:8px;margin:0 0 8px}.shortc .btn{flex:1;font-size:15px;padding:10px 6px}
 </style>
 </head>
 <body>
@@ -470,6 +471,7 @@ async function act(a,arg){
   catch(e){if(e.status===401)logout(true);else toast(e.message);}
   finally{busy=false;}
   render();
+  if(ui.orOpen&&!$('modal').hidden)oracleSheet();
   if(ui.eqOpen&&!$('modal').hidden){if(ui.eqSel&&ui.eqSel.id&&!S.eq.inv.some(x=>x.id===ui.eqSel.id))ui.eqSel=null;eqSheet();}
 }
 
@@ -524,7 +526,7 @@ function costHTML(c){
 function effect(id,L){
   const b=B[id],nx=L<MAXL;
   if(b.res)return `Добыча: ${fmt(prodAt(id,L))}/ч`+(nx?` → ${fmt(prodAt(id,L+1))}/ч`:'');
-  if(id==='storehouse')return `Вместимость: ${fmt(Core.capAt(L,lvl('hall')))}`+(nx?` → ${fmt(Core.capAt(L+1,lvl('hall')))}`:'');
+  if(id==='storehouse'){const vm=Core.isVip()?1.2:1;return `Вместимость: ${fmt(Math.round(Core.capAt(L,lvl('hall'))*vm))}`+(nx?` → ${fmt(Math.round(Core.capAt(L+1,lvl('hall'))*vm))}`:'');}
   if(id==='vault')return `Прячет от грабежа: ${fmt(300*L)} каждого ресурса`+(nx?` → ${fmt(300*(L+1))}`:'');
   if(id==='barracks')return `Обучение +${15*(L-1)}%, партия до ${10*L}`+(nx?` → +${15*L}%, до ${10*(L+1)}`:'');
   if(id==='oracle')return L?`Знания доступны до ур. ${L}`+(nx?` → ${L+1}`:''):'Откроет знания Оракула';
@@ -555,6 +557,7 @@ function viewCity(){
   if(!S.introDone)h+=`<section class="card"><h3>Добро пожаловать, ярл</h3>
     <p class="sm" style="margin:6px 0 10px">Стройте и улучшайте здания, пока копится добыча. Копите дружину в Казарме и ходите в походы: на разбойников, на ресурсные точки и на города других игроков. Таймеры идут и при закрытой игре. Пока вас нет, на город могут напасть, поэтому держите дома войско и стройте Хранилище.</p>
     <button class="btn" data-act="intro">Понятно</button></section>`;
+  h+=`<div class="shortc"><button class="btn" data-act="eq" type="button">⚒ Кузница</button><button class="btn" data-act="oracle" type="button">🔮 Оракул</button></div>`;
   h+=jobsHTML('city');
   BORDER.forEach(id=>{
     const b=B[id],L=lvl(id),block=canUp(id),busyB=S.q&&S.q.id===id;
@@ -601,7 +604,11 @@ function viewTroops(){
     }
     h+=`</div></article>`;
   });
-  h+=`<h2 style="margin-top:6px">Знания Оракула</h2>`;
+  h+=`<section class="card"><h2>Знания Оракула</h2><p class="sm muted">Знания открывает ярлык «Оракул» на экране города.</p><button class="btn" data-act="oracle" type="button">Открыть Оракул</button></section>`;
+  return h;
+}
+function oracleHTML(){
+  let h='';
   if(!lvl('oracle'))h+=`<section class="card"><p class="note">Постройте Оракул, чтобы изучать знания.</p></section>`;
   Object.keys(TECH).forEach(k=>{
     const t=TECH[k],L=S.tech[k];
@@ -613,6 +620,10 @@ function viewTroops(){
     h+=`<article class="card bld"><div class="plate"><i class="rn glow d${k.length%4}">${t.r}</i><span class="cap">${TL[k]}</span></div><div class="bb"><div class="bt"><h3>${t.n}</h3><span class="lv">Ур. ${L}</span></div><p class="bd">${t.d}</p>${act}</div></article>`;
   });
   return h;
+}
+function oracleSheet(){
+  $('modal').innerHTML=`<div class="sheet"><h2>Оракул</h2>${S.study?jobHTML('Оракул',TECH[S.study.key].n+', ур. '+S.study.to,S.study,'study'):''}${oracleHTML()}<button class="btn ghost" data-act="sheetx" type="button" style="margin-top:8px">Назад</button></div>`;
+  $('modal').hidden=false;ui.orOpen=true;
 }
 function heroHTML(){
   const H=heroOf(S),maxed=H.lv>=MAXHL,need=xpNeed(H.lv);
@@ -794,7 +805,7 @@ function clanGoalHTML(d){
   <div class="gbar"><span style="width:${pct}%"></span>${marks}</div>
   <div class="gt">${g.tiers.map((t,i)=>`<div class="${g.tier>i?'on':''}"><b>${t.n}</b><small>${t.need} оч.</small><small>ᛝ${t.gems}${t.haste?' ᛞ'+t.haste:''}</small></div>`).join('')}</div>
   <p class="note">Тройка лучших кланов недели получает ещё ${g.top.join(', ')} рунных камней. Награда приходит в понедельник.</p>
-  <details style="margin-top:6px"><summary class="sm">Вклад участников</summary>${g.members.map(m=>`<p class="sm" style="display:flex;justify-content:space-between;margin:2px 0"><span>${esc(m.name)}</span><b>${m.v}</b></p>`).join('')}</details>
+  <details style="margin-top:6px" ${window._cdet?"open":""} ontoggle="window._cdet=this.open"><summary class="sm">Вклад участников</summary>${g.members.map(m=>`<p class="sm" style="display:flex;justify-content:space-between;margin:2px 0"><span>${esc(m.name)}</span><b>${m.v}</b></p>`).join('')}</details>
   ${g.last&&g.last.top.length?`<p class="sm muted" style="margin-top:8px">Прошлая неделя: ${g.last.top.slice(0,3).map(c=>`${c.place}. [${esc(c.tag)}] ${c.total}`).join(', ')}.</p>`:''}</section>`;
 }
 function newsHTML(c){
@@ -892,6 +903,21 @@ function dmHTML(t,me){
   if(!t.msgs.length)return '<p class="cs">Переписка пуста. Напишите первым.</p>';
   return t.msgs.map(m=>msgH(m.from,m.from===me?'Вы':t.name,'',m.t,m.text,{me:m.from===me})).join('');
 }
+function peekSheet(p){
+  const E=p.eq||{},cell=k=>{const it=E[k];return `<div class="eqc"><div class="eqs ${it?'r'+it.r+' t-'+it.slot+it.r:''}">${eqIcon(it,k)}${it?`<i class="eqil">${it.il}</i>`:''}</div><span>${EQSN[k]}</span></div>`;};
+  const tot={atk:0,def:0,loot:0,eco:0};Object.keys(E).forEach(k=>{const it=E[k],st=Core.SLOTS[it.slot].stat;if(tot[st]!==undefined)tot[st]+=Core.itemPct(it);});
+  const pc=v=>'+'+Math.round(v*10)/10+'%';
+  const list=Object.keys(E).map(k=>`<p class="sm" style="margin:2px 0"><b style="color:${RC[E[k].r]}">${Core.itemName(E[k])}</b> <span class="muted">· ур. ${E[k].il} · +${Core.itemPct(E[k])}% ${Core.SLOTS[E[k].slot].w}</span></p>`).join('')||'<p class="muted sm">Снаряжения пока нет.</p>';
+  $('modal').innerHTML=`<div class="sheet eqw"><i class="rv a"></i><i class="rv b"></i><i class="rv c"></i><i class="rv d"></i>
+    <div class="eqban"><span>${esc(p.name)}</span></div>
+    <div class="eqtop"><div class="eqcol">${['helm','armor','gloves','pants','belt'].map(cell).join('')}</div>
+      <div class="eqhero"><img class="eqpt full" src="img/herop${p.look||1}.webp" alt="Ярл"><div class="eqnm"><b>${esc(p.name)}</b><span>Уровень ${p.hero||1}</span></div></div>
+      <div class="eqcol">${['cloak','weapon','amulet','ring1','ring2'].map(cell).join('')}</div></div>
+    <p class="sm" style="margin:8px 0">Атака ${pc(tot.atk)} · Защита ${pc(tot.def)} · Добыча ${pc(tot.eco)} · Ноша ${pc(tot.loot)}</p>
+    <div class="eqdet">${list}</div>
+    <button class="eqx" data-act="sheetx" type="button">Назад</button></div>`;
+  $('modal').hidden=false;
+}
 function profCard(){
   const p=ui.soc.prof;if(!p)return '';
   const d=ui.soc.d||{};
@@ -902,6 +928,7 @@ function profCard(){
     b.push(p.blocked?`<button class="btn small ghost" data-act="unblock" data-arg="${p.pid}">Разблокировать</button>`:`<button class="btn small ghost" data-act="block" data-arg="${p.pid}">Заблокировать</button>`);
     b.push(`<button class="btn small ghost" data-act="report" data-arg="${p.pid}">Пожаловаться</button>`);
   }
+  b.push(`<button class="btn small" data-act="peek" data-arg="${p.pid}">Облик и снаряжение</button>`);
   b.push('<button class="btn small ghost" data-act="profx">Закрыть</button>');
   const av=`<div class="av big fr${p.fr||0}">${p.av?`<img src="${p.av}" alt="">`:'<span class="ph">ᛟ</span>'}</div>`;
   return `<section class="card pcard"><div style="display:flex;gap:12px;align-items:center">${av}<div style="min-width:0;flex:1"><div class="trow2"><h2>${p.clan?`<span class="tag4">${esc(p.clan.tag)}</span>`:''}${esc(p.name)}</h2><span class="lv"><i class="online ${p.online?'':'off'}"></i>${p.online?'в игре':'не в игре'}</span></div>
@@ -1417,10 +1444,16 @@ function openModal(tid){
   $('modal').innerHTML=`<div class="sheet"><div class="trow2"><span class="kind">${KIND[t.kind]} · ур. ${t.level}</span><span class="pill ${v.c}">${v.t}</span></div>
     <h3>${esc(t.name)}</h3>
     <p class="bd">${t.kind==='node'?`Отряд соберёт, сколько унесёт, и вернётся. Сбор занимает ${fmtT(gatherSecs())}.`:(t.kind==='player'?'Разведка (может устареть): ':'Защитники: ')+(fmtComp(t.comp)||'войск не видно')}</p>${loot}
-    ${rows||'<p class="note">Дома нет войск. Обучите их в Казарме.</p>'}
+    ${rows?presetsHTML():''}${rows||'<p class="note">Дома нет войск. Обучите их в Казарме.</p>'}
     <div class="pv" id="pv"></div>
     <div class="acts"><button class="btn" id="go" data-act="go">Выступить</button><button class="btn ghost" data-act="all">Всё войско</button><button class="btn ghost" data-act="cancel">Отмена</button></div></div>`;
   $('modal').hidden=false;modalPreview();
+}
+function presetsHTML(){
+  const P=S.presets||[];
+  const btn=i=>{const c=P[i],n=c?sum(c):0;return `<button class="btn small ${n?'':'ghost'}" data-act="papply" data-arg="${i}" type="button" ${n?'':'disabled'}>Армия ${i+1}${n?` <span class="sm">· ${n}</span>`:''}</button>`;};
+  return `<div class="presets"><p class="sm muted" style="margin:6px 0 2px">Сохранённые отряды:</p><div class="subtabs">${[0,1,2,3,4].map(btn).join('')}</div>
+  <p class="sm muted" style="margin:6px 0 2px">Запомнить текущий состав как:</p><div class="subtabs">${[0,1,2,3,4].map(i=>`<button class="btn small ghost" data-act="pset" data-arg="${i}" type="button">№${i+1}</button>`).join('')}</div></div>`;
 }
 function readSend(){
   const s={};
@@ -1465,7 +1498,7 @@ function uSheet(k){
     <div class="tblw"><table class="tbl"><thead><tr><th>Ст.</th><th>Название</th><th>Атака / защита / ноша</th><th>Улучшение до ступени</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
   $('modal').hidden=false;
 }
-function closeModal(){ui.topOpen=false;ui.eqOpen=false;ui.modal=null;$('modal').hidden=true;$('modal').innerHTML='';}
+function closeModal(){ui.topOpen=false;ui.eqOpen=false;ui.orOpen=false;ui.modal=null;$('modal').hidden=true;$('modal').innerHTML='';}
 
 /* ---------- события ---------- */
 async function loadRank(){
@@ -1484,6 +1517,8 @@ function onAct(act,arg){
     case 'looks':looksSheet();return;
     case 'look':act2('look',Number(arg)).then(()=>{if(!$('modal').hidden)looksSheet();});return;
     case 'eq':ui.eqSel=null;eqSheet();return;
+    case 'oracle':oracleSheet();return;
+    case 'peek':{const p=ui.soc.prof;if(p)peekSheet(p);return;}
     case 'eqsort':ui.eqSort=arg;eqSheet();return;
     case 'eqf':ui.eqF=arg;eqSheet();return;
     case 'eqsel':{const [a,v]=String(arg).split(':');ui.eqSel=a==='i'?{id:v}:{slot:v};eqSheet();return;}
@@ -1524,6 +1559,8 @@ function onAct(act,arg){
     case 'tn':{const[k,d]=arg.split(':');ui.tn[k]=Math.max(1,Math.min(maxBatch(),ui.tn[k]+parseInt(d,10)));render();return;}
     case 'atk':openModal(arg);return;
     case 'step':{const[k,d]=arg.split(':');const el=$('sn-'+k);if(el){el.value=Math.max(0,Math.min(S.troops[k],(parseInt(el.value,10)||0)+parseInt(d,10)));modalPreview();}return;}
+    case 'papply':{const c=(S.presets||[])[Number(arg)];if(c){for(const k in U){const el=$('sn-'+k);if(el)el.value=Math.min(S.troops[k],c[k]||0);}modalPreview();}return;}
+    case 'pset':{const i=Number(arg),c=readSend();if(!sum(c)){toast('Сначала выберите войско');return;}act2('preset',{i,comp:c}).then(()=>{toast('Сохранено: Армия '+(i+1));const tid=ui.modal,sv={};for(const k in U){const el=$('sn-'+k);sv[k]=el?el.value:0;}openModal(tid);for(const k in U){const el=$('sn-'+k);if(el)el.value=sv[k];}modalPreview();});return;}
     case 'all':for(const k in U){const el=$('sn-'+k);if(el)el.value=S.troops[k];}modalPreview();return;
     case 'cancel':closeModal();return;
     case 'go':{const id=ui.modal,s=readSend(),n=S.marches.length;closeModal();ui.tab='map';act2('march',{id,send:s}).then(()=>{if(S.marches.length>n&&window.Snd)Snd.sfx('march');});return;}

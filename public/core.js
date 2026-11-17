@@ -231,6 +231,7 @@ function ensure(st) {
   if (!st.tier) st.tier = { spear: 1, archer: 1, cav: 1 };
   if (!st.hero) st.hero = { lv: 1, xp: 0, sp: 0, sk: { atk: 0, def: 0, loot: 0 } };
   if (!(st.hero.look >= 1 && st.hero.look <= 5)) st.hero.look = 1;
+  if (!Array.isArray(st.presets)) st.presets = [];
   if (st.upg === undefined) st.upg = null;
   if (st.gems === undefined) { st.gems = 0; st.vip = 0; st.daily = 0; st.bought = {}; }
 }
@@ -259,6 +260,8 @@ const isVip = () => (S.vip || 0) > nowMs();
 const cap = () => Math.round(capAt(lvl('storehouse'), lvl('hall')) * (isVip() ? 1.2 : 1));
 const ecoMul = () => (1 + 0.05 * S.tech.eco + eqB(S, 'eco')) * (isVip() ? 1.15 : 1);
 const prot = () => 300 * lvl('vault');
+/* Добыча и награды не превышают вместимость Амбара (уже лежащее сверху не отнимаем). */
+const addCapped = (k, v) => { const c = cap(), cur = S.res[k] || 0; S.res[k] = Math.max(cur, Math.min(c, cur + v)); };
 function prodAt(id, L) { const b = B[id]; return L ? Math.round(b.base * L * (1 + 0.12 * (L - 1)) * ecoMul()) : 0; }
 function rate(rid) { const id = BORDER.find(k => B[k].res === rid); return prodAt(id, lvl(id)); }
 const upCost = (id, L) => { const o = {}; for (const k in B[id].cost) o[k] = Math.round(B[id].cost[k] * grow(L, 1.55, 1.10)); return o; };
@@ -281,7 +284,7 @@ const addLog = (txt, k, t) => addLogTo(S, txt, k, t);
 function score(st) {
   let s = 0;
   for (const k in B) s += (st.b[k] || 0) * 40;
-  for (const k in U) s += (st.troops[k] || 0) * (U[k].atk + U[k].def) / 2;
+  for (const k in U) { let n = st.troops[k] || 0; (st.marches || []).forEach(m => { n += (m.send && m.send[k]) || 0; }); s += n * (U[k].atk + U[k].def) / 2; }
   for (const k in st.tech) s += st.tech[k] * 50;
   s += heroOf(st).lv * 30;
   if (st.eq) EQS.forEach(k => { const it = st.eq.s[k]; if (it) s += 15 * (it.r + 1) * it.il; });
@@ -503,7 +506,7 @@ function endGather(m) {
 }
 function returnMarch(m) {
   for (const k in m.send) S.troops[k] = (S.troops[k] || 0) + m.send[k];
-  for (const k in m.loot) S.res[k] += m.loot[k];
+  for (const k in m.loot) addCapped(k, m.loot[k]);
   S.marches = S.marches.filter(x => x !== m);
   toast('Дружина вернулась домой');
 }
@@ -581,7 +584,7 @@ const CLAN_COST = { wood: 500, stone: 500 }, CLAN_HALL = 3;
 function jobInfo(kind) {
   const o = jobObj(kind); if (!o) return null;
   if (!o.sid) o.sid = 'j' + (S.mid++);
-  const what = kind === 'q' ? `${B[o.id].n}, ур. ${o.to}` : kind === 'train' ? `${U[o.type].n} ×${o.n}` : kind === 'study' ? `${TECH[o.key].n}, ур. ${o.to}` : `${unitName(o.key, o.to)}`;
+  const what = kind === 'q' ? `${B[o.id].n}, ур. ${o.to}` : kind === 'train' ? `${unitName(o.type, tierOf(S, o.type))} ×${o.n}` : kind === 'study' ? `${TECH[o.key].n}, ур. ${o.to}` : `${unitName(o.key, o.to)}`;
   return { kind, sid: o.sid, end: o.end, dur: o.dur, what };
 }
 function helpJob(kind, sid, cutMs) {
@@ -612,7 +615,7 @@ function claim(id) {
   const q = QUESTS.find(x => x.id === id);
   if (!q || S.claimed[id] || q.cur() < q.max) return;
   S.claimed[id] = true;
-  for (const k in q.rw) { if (k === 'haste') S.haste += q.rw[k]; else if (k === 'gems') S.gems += q.rw[k]; else S.res[k] += q.rw[k]; }
+  for (const k in q.rw) { if (k === 'haste') S.haste += q.rw[k]; else if (k === 'gems') S.gems += q.rw[k]; else addCapped(k, q.rw[k]); }
   addLog(`Награда за дело «${q.t}».`, 'good'); toast('Награда получена');
 }
 
@@ -774,6 +777,7 @@ function act(a, arg) {
     case 'claim': if (typeof arg === 'string') claim(arg); break;
     case 'intro': S.introDone = true; break;
     case 'bag': buyBag(); break;
+    case 'preset': { const i = Math.floor(Number(arg && arg.i)); if (!(i >= 0 && i < 5) || !arg.comp || typeof arg.comp !== 'object') break; const c = {}; for (const k in U) c[k] = Math.max(0, Math.min(1e6, Math.floor(Number(arg.comp[k])) || 0)); if (!Array.isArray(S.presets)) S.presets = []; while (S.presets.length < 5) S.presets.push(null); S.presets[i] = c; break; }
     case 'look': { const n = Math.floor(Number(arg)); if (n >= 1 && n <= LOOKS.length) S.hero.look = n; break; }
     case 'buy': if (typeof arg === 'string') buy(arg); break;
     case 'daily': claimDaily(); break;
