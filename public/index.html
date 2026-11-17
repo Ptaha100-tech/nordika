@@ -99,6 +99,9 @@ p{margin:0}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:12px;min-width:0}
 
 .btn{background:var(--accent);color:var(--accent-ink);border:0;border-radius:4px;padding:8px 14px;font-weight:700;font-size:15px;min-height:42px;cursor:pointer}
+.btn:not(.ghost):not(.danger):not(.on){background:none;color:#f6dc9a;text-shadow:0 1px 2px #000;border:solid transparent;border-width:9px 15px;border-image:url(/img/btn-leather.webp?v=1) 24% 14% fill/9px 15px stretch;padding:2px 4px;letter-spacing:.02em}
+.btn:not(.ghost):not(.danger):not(.on):active{filter:brightness(1.25)}
+.btn.small:not(.ghost):not(.danger):not(.on){border-width:7px 12px;border-image-width:7px 12px;padding:0 2px}
 .btn.ghost{background:transparent;color:var(--fg);border:1px solid var(--line)}
 .btn.danger{background:transparent;color:var(--blood);border:1px solid var(--blood)}
 .btn.small{min-height:34px;padding:4px 10px;font-size:14px}
