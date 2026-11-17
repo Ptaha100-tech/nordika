@@ -472,7 +472,7 @@ async function act(a,arg){
   finally{busy=false;}
   render();
   if(ui.orOpen&&!$('modal').hidden)oracleSheet();
-  if(ui.eqOpen&&!$('modal').hidden){if(ui.eqSel&&ui.eqSel.id&&!S.eq.inv.some(x=>x.id===ui.eqSel.id))ui.eqSel=null;eqSheet();}
+  if((ui.eqOpen||ui.fgOpen)&&!$('modal').hidden){if(ui.eqSel&&ui.eqSel.id&&!S.eq.inv.some(x=>x.id===ui.eqSel.id))ui.eqSel=null;if(ui.fgOpen)forgeSheet();else eqSheet();}
 }
 
 /* ---------- вход ---------- */
@@ -557,7 +557,7 @@ function viewCity(){
   if(!S.introDone)h+=`<section class="card"><h3>Добро пожаловать, ярл</h3>
     <p class="sm" style="margin:6px 0 10px">Стройте и улучшайте здания, пока копится добыча. Копите дружину в Казарме и ходите в походы: на разбойников, на ресурсные точки и на города других игроков. Таймеры идут и при закрытой игре. Пока вас нет, на город могут напасть, поэтому держите дома войско и стройте Хранилище.</p>
     <button class="btn" data-act="intro">Понятно</button></section>`;
-  h+=`<div class="shortc"><button class="btn" data-act="eq" type="button">⚒ Кузница</button><button class="btn" data-act="oracle" type="button">🔮 Оракул</button></div>`;
+  h+=`<div class="shortc"><button class="btn" data-act="fgopen" type="button">⚒ Кузница</button><button class="btn" data-act="oracle" type="button">🔮 Оракул</button></div>`;
   h+=jobsHTML('city');
   BORDER.forEach(id=>{
     const b=B[id],L=lvl(id),block=canUp(id),busyB=S.q&&S.q.id===id;
@@ -655,20 +655,12 @@ function eqHTML(){
   return `<section class="card"><h2>Снаряжение ярла</h2><p class="sm muted">Шлем, броня, оружие, кольца и другое дают бонусы к атаке, защите, ноше и добыче.</p><button class="btn" data-act="eq" type="button">Открыть снаряжение</button></section>`;
 }
 function eqSheet(){
-  const E=S.eq,fc=Core.forgeCost(),can=lvl('hall')>=3&&E.inv.length<Core.eqCap(S)&&S.res.wood>=fc.wood&&S.res.iron>=fc.iron&&S.res.silver>=fc.silver;
-  const H=heroOf(S),f=ui.eqF||'all',sel=ui.eqSel;
+  ui.fgOpen=false;
+  const E=S.eq,H=heroOf(S),sel=ui.eqSel;
   const tot={atk:Core.eqB(S,'atk'),def:Core.eqB(S,'def'),loot:Core.eqB(S,'loot'),eco:Core.eqB(S,'eco')};
   const pc=v=>'+'+Math.round(v*1000)/10+'%';
-  const so=ui.eqSort||'r',EQO=Object.keys(Core.SLOTS),inv=E.inv.slice().sort((a,b)=>so==='s'?EQO.indexOf(a.slot)-EQO.indexOf(b.slot)||b.r-a.r||b.il-a.il:so==='l'?b.il-a.il||b.r-a.r:so==='p'?Core.itemPct(b)-Core.itemPct(a):b.r-a.r||b.il-a.il).filter(it=>f==='all'||(f==='w'&&['weapon','gloves','ring','amulet'].includes(it.slot))||(f==='a'&&['armor','helm','pants','cloak','belt'].includes(it.slot)));
-  let cells=inv.map(it=>`<button class="eqs r${it.r} t-${it.slot}${it.r} ${sel&&sel.id===it.id?'sel':''}" data-act="eqsel" data-arg="i:${it.id}" type="button">${eqIcon(it)}<i class="eqil">${it.il}</i></button>`).join('');
-  for(let n=inv.length;n<Math.max(15,Math.ceil(inv.length/5)*5);n++)cells+='<div class="eqs empty"></div>';
-  let det='<p class="muted sm">Нажмите на предмет, чтобы увидеть бонус.</p>';
-  if(sel&&sel.id){const it=E.inv.find(x=>x.id===sel.id);if(it){const k=it.slot==='ring'?(!E.s.ring1?'ring1':!E.s.ring2?'ring2':'ring1'):it.slot,cur=E.s[k],sc=Core.scrapOf(it);
-    det=`${itemLine(it)}${cur?`<p class="sm" style="margin:2px 0;color:${Core.itemPct(it)>Core.itemPct(cur)?'var(--good,#7ad07a)':'var(--muted)'}">Сейчас надето: +${Core.itemPct(cur)}%</p>`:''}<div class="eqb"><button class="btn small" data-act="equip" data-arg="${it.id}">Надеть</button><button class="btn small ghost" data-act="scrap" data-arg="${it.id}">Разобрать (${fmtRes(sc)})</button></div>`;}}
-  else if(sel&&sel.slot){const it=E.s[sel.slot];det=it?`${itemLine(it)}<div class="eqb"><button class="btn small ghost" data-act="unequip" data-arg="${sel.slot}">Снять</button></div>`:`<p class="muted sm">Слот «${EQSN[sel.slot]}» пуст.</p>`;}
-  const grp={};E.inv.forEach(it=>{if(it.r<2){const g=it.slot+':'+it.r;grp[g]=(grp[g]||0)+1;}});
-  const mg=Object.keys(grp).filter(g=>grp[g]>=3);
-  const tabs=[['all','Все'],['w','Оружие'],['a','Броня']];
+  let det='<p class="muted sm">Нажмите на надетый предмет, чтобы увидеть бонус. Новые предметы куются в Кузнице.</p>';
+  if(sel&&sel.slot){const it=E.s[sel.slot];det=it?`${itemLine(it)}<div class="eqb"><button class="btn small ghost" data-act="unequip" data-arg="${sel.slot}">Снять</button></div>`:`<p class="muted sm">Слот «${EQSN[sel.slot]}» пуст. Выберите предмет в Кузнице.</p>`;}
   $('modal').innerHTML=`<div class="sheet eqw"><i class="rv a"></i><i class="rv b"></i><i class="rv c"></i><i class="rv d"></i>
     <div class="eqban"><span>Снаряжение</span></div>
     <div class="eqtop"><div class="eqcol">${['helm','armor','gloves','pants','belt'].map(eqCell).join('')}</div>
@@ -676,15 +668,42 @@ function eqSheet(){
       <div class="eqcol">${['cloak','weapon','amulet','ring1','ring2'].map(eqCell).join('')}</div></div>
     <div class="eqbars"><div class="eqbar rd"><i style="width:${Math.min(100,tot.atk*100/0.3)}%"></i><span>Атака</span><b>${pc(tot.atk)}</b></div><div class="eqbar gn"><i style="width:${Math.min(100,tot.def*100/0.3)}%"></i><span>Защита</span><b>${pc(tot.def)}</b></div><div class="eqbar bl"><i style="width:${Math.min(100,tot.loot*100/0.3)}%"></i><span>Ноша</span><b>${pc(tot.loot)}</b></div><div class="eqbar gd"><i style="width:${Math.min(100,tot.eco*100/0.3)}%"></i><span>Добыча</span><b>${pc(tot.eco)}</b></div></div>
     <div class="eqdet">${det}</div>
+    <button class="btn" style="display:block;margin:10px auto 0" data-act="fgopen" type="button">⚒ Открыть кузницу</button>
+    <button class="eqx" data-act="sheetx" type="button">Назад</button></div>`;
+  $('modal').hidden=false;ui.eqOpen=true;
+  try{window.Art&&Art.paintIn&&Art.paintIn($('modal'));}catch(e){}
+}
+function forgeSheet(){
+  ui.eqOpen=false;ui.fgOpen=true;
+  const E=S.eq,fc=Core.forgeCost(),can=lvl('hall')>=3&&E.inv.length<Core.eqCap(S)&&S.res.wood>=fc.wood&&S.res.iron>=fc.iron&&S.res.silver>=fc.silver;
+  const H=heroOf(S),f=ui.eqF||'all',sel=ui.eqSel;
+  const so=ui.eqSort||'r',EQO=Object.keys(Core.SLOTS),inv=E.inv.slice().sort((a,b)=>so==='s'?EQO.indexOf(a.slot)-EQO.indexOf(b.slot)||b.r-a.r||b.il-a.il:so==='l'?b.il-a.il||b.r-a.r:so==='p'?Core.itemPct(b)-Core.itemPct(a):b.r-a.r||b.il-a.il).filter(it=>f==='all'||(f==='w'&&['weapon','gloves','ring','amulet'].includes(it.slot))||(f==='a'&&['armor','helm','pants','cloak','belt'].includes(it.slot)));
+  let cells=inv.map(it=>`<button class="eqs r${it.r} t-${it.slot}${it.r} ${sel&&sel.id===it.id?'sel':''}" data-act="eqsel" data-arg="i:${it.id}" type="button">${eqIcon(it)}<i class="eqil">${it.il}</i></button>`).join('');
+  for(let n=inv.length;n<Math.max(15,Math.ceil(inv.length/5)*5);n++)cells+='<div class="eqs empty"></div>';
+  const pcw=v=>v;
+  let det='<p class="muted sm">Нажмите на предмет в сумке, чтобы увидеть бонус.</p>';
+  if(sel&&sel.id){const it=E.inv.find(x=>x.id===sel.id);if(it){const k=it.slot==='ring'?(!E.s.ring1?'ring1':!E.s.ring2?'ring2':'ring1'):it.slot,cur=E.s[k],sc=Core.scrapOf(it);
+    det=`${itemLine(it)}${cur?`<p class="sm" style="margin:2px 0;color:${Core.itemPct(it)>Core.itemPct(cur)?'var(--good,#7ad07a)':'var(--muted)'}">Сейчас надето: +${Core.itemPct(cur)}%</p>`:''}<div class="eqb"><button class="btn small" data-act="equip" data-arg="${it.id}">Надеть</button><button class="btn small ghost" data-act="scrap" data-arg="${it.id}">Разобрать (${fmtRes(sc)})</button></div>`;}}
+  const grp={};E.inv.forEach(it=>{if(it.r<2){const g=it.slot+':'+it.r;grp[g]=(grp[g]||0)+1;}});
+  const mg=Object.keys(grp).filter(g=>grp[g]>=3);
+  const tabs=[['all','Все'],['w','Оружие'],['a','Броня']];
+  $('modal').innerHTML=`<div class="sheet eqw"><i class="rv a"></i><i class="rv b"></i><i class="rv c"></i><i class="rv d"></i>
+    <div class="eqban"><span>Кузница</span></div>
+    <div class="eqforge"><div style="min-width:0"><b>Кузница</b><p class="sm muted" style="margin:0">Куёт случайный предмет (чаще обычный, реже редкий и эпический). Нужна Палата ярла 3. Уровень предмета зависит от Палаты ярла: сейчас куётся ур. ${Core.forgeLvl()} из ${Core.EQ_IL}. Палата 5 даёт ур. 2, Палата 10 ур. 3, Палата 15 ур. 4, Палата 20 ур. 5. Три одинаковых предмета можно слить в один следующей редкости.</p><div class="costs" style="margin:4px 0 0">${Object.keys(fc).map(k=>cpHTML(k,fc[k])).join('')}</div></div><button class="btn small ${can?'':'off'}" data-act="forge">Ковать</button></div>
+    <div class="eqdet">${det}</div>
     <div class="eqhd"><span>Сумка</span><span class="lv">${E.inv.length}/${Core.eqCap(S)}</span></div>
     ${(E.bag||0)<Core.BAG_COST.length?`<button class="btn small ghost" style="display:block;margin:6px auto 0" data-act="bag" type="button">Расширить сумку на ${Core.BAG_STEP} мест · ${Core.BAG_COST[E.bag||0]} рунных камней</button>`:''}
     <div class="subtabs" style="margin:6px 0">${tabs.map(t=>`<button class="btn small ${t[0]===f?'on':'ghost'}" data-act="eqf" data-arg="${t[0]}">${t[1]}</button>`).join('')}</div>
     <div class="subtabs sm" style="margin:2px 0 6px;align-items:center"><span class="muted sm">Порядок:</span>${[['r','редкость'],['s','слот'],['l','уровень'],['p','бонус']].map(t=>`<button class="btn small ${t[0]===so?'on':'ghost'}" data-act="eqsort" data-arg="${t[0]}">${t[1]}</button>`).join('')}</div>
     <div class="eqgrid">${cells}</div>
     ${mg.length?`<p class="sm muted" style="margin:8px 0 2px">Слияние: три одинаковых предмета дают один следующей редкости.</p>`+mg.map(g=>{const [sl,r]=g.split(':');return `<button class="btn small" style="margin:3px" data-act="merge" data-arg="${g}">${Core.SLOTS[sl].n}: 3 ${Core.RARN[r].toLowerCase()}х → ${Core.RARN[+r+1].toLowerCase()}</button>`;}).join(''):''}
-    <div class="eqforge"><div style="min-width:0"><b>Кузница</b><p class="sm muted" style="margin:0">Куёт случайный предмет (чаще обычный, реже редкий и эпический). Нужна Палата ярла 3. Уровень предмета зависит от Палаты ярла: сейчас куётся ур. ${Core.forgeLvl()} из ${Core.EQ_IL}. Палата 5 даёт ур. 2, Палата 10 ур. 3, Палата 15 ур. 4, Палата 20 ур. 5. Три одинаковых предмета можно слить в один следующей редкости.</p><div class="costs" style="margin:4px 0 0">${Object.keys(fc).map(k=>cpHTML(k,fc[k])).join('')}</div></div><button class="btn small ${can?'':'off'}" data-act="forge">Ковать</button></div>
+    <div class="subtabs" style="margin:6px 0">${tabs.map(t=>`<button class="btn small ${t[0]===f?'on':'ghost'}" data-act="eqf" data-arg="${t[0]}">${t[1]}</button>`).join('')}</div>
+    <div class="subtabs sm" style="margin:2px 0 6px;align-items:center"><span class="muted sm">Порядок:</span>${[['r','редкость'],['s','слот'],['l','уровень'],['p','бонус']].map(t=>`<button class="btn small ${t[0]===so?'on':'ghost'}" data-act="eqsort" data-arg="${t[0]}">${t[1]}</button>`).join('')}</div>
+    <div class="eqgrid">${cells}</div>
+    ${mg.length?`<p class="sm muted" style="margin:8px 0 2px">Слияние: три одинаковых предмета дают один следующей редкости.</p>`+mg.map(g=>{const [sl,r]=g.split(':');return `<button class="btn small" style="margin:3px" data-act="merge" data-arg="${g}">${Core.SLOTS[sl].n}: 3 ${Core.RARN[r].toLowerCase()}х → ${Core.RARN[+r+1].toLowerCase()}</button>`;}).join(''):''}
+    <button class="btn ghost" style="display:block;margin:8px auto 0" data-act="eq" type="button">Снаряжение ярла</button>
     <button class="eqx" data-act="sheetx" type="button">Назад</button></div>`;
-  $('modal').hidden=false;ui.eqOpen=true;
+  $('modal').hidden=false;
   try{window.Art&&Art.paintIn&&Art.paintIn($('modal'));}catch(e){}
 }
 const TL={atk:'Атака',def:'Защита',eco:'Экономика',bld:'Стройка',fast:'Походы',drill:'Найм'};
@@ -1503,7 +1522,7 @@ function uSheet(k){
     <div class="tblw"><table class="tbl"><thead><tr><th>Ст.</th><th>Название</th><th>Атака / защита / ноша</th><th>Улучшение до ступени</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
   $('modal').hidden=false;
 }
-function closeModal(){ui.topOpen=false;ui.eqOpen=false;ui.orOpen=false;ui.modal=null;$('modal').hidden=true;$('modal').innerHTML='';}
+function closeModal(){ui.topOpen=false;ui.eqOpen=false;ui.fgOpen=false;ui.orOpen=false;ui.modal=null;$('modal').hidden=true;$('modal').innerHTML='';}
 
 /* ---------- события ---------- */
 async function loadRank(){
@@ -1524,9 +1543,10 @@ function onAct(act,arg){
     case 'eq':ui.eqSel=null;eqSheet();return;
     case 'oracle':oracleSheet();return;
     case 'peek':{const p=ui.soc.prof;if(p)peekSheet(p);return;}
-    case 'eqsort':ui.eqSort=arg;eqSheet();return;
-    case 'eqf':ui.eqF=arg;eqSheet();return;
-    case 'eqsel':{const [a,v]=String(arg).split(':');ui.eqSel=a==='i'?{id:v}:{slot:v};eqSheet();return;}
+    case 'fgopen':ui.eqSel=null;forgeSheet();return;
+    case 'eqsort':ui.eqSort=arg;forgeSheet();return;
+    case 'eqf':ui.eqF=arg;forgeSheet();return;
+    case 'eqsel':{const [a,v]=String(arg).split(':');ui.eqSel=a==='i'?{id:v}:{slot:v};if(ui.fgOpen)forgeSheet();else eqSheet();return;}
     case 'frame':saveAv({fr:Number(arg)});return;
     case 'avclr':saveAv({clear:true});return;
     case 'top':topSheet();return;
