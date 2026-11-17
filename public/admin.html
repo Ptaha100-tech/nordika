@@ -114,7 +114,7 @@ function chatView(){
 }
 function sayView(){
   const nw=data.news;
-  return `<div class="card"><h2>Объявление в общий чат</h2><p class="muted sm">Сообщение появится от имени «Вести фьерда» у всех игроков.</p><textarea id="say" rows="3" maxlength="300" style="margin:8px 0"></textarea><button id="saygo">Отправить всем</button></div>
+  return `<div class="card"><h2>Объявление в общий чат</h2><p class="muted sm">Сообщение появится от имени «Вести фьорда» у всех игроков.</p><textarea id="say" rows="3" maxlength="300" style="margin:8px 0"></textarea><button id="saygo">Отправить всем</button></div>
   <div class="card"><h2>Новость на сайте</h2><input id="ntitle" maxlength="80" placeholder="Заголовок" style="margin-bottom:8px"><textarea id="ntext" rows="4" maxlength="600" placeholder="Текст новости" style="margin-bottom:8px"></textarea><button id="newsgo">Опубликовать</button></div>
   <div class="card"><h2>Новости на сайте</h2>${nw?nw.news.map(n=>`<div class="row"><div><p><b>${esc(n.title)}</b> <span class="muted sm">${fmtD(n.t)}</span></p><p class="muted sm">${esc(n.text)}</p></div><button class="s r" data-nd="${n.id}">×</button></div>`).join('')||'<p class="muted sm">Новостей нет.</p>':'<p class="muted">Загрузка…</p>'}</div>`;
 }

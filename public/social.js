@@ -149,7 +149,7 @@ const admin = {
   deleteWorld(st, t, pid) { st.world = st.world.filter(m => !(m.t === t && m.pid === pid)); },
   clearWorld(st, pid) { st.world = st.world.filter(m => m.pid !== pid); },
   dismissReport(st, id) { st.reports = st.reports.filter(r => r.id !== id); },
-  say(st, ctx, text) { st.world.push({ t: ctx.now(), pid: 'sys', name: 'Вести фьерда', tag: '', text: clean(text, 300), sys: true }); if (st.world.length > MAXW) st.world.splice(0, st.world.length - MAXW); }
+  say(st, ctx, text) { st.world.push({ t: ctx.now(), pid: 'sys', name: 'Вести фьорда', tag: '', text: clean(text, 300), sys: true }); if (st.world.length > MAXW) st.world.splice(0, st.world.length - MAXW); }
 };
 
 const API = { newStore, view, act, admin, MAXW };

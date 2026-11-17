@@ -7,8 +7,8 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="icon" href="/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/icon-192.png">
-<title>Играть в Nordika: сердце фьерда онлайн</title>
-<meta name="description" content="Nordika: сердце фьерда — браузерная стратегия про викингов. Вход и регистрация, играйте бесплатно с телефона.">
+<title>Играть в Nordika: сердце фьорда онлайн</title>
+<meta name="description" content="Nordika: сердце фьорда — браузерная стратегия про викингов. Вход и регистрация, играйте бесплатно с телефона.">
 <link rel="canonical" href="https://nordika-mobile.ru/play">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Runic&display=swap">
 <style>
@@ -395,8 +395,8 @@ canvas.pic[data-b="farm"],canvas.pic[data-b="sawmill"]{animation:bldSway 6s ease
 <body>
 <div id="authbg" hidden><video id="authV" muted loop playsinline preload="auto" poster="/login-poster.jpg" disablepictureinpicture><source src="/login.mp4" type="video/mp4"></video></div>
 <div id="auth" hidden>
-  <div class="lg lgs"><img data-l="logo" alt="Nordika: сердце фьерда"></div>
-  <h1 class="vh">Nordika: сердце фьерда</h1>
+  <div class="lg lgs"><img data-l="logo" alt="Nordika: сердце фьорда"></div>
+  <h1 class="vh">Nordika: сердце фьорда</h1>
   <p class="sub">Стратегия про викингов. Стройте деревню, собирайте дружину, ходите в походы и грабьте соседей.</p>
   <div class="tabs2"><button class="btn on" id="tabLogin" type="button">Вход</button><button class="btn ghost" id="tabReg" type="button">Новая игра</button></div>
   <div class="field"><label for="in-name">Имя ярла</label><input id="in-name" autocomplete="username" maxlength="16" autocapitalize="off"></div>
@@ -410,7 +410,7 @@ canvas.pic[data-b="farm"],canvas.pic[data-b="sawmill"]{animation:bldSway 6s ease
   <header id="head">
     <div class="hgrid">
       <div class="hs hl"><button class="av fr0" id="av" data-act="me" type="button" aria-label="Профиль"><img id="avi" alt="" hidden><span class="ph">ᛟ</span></button><button class="swbtn" data-act="me" type="button">Профиль</button><button class="swbtn" id="lg" data-act="tab" data-arg="log" type="button">Хроника</button></div>
-      <div class="hm"><div id="logo" class="lg" hidden><img data-l="logo" alt="Nordika: сердце фьерда"><img class="ov a" data-l="logo-c1" alt=""><img class="ov b" data-l="logo-c2" alt=""><img class="ov c" data-l="logo-c3" alt=""><img class="ov b" data-l="logo-r1" alt=""><img class="ov c" data-l="logo-r2" alt=""><img class="ov a" data-l="logo-r3" alt=""><img class="ov d" data-l="logo-s1" alt=""><img class="ov e" data-l="logo-s2" alt=""><img class="ov f" data-l="logo-f" alt=""></div><h1 id="h1">Nordika</h1></div>
+      <div class="hm"><div id="logo" class="lg" hidden><img data-l="logo" alt="Nordika: сердце фьорда"></div><h1 id="h1">Nordika</h1></div>
       <div class="hs hr"><span class="haste" title="Руны времени: каждая сокращает любой таймер на 5 минут"><span><i class="rn glow d2">ᛞ</i> <b id="hasteN">0</b></span><small>Ускорение</small></span><button class="gembtn" data-act="tab" data-arg="shop" aria-label="Магазин"><span><i class="rn glow d1">ᛝ</i> <b id="gemN">0</b></span><small id="vipN">Магазин</small></button><button class="gembtn tpbtn" data-act="top" aria-label="Топ"><span><i class="rn glow d3">ᚦ</i></span><small>Топ</small></button><button class="swbtn" id="snd" data-act="snd" type="button" aria-label="Звук и музыка">♪</button></div>
     </div>
     <div class="res" id="res"></div>
@@ -1694,7 +1694,7 @@ function onAct(act,arg){
     case 'go':{const id=ui.modal,s=readSend(),n=S.marches.length;closeModal();ui.tab='map';act2('march',{id,send:s}).then(()=>{if(S.marches.length>n&&window.Snd)Snd.sfx('march');});return;}
     case 'train':act2('train',{k:arg,n:ui.tn[arg]});return;
     case 'logout':logout(false);return;
-    case 'invshare':{const l=inviteLink(),txt='Играй со мной в Nordika: сердце фьерда, стратегию про викингов. Ссылка: '+l;
+    case 'invshare':{const l=inviteLink(),txt='Играй со мной в Nordika: сердце фьорда, стратегию про викингов. Ссылка: '+l;
       if(navigator.share){navigator.share({title:'Nordika',text:txt,url:l}).catch(()=>{});}
       else{try{navigator.clipboard.writeText(l).then(()=>toast('Ссылка скопирована'),()=>{const i=$('invl');if(i){i.select();}toast('Выделите и скопируйте ссылку');});}catch(e){const i=$('invl');if(i)i.select();}}return;}
     case 'snd':sndCycle();return;
@@ -1705,7 +1705,7 @@ function onAct(act,arg){
 }
 function act2(a,arg){return act(a,arg);}
 function boot(){
-  document.querySelectorAll('img[data-l]').forEach(i=>{i.src=(window.LOGO&&LOGO[i.dataset.l])||('/img/'+i.dataset.l+'.webp');});
+  document.querySelectorAll('img[data-l]').forEach(i=>{i.src=(window.LOGO&&LOGO[i.dataset.l])||('/img/'+i.dataset.l+'.webp?v=2');});
   buildStatic();
   $('view').addEventListener('scroll',()=>{
     ui.sat=Date.now();
