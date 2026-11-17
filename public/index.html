@@ -152,8 +152,10 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--frost);outline-
 .rk:first-of-type{border-top:0}.rk .n{width:2em;color:var(--muted)}.rk .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.rk.me{color:var(--accent)}
 
 #nav{flex:none;display:grid;grid-template-columns:repeat(6,1fr);border-top:1px solid var(--line);margin:0 -16px}
-#nav button{background:none;border:0;border-top:2px solid transparent;margin-top:-1px;padding:7px 0 8px;color:var(--muted);cursor:pointer;position:relative;font-size:13px}
+#nav button{background:none;border:0;border-top:2px solid transparent;margin-top:-1px;padding:5px 0 6px;color:var(--muted);cursor:pointer;position:relative;font-size:13px}
 #nav .rn{display:block;font-size:20px;line-height:1.1}
+#nav .nic{display:block;width:36px;height:36px;margin:0 auto;object-fit:contain;filter:saturate(.75) brightness(.8);transition:.15s}#nav button.on .nic{filter:none;transform:translateY(-1px) scale(1.06)}
+.uic{width:34px;height:34px;object-fit:contain;display:block}.uic.s{display:inline-block;width:26px;height:26px;vertical-align:middle;margin-right:4px}.shortc .btn{display:flex;align-items:center;justify-content:center}
 #nav button.on{color:var(--accent);border-top-color:var(--accent)}
 #nav .dot{position:absolute;top:6px;left:calc(50% + 10px);width:8px;height:8px;border-radius:50%;background:var(--blood)}
 
@@ -412,7 +414,7 @@ canvas.pic[data-b="farm"],canvas.pic[data-b="sawmill"]{animation:bldSway 6s ease
     <div class="hgrid">
       <div class="hs hl"><button class="av fr0" id="av" data-act="me" type="button" aria-label="Профиль"><img id="avi" alt="" hidden><span class="ph">ᛟ</span></button><button class="swbtn" data-act="me" type="button">Профиль</button><button class="swbtn" id="lg" data-act="tab" data-arg="log" type="button">Хроника</button></div>
       <div class="hm"><div id="logo" class="lg" hidden><img data-l="logo" alt="Nordika: сердце фьорда"></div><h1 id="h1">Nordika</h1></div>
-      <div class="hs hr"><span class="haste" title="Руны времени: каждая сокращает любой таймер на 5 минут"><span><i class="rn glow d2">ᛞ</i> <b id="hasteN">0</b></span><small>Ускорение</small></span><button class="gembtn" data-act="tab" data-arg="shop" aria-label="Магазин"><span><i class="rn glow d1">ᛝ</i> <b id="gemN">0</b></span><small id="vipN">Магазин</small></button><button class="gembtn tpbtn" data-act="top" aria-label="Топ"><span><i class="rn glow d3">ᚦ</i></span><small>Топ</small></button><button class="swbtn" id="snd" data-act="snd" type="button" aria-label="Звук и музыка">♪</button></div>
+      <div class="hs hr"><span class="haste" title="Руны времени: каждая сокращает любой таймер на 5 минут"><span><i class="rn glow d2">ᛞ</i> <b id="hasteN">0</b></span><small>Ускорение</small></span><button class="gembtn" data-act="tab" data-arg="shop" aria-label="Магазин"><span><i class="rn glow d1">ᛝ</i> <b id="gemN">0</b></span><small id="vipN">Магазин</small></button><button class="gembtn tpbtn" data-act="top" aria-label="Топ"><span><img class="uic" src="/img/ui-top.webp?v=1" alt=""></span><small>Топ</small></button><button class="swbtn" id="snd" data-act="snd" type="button" aria-label="Звук и музыка">♪</button></div>
     </div>
     <div class="res" id="res"></div>
     <div id="net" hidden>Нет связи с сервером</div>
@@ -578,7 +580,7 @@ function viewCity(){
   if(!S.introDone)h+=`<section class="card"><h3>Добро пожаловать, ярл</h3>
     <p class="sm" style="margin:6px 0 10px">Стройте и улучшайте здания, пока копится добыча. Копите дружину в Казарме и ходите в походы: на разбойников, на ресурсные точки и на города других игроков. Таймеры идут и при закрытой игре. Пока вас нет, на город могут напасть, поэтому держите дома войско и стройте Хранилище.</p>
     <button class="btn" data-act="intro">Понятно</button></section>`;
-  h+=`<div class="shortc"><button class="btn" data-act="fgopen" type="button">⚒ Кузница</button><button class="btn" data-act="oracle" type="button">🔮 Оракул</button></div>`;
+  h+=`<div class="shortc"><button class="btn" data-act="fgopen" type="button"><img class="uic s" src="/img/ui-forge.webp?v=1" alt=""> Кузница</button><button class="btn" data-act="oracle" type="button"><img class="uic s" src="/img/ui-oracle.webp?v=1" alt=""> Оракул</button></div>`;
   h+=jobsHTML('city');
   BORDER.forEach(id=>{
     const b=B[id],L=lvl(id),block=canUp(id),busyB=S.q&&S.q.id===id;
@@ -1473,9 +1475,10 @@ function sndFor(a){if(!window.Snd||SND_ACT[a]==='none')return;Snd.sfx(SND_ACT[a]
 function sndLabel(){const c=window.Snd?Snd.cfg:{};return c.music&&c.sfx?'♪':c.sfx?'♪ эфф.':'♪ ✕';}
 function sndCycle(){const c=Snd.cfg;if(c.music&&c.sfx){Snd.set('music',false);}else if(c.sfx){Snd.set('sfx',false);}else{Snd.set('sfx',true);Snd.set('music',true);}const b=$('snd');if(b)b.textContent=sndLabel();}
 const NAV=[['city','ᛟ','Город'],['troops','ᛏ','Войска'],['map','ᚱ','Карта'],['quests','ᚷ','Задания'],['chat','ᛗ','Чат'],['clan','ᛉ','Клан']];
+const NAVI={city:'city',troops:'troops',map:'map',quests:'quests',chat:'chat',clan:'clan'};
 function buildStatic(){
   $('res').innerHTML=RES.map((r,i)=>`<div class="chip" id="c-${r.id}" style="color:var(--${r.id})"><span class="rimg">${ricon(r.id)}</span><span class="lb">${r.n}</span><b id="v-${r.id}" style="color:var(--fg)">0</b><small id="r-${r.id}">+0/ч</small><div class="cb"><i id="b-${r.id}"></i></div></div>`).join('');
-  $('nav').innerHTML=NAV.map((n,i)=>`<button data-act="tab" data-arg="${n[0]}" id="n-${n[0]}" aria-label="${n[2]}"><i class="rn glow d${i%4}">${n[1]}</i><span class="cap">${n[2]}</span></button>`).join('');
+  $('nav').innerHTML=NAV.map((n,i)=>`<button data-act="tab" data-arg="${n[0]}" id="n-${n[0]}" aria-label="${n[2]}"><img class="nic" src="/img/ui-${NAVI[n[0]]}.webp?v=1" alt=""><span class="cap">${n[2]}</span></button>`).join('');
 }
 function render(bg){
   if(!S)return;
