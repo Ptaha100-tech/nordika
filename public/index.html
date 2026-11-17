@@ -278,6 +278,10 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--frost);outline-
 .incb{margin:8px 12px;padding:10px 12px;border:1px solid #c0392b;background:rgba(192,57,43,.2);border-radius:10px;color:#ffd9d2;font-size:14px;animation:incp 1.4s ease-in-out infinite}.incb .sm{opacity:.85;font-size:12px}@keyframes incp{50%{box-shadow:0 0 14px #c0392b}}
 
 .eqw{position:relative;max-height:92vh;overflow-y:auto;padding:22px 14px 14px;background:linear-gradient(#26201c,#15110f);border:7px solid #4a3827;border-image:linear-gradient(#6a5236,#2c2018 50%,#6a5236) 1;box-shadow:inset 0 0 0 2px #1a120c,inset 0 0 0 3px #8a6a3a,0 0 30px #000}
+.fgw{position:relative;max-width:440px;width:100%;max-height:92vh;overflow:hidden;padding:0;background:#15110f;border:0;border-radius:0;box-shadow:none}
+.fgw::after{content:"";position:absolute;inset:0;background:url(/img/forge-frame.webp?v=1) 0 0/100% 100% no-repeat;pointer-events:none;z-index:4}
+.fgin{max-height:92vh;height:min(92vh,720px);overflow-y:auto;padding:72px 56px 64px}
+.fgw .eqx{margin-top:8px}
 .eqw .rv{position:absolute;width:12px;height:12px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#f3d58a,#8a6a2a 60%,#3a2a10);box-shadow:0 1px 2px #000;z-index:3}
 .eqw .rv.a{left:4px;top:4px}.eqw .rv.b{right:4px;top:4px}.eqw .rv.c{left:4px;bottom:4px}.eqw .rv.d{right:4px;bottom:4px}
 .eqban{position:relative;margin:-8px auto 12px;width:max-content;max-width:90%;padding:6px 26px;background:linear-gradient(#6b5226,#3d2c12);border:2px solid #d8b25a;border-radius:6px;box-shadow:0 2px 8px #000,inset 0 0 0 1px #2a1d0a}
@@ -714,8 +718,7 @@ function forgeSheet(){
   const grp={};E.inv.forEach(it=>{if(it.r<2){const g=it.slot+':'+it.r;grp[g]=(grp[g]||0)+1;}});
   const mg=Object.keys(grp).filter(g=>grp[g]>=3);
   const tabs=[['all','Все'],['w','Оружие'],['a','Броня']];
-  $('modal').innerHTML=`<div class="sheet eqw"><i class="rv a"></i><i class="rv b"></i><i class="rv c"></i><i class="rv d"></i>
-    <div class="eqban"><span>Кузница</span></div>
+  $('modal').innerHTML=`<div class="sheet fgw"><div class="fgin">
     <div class="eqforge"><div style="min-width:0"><b>Кузница</b><p class="sm muted" style="margin:0">Куёт случайный предмет (чаще обычный, реже редкий и эпический). Нужна Палата ярла 3. Уровень предмета зависит от Палаты ярла: сейчас куётся ур. ${Core.forgeLvl()} из ${Core.EQ_IL}. Палата 5 даёт ур. 2, Палата 10 ур. 3, Палата 15 ур. 4, Палата 20 ур. 5. Три одинаковых предмета можно слить в один следующей редкости.</p><div class="costs" style="margin:4px 0 0">${Object.keys(fc).map(k=>cpHTML(k,fc[k])).join('')}</div></div><button class="btn small ${can?'':'off'}" data-act="forge">Ковать</button></div>
     <div class="eqdet">${det}</div>
     <div class="eqhd"><span>Сумка</span><span class="lv">${E.inv.length}/${Core.eqCap(S)}</span></div>
@@ -724,12 +727,8 @@ function forgeSheet(){
     <div class="subtabs sm" style="margin:2px 0 6px;align-items:center"><span class="muted sm">Порядок:</span>${[['r','редкость'],['s','слот'],['l','уровень'],['p','бонус']].map(t=>`<button class="btn small ${t[0]===so?'on':'ghost'}" data-act="eqsort" data-arg="${t[0]}">${t[1]}</button>`).join('')}</div>
     <div class="eqgrid">${cells}</div>
     ${mg.length?`<p class="sm muted" style="margin:8px 0 2px">Слияние: три одинаковых предмета дают один следующей редкости.</p>`+mg.map(g=>{const [sl,r]=g.split(':');return `<button class="btn small" style="margin:3px" data-act="merge" data-arg="${g}">${Core.SLOTS[sl].n}: 3 ${Core.RARN[r].toLowerCase()}х → ${Core.RARN[+r+1].toLowerCase()}</button>`;}).join(''):''}
-    <div class="subtabs" style="margin:6px 0">${tabs.map(t=>`<button class="btn small ${t[0]===f?'on':'ghost'}" data-act="eqf" data-arg="${t[0]}">${t[1]}</button>`).join('')}</div>
-    <div class="subtabs sm" style="margin:2px 0 6px;align-items:center"><span class="muted sm">Порядок:</span>${[['r','редкость'],['s','слот'],['l','уровень'],['p','бонус']].map(t=>`<button class="btn small ${t[0]===so?'on':'ghost'}" data-act="eqsort" data-arg="${t[0]}">${t[1]}</button>`).join('')}</div>
-    <div class="eqgrid">${cells}</div>
-    ${mg.length?`<p class="sm muted" style="margin:8px 0 2px">Слияние: три одинаковых предмета дают один следующей редкости.</p>`+mg.map(g=>{const [sl,r]=g.split(':');return `<button class="btn small" style="margin:3px" data-act="merge" data-arg="${g}">${Core.SLOTS[sl].n}: 3 ${Core.RARN[r].toLowerCase()}х → ${Core.RARN[+r+1].toLowerCase()}</button>`;}).join(''):''}
     <button class="btn ghost" style="display:block;margin:8px auto 0" data-act="eq" type="button">Снаряжение ярла</button>
-    <button class="eqx" data-act="sheetx" type="button">Назад</button></div>`;
+    <button class="eqx" data-act="sheetx" type="button">Назад</button></div></div>`;
   $('modal').hidden=false;
   try{window.Art&&Art.paintIn&&Art.paintIn($('modal'));}catch(e){}
 }
