@@ -435,7 +435,7 @@ const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',
 const sum=o=>Object.values(o).reduce((x,y)=>x+(y||0),0);
 
 let S=null,TOKEN='',off=0,seenLog=0,busy=false,lastSync=0,syncing=false,failCount=0;
-const ui={clan:null,clanAt:0,leaveSure:false,tab:'city',tn:{spear:10,archer:10,cav:10},modal:null,rank:null,rankAt:0,authMode:'login'};
+const ui={clan:null,clanAt:0,leaveSure:false,tab:'city',tn:{spear:10,archer:10,cav:10},tt:{},modal:null,rank:null,rankAt:0,authMode:'login'};
 try{TOKEN=localStorage.getItem('sp_token')||'';}catch(e){}
 if(window.DEMO)TOKEN='demo';
 
@@ -560,8 +560,8 @@ function jobsHTML(scope){
   const j=[];
   if(scope==='city'&&S.q)j.push(jobHTML('Стройка',`${B[S.q.id].n} → ур. ${S.q.to}`,S.q,'q'));
   if(scope==='troops'||scope==='city'){
-    if(S.train)j.push(jobHTML('Казарма',`${S.train.n} × ${unitName(S.train.type,tierOf(S,S.train.type))}`,S.train,'train'));
-    if(S.upg)j.push(jobHTML('Казарма',`${unitName(S.upg.key,S.upg.to)} (ступень ${S.upg.to})`,S.upg,'upg'));
+    if(S.train)j.push(jobHTML('Казарма',`${S.train.n} × ${unitName(S.train.type,S.train.t||1)}`,S.train,'train'));
+    if(S.upg)j.push(jobHTML('Казарма',`Улучшение до «${unitName(S.upg.k,S.upg.to)}» (ступень ${S.upg.to})`,S.upg,'upg'));
     if(S.study)j.push(jobHTML('Оракул',`${TECH[S.study.key].n} → ур. ${S.study.to}`,S.study,'study'));
   }
   if(scope==='map')S.marches.forEach(m=>{
@@ -593,33 +593,36 @@ function viewCity(){
 }
 function viewTroops(){
   let h=jobsHTML('troops');
-  const away={spear:0,archer:0,cav:0};
-  S.marches.forEach(m=>{for(const k in m.send)away[k]+=m.send[k];});
-  h+=`<section class="card"><h2>Дружина дома</h2><div class="stats">${Object.keys(U).map(k=>`<div class="stat"><b>${S.troops[k]}</b><span>${unitName(k,tierOf(S,k))}</span></div>`).join('')}</div>
+  const away={};
+  S.marches.forEach(m=>{for(const k in m.send)away[k]=(away[k]||0)+m.send[k];});
+  const stk=Core.sortKeys(S.troops).filter(k=>S.troops[k]>0);
+  h+=`<section class="card"><h2>Дружина дома</h2><div class="stats">${stk.length?stk.map(k=>`<div class="stat"><b>${S.troops[k]}</b><span>${Core.sname(k)} <small class="muted">ст.${Core.stier(k)}</small></span></div>`).join(''):'<p class="note">Дома пока нет воинов.</p>'}</div>
     ${sum(away)?`<p class="note">В походах: ${fmtComp(away)}</p>`:''}</section>`;
   h+=heroHTML();
+  const mt=Core.maxTier();
   Object.keys(U).forEach(k=>{
-    const u=U[k],ok=lvl('barracks')>=u.need,tr=tierOf(S,k),tm=tmul(tr);
+    const u=U[k],ok=lvl('barracks')>=u.need;
+    const tr=Math.max(1,Math.min(mt,ui.tt[k]||mt)),tm=tmul(tr);
     const n=Math.max(1,Math.min(ui.tn[k],maxBatch()||1));ui.tn[k]=n;
-    const c={};for(const r in u.cost)c[r]=u.cost[r]*n;
+    const c=Core.costOf(k,tr,n);
     h+=`<article class="card bld"><canvas class="pic tall" width="152" height="200" data-u="${k}" data-t="${tr}" aria-label="${unitName(k,tr)}"></canvas><div class="bb"><div class="bt"><h3>${unitName(k,tr)}</h3><span class="lv">Ступень ${tr}</span></div><p class="lv" style="margin-top:3px;white-space:normal">Атака ${Math.round(u.atk*tm)} · Защита ${Math.round(u.def*tm)} · Ноша ${Math.round(u.carry*tm)}</p>
-      <p class="bd">Бьёт сильнее: ${unitName(u.counters,tierOf(S,u.counters)).toLowerCase()}. Уязвим к: ${unitName(WEAK[k],tierOf(S,WEAK[k])).toLowerCase()}. <a href="#" class="lnk" data-act="usheet" data-arg="${k}">Все ступени</a></p>`;
+      <p class="bd">Бьёт сильнее: ${unitName(u.counters,1).toLowerCase()}. Уязвим к: ${unitName(WEAK[k],1).toLowerCase()}. <a href="#" class="lnk" data-act="usheet" data-arg="${k}">Все ступени</a></p>`;
     if(!ok)h+=`<p class="note">Нужна Казарма ур. ${u.need}</p>`;
     else{
+      if(mt>1)h+=`<div class="subtabs" style="margin:4px 0">${Array.from({length:mt},(_,i)=>`<button class="btn small ${i+1===tr?'':'ghost'}" data-act="tsel" data-arg="${k}:${i+1}" type="button">Ст.${i+1}</button>`).join('')}</div>`;
       h+=`<div class="stepper"><button class="btn ghost small" data-act="tn" data-arg="${k}:-5">−5</button><button class="btn ghost small" data-act="tn" data-arg="${k}:-1">−1</button><b>${n}</b><button class="btn ghost small" data-act="tn" data-arg="${k}:1">+1</button><button class="btn ghost small" data-act="tn" data-arg="${k}:5">+5</button></div>`;
       h+=costHTML(c);
-      h+=S.train?`<p class="note">Казарма занята</p>`:`<button class="btn" data-act="train" data-arg="${k}" data-gate="1">Обучить ${n} · ${fmtT(trainSecs(k,n))}</button>`;
-    }
-    if(ok){
-      if(tr>=MAXT)h+=`<p class="note">Высшая ступень</p>`;
-      else{
-        const to=tr+1,need=TIER_NEED[to-1];
-        h+=`<div class="tierbox"><b>Ступень ${to}: ${TIERN[k][to-1]}</b> <span class="muted sm">+30% к силе и ноше всех воинов этого вида</span>`;
-        if(lvl('barracks')<need)h+=`<p class="note">Нужна Казарма ур. ${need}</p>`;
-        else if(S.upg)h+=`<p class="note">Казарма улучшает воинов</p>`;
-        else h+=costHTML(tierCost(k,to))+`<button class="btn" data-act="tierup" data-arg="${k}" data-gate="1">Улучшить воинов · ${fmtT(tierSecs(to))}</button>`;
-        h+=`</div>`;
+      h+=S.train?`<p class="note">Казарма занята</p>`:`<button class="btn" data-act="train" data-arg="${k}" data-gate="1">Обучить ${n} · ${fmtT(trainSecs(k,n,tr))}</button>`;
+      if(tr>1){
+        const p=Core.upgPlan(k,tr),have=Core.sortKeys(S.troops).filter(x=>Core.stype(x)===k&&Core.stier(x)<tr&&S.troops[x]>0);
+        if(have.length){
+          h+=`<div class="tierbox"><b>Улучшить до ступени ${tr}: ${unitName(k,tr)}</b> <span class="muted sm">Нижние стопки (${p.tot} воинов) станут «${unitName(k,tr)}». Цена — ${Math.round(Core.UPG_PCT*100)}% разницы в цене найма.</span>`;
+          if(S.upg)h+=`<p class="note">Казарма улучшает воинов</p>`;
+          else h+=costHTML(p.cost)+`<button class="btn" data-act="tierup" data-arg="${k}:${tr}" data-gate="1">Улучшить всех (${p.tot}) · ${fmtT(p.secs)}</button>`;
+          h+=`</div>`;
+        }
       }
+      if(mt<MAXT)h+=`<p class="note sm">Следующая ступень откроется с Казармой ур. ${TIER_NEED[mt]}.</p>`;
     }
     h+=`</div></article>`;
   });
@@ -1071,9 +1074,9 @@ function looksSheet(){
 }
 async function meSheet(){
   let p=null;try{p=await call('GET','/api/profile?id='+encodeURIComponent(S.pid));}catch(e){}
-  const away={spear:0,archer:0,cav:0};S.marches.forEach(m=>{for(const k in m.send)away[k]+=m.send[k];});
+  const away={};S.marches.forEach(m=>{for(const k in m.send)away[k]=(away[k]||0)+m.send[k];});
   const H=Core.heroOf(S),st=S.stat;
-  const troops=Object.keys(U).map(k=>{const t=tierOf(S,k);return `<tr><td>${unitName(k,t)} <span class="muted">ст. ${t}</span></td><td>${S.troops[k]||0}</td><td>${away[k]||0}</td><td>${Math.round(U[k].atk*tmul(t))}/${Math.round(U[k].def*tmul(t))}</td></tr>`;}).join('');
+  const troops=Core.sortKeys(Object.assign({},S.troops,away)).map(k=>{const t=Core.stier(k),ty=Core.stype(k);return `<tr><td>${Core.sname(k)} <span class="muted">ст. ${t}</span></td><td>${S.troops[k]||0}</td><td>${away[k]||0}</td><td>${Math.round(U[ty].atk*tmul(t))}/${Math.round(U[ty].def*tmul(t))}</td></tr>`;}).join('');
   const bl=BORDER.map(id=>`<span class="pill mute">${B[id].n} ${lvl(id)}</span>`).join('');
   const tc=Object.keys(TECH).map(k=>`<span class="pill mute">${TECH[k].n} ${S.tech[k]||0}</span>`).join('');
   const A=ui.av||{img:'',fr:0},hall=lvl('hall');
@@ -1563,7 +1566,7 @@ function openModal(tid){
   const t=S.targets.find(x=>x.id===tid);if(!t)return;
   ui.modal=tid;
   const v=verdict(t);
-  const rows=Object.keys(U).filter(k=>S.troops[k]>0).map(k=>`<div class="srow"><label>${unitName(k,tierOf(S,k))} <span class="muted sm">(дома ${S.troops[k]})</span></label>
+  const rows=Core.sortKeys(S.troops).filter(k=>S.troops[k]>0).map(k=>`<div class="srow"><label>${Core.sname(k)} <small class="muted">ст.${Core.stier(k)}</small> <span class="muted sm">(дома ${S.troops[k]})</span></label>
     <button class="btn ghost small" data-act="step" data-arg="${k}:-5">−5</button>
     <input class="sn" id="sn-${k}" type="number" inputmode="numeric" min="0" max="${S.troops[k]}" value="${S.troops[k]}">
     <button class="btn ghost small" data-act="step" data-arg="${k}:5">+5</button></div>`).join('');
@@ -1584,7 +1587,7 @@ function presetsHTML(){
 }
 function readSend(){
   const s={};
-  for(const k in U){const el=$('sn-'+k);s[k]=el?Math.max(0,Math.min(S.troops[k],parseInt(el.value,10)||0)):0;}
+  for(const k in S.troops){const el=$('sn-'+k);const v=el?Math.max(0,Math.min(S.troops[k],parseInt(el.value,10)||0)):0;if(v)s[k]=v;}
   return s;
 }
 function modalPreview(){
@@ -1615,14 +1618,14 @@ function bSheet(id){
   $('modal').hidden=false;
 }
 function uSheet(k){
-  const u=U[k],cur=tierOf(S,k);let rows='';
+  const u=U[k],mt=Core.maxTier();let rows='';
   for(let t=1;t<=MAXT;t++){
-    const m=tmul(t),up=t>1?`${fmtRes(tierCost(k,t))} · ${fmtT(tierSecs(t))} · Казарма ${TIER_NEED[t-1]}`:'—';
-    rows+=`<tr class="${t===cur?'cur':''}"><td>${t}</td><td>${unitName(k,t)}</td><td>${Math.round(u.atk*m)}/${Math.round(u.def*m)}/${Math.round(u.carry*m)}</td><td>${up}</td></tr>`;
+    const m=tmul(t),op=t<=mt;
+    rows+=`<tr class="${op?'cur':''}"><td>${t}</td><td>${unitName(k,t)}</td><td>${Math.round(u.atk*m)}/${Math.round(u.def*m)}/${Math.round(u.carry*m)}</td><td>${op?fmtRes(Core.costOf(k,t,1)):'Казарма ур. '+TIER_NEED[t-1]}</td></tr>`;
   }
   $('modal').innerHTML=`<div class="sheet"><div class="trow2"><h3>${u.n}: все ступени</h3><button class="btn small ghost" data-act="sheetx">Закрыть</button></div>
-    <p class="muted sm">Обучение одного бойца: ${fmtRes(u.cost)}, ${fmtT(trainSecs(k,1))} (нужна Казарма ур. ${u.need}). Ваша ступень выделена.</p>
-    <div class="tblw"><table class="tbl"><thead><tr><th>Ст.</th><th>Название</th><th>Атака / защита / ноша</th><th>Улучшение до ступени</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+    <p class="muted sm">Нанимать можно любую открытую ступень (они выделены). Время обучения одного бойца ступени 1: ${fmtT(trainSecs(k,1,1))}. Уже обученных можно улучшать за ${Math.round(Core.UPG_PCT*100)}% разницы в цене. В поход можно брать разные ступени вместе.</p>
+    <div class="tblw"><table class="tbl"><thead><tr><th>Ст.</th><th>Название</th><th>Атака / защита / ноша</th><th>Цена найма одного</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
   $('modal').hidden=false;
 }
 function closeModal(){ui.topOpen=false;ui.eqOpen=false;ui.fgOpen=false;ui.orOpen=false;ui.modal=null;$('modal').hidden=true;$('modal').innerHTML='';}
@@ -1687,12 +1690,14 @@ function onAct(act,arg){
     case 'tn':{const[k,d]=arg.split(':');ui.tn[k]=Math.max(1,Math.min(maxBatch(),ui.tn[k]+parseInt(d,10)));render();return;}
     case 'atk':openModal(arg);return;
     case 'step':{const[k,d]=arg.split(':');const el=$('sn-'+k);if(el){el.value=Math.max(0,Math.min(S.troops[k],(parseInt(el.value,10)||0)+parseInt(d,10)));modalPreview();}return;}
-    case 'papply':{const c=(S.presets||[])[Number(arg)];if(c){for(const k in U){const el=$('sn-'+k);if(el)el.value=Math.min(S.troops[k],c[k]||0);}modalPreview();}return;}
-    case 'pset':{const i=Number(arg),c=readSend();if(!sum(c)){toast('Сначала выберите войско');return;}act2('preset',{i,comp:c}).then(()=>{toast('Сохранено: Армия '+(i+1));const tid=ui.modal,sv={};for(const k in U){const el=$('sn-'+k);sv[k]=el?el.value:0;}openModal(tid);for(const k in U){const el=$('sn-'+k);if(el)el.value=sv[k];}modalPreview();});return;}
-    case 'all':for(const k in U){const el=$('sn-'+k);if(el)el.value=S.troops[k];}modalPreview();return;
+    case 'papply':{const c=(S.presets||[])[Number(arg)];if(c){for(const k in S.troops){const el=$('sn-'+k);if(el)el.value=Math.min(S.troops[k],c[k]||0);}modalPreview();}return;}
+    case 'pset':{const i=Number(arg),c=readSend();if(!sum(c)){toast('Сначала выберите войско');return;}act2('preset',{i,comp:c}).then(()=>{toast('Сохранено: Армия '+(i+1));const tid=ui.modal,sv={};for(const k in S.troops){const el=$('sn-'+k);sv[k]=el?el.value:0;}openModal(tid);for(const k in S.troops){const el=$('sn-'+k);if(el)el.value=sv[k];}modalPreview();});return;}
+    case 'all':for(const k in S.troops){const el=$('sn-'+k);if(el)el.value=S.troops[k];}modalPreview();return;
     case 'cancel':closeModal();return;
     case 'go':{const id=ui.modal,s=readSend(),n=S.marches.length;closeModal();ui.tab='map';act2('march',{id,send:s}).then(()=>{if(S.marches.length>n&&window.Snd)Snd.sfx('march');});return;}
-    case 'train':act2('train',{k:arg,n:ui.tn[arg]});return;
+    case 'train':act2('train',{k:arg,n:ui.tn[arg],t:Math.max(1,Math.min(Core.maxTier(),ui.tt[arg]||Core.maxTier()))});return;
+    case 'tsel':{const[k,t]=arg.split(':');ui.tt[k]=+t;render();return;}
+    case 'tierup':{const[k,t]=arg.split(':');act2('tierup',{k,to:+t});return;}
     case 'logout':logout(false);return;
     case 'invshare':{const l=inviteLink(),txt='Играй со мной в Nordika: сердце фьорда, стратегию про викингов. Ссылка: '+l;
       if(navigator.share){navigator.share({title:'Nordika',text:txt,url:l}).catch(()=>{});}

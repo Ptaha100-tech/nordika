@@ -93,7 +93,7 @@ const QUESTS = [
   { id: 'q9',  t: 'Подними Казарму до 3 уровня',        cur: () => lvl('barracks'), max: 3, rw: { iron: 300, silver: 150 } },
   { id: 'q10', t: 'Собери ресурсы на точке карты',      cur: () => S.stat.gathered, max: 1, rw: { food: 300, wood: 300, haste: 1 } },
   { id: 'q12', t: 'Подними ярла до 3 уровня',            cur: () => heroOf(S).lv, max: 3, rw: { silver: 200, food: 300, haste: 1 } },
-  { id: 'q13', t: 'Улучши воинов до 2 ступени',         cur: () => Object.keys(U).filter(k => tierOf(S, k) >= 2).length, max: 1, rw: { iron: 300, silver: 200, haste: 1 } },
+  { id: 'q13', t: 'Обучи или улучши воинов до 2 ступени',         cur: () => Object.keys(U).filter(k => tierOf(S, k) >= 2).length, max: 1, rw: { iron: 300, silver: 200, haste: 1 } },
   { id: 'q14', t: 'Подними Палату ярла до 10 уровня',   cur: () => lvl('hall'),    max: 10, rw: { food: 3000, wood: 3000, stone: 2000, haste: 3, gems: 10 } },
   { id: 'q15', t: 'Подними ярла до 10 уровня',          cur: () => heroOf(S).lv,   max: 10, rw: { silver: 1500, iron: 1500, haste: 3, gems: 8 } },
   { id: 'q16', t: 'Подними Палату ярла до 20 уровня',   cur: () => lvl('hall'),    max: 20, rw: { food: 12000, wood: 12000, stone: 8000, iron: 5000, haste: 6, gems: 20 } },
@@ -131,7 +131,7 @@ const QUESTS = [
   QUESTS.forEach(q => { Object.keys(q.rw).forEach(k => { if (!q.rw[k]) delete q.rw[k]; }); });
 })();
 
-const armyAtk = st => { let a = 0; for (const k in U) a += (st.troops[k] || 0) * U[k].atk * tmul(tierOf(st, k)); return a * atkB(st); };
+const armyAtk = st => { let a = 0; for (const k in st.troops) if (validKey(k)) a += (st.troops[k] || 0) * U[stype(k)].atk * tmul(stier(k)); return a * atkB(st); };
 /* ============ Снаряжение ярла ============ */
 const SLOTS = {
   weapon: { n: 'Оружие',  stat: 'atk',  base: 3, w: 'к атаке всех воинов',      names: ['Дубовый топор', 'Стальная секира', 'Клинок ярла'] },
@@ -233,6 +233,16 @@ function ensure(st) {
   if (!(st.hero.look >= 1 && st.hero.look <= 5)) st.hero.look = 1;
   if (!Array.isArray(st.presets)) st.presets = [];
   if (st.upg === undefined) st.upg = null;
+  if (!st.stk) {          // перевод на стопки по ступеням: все нынешние воины встают в стопку своей ступени
+    st.stk = 1;
+    const T = k => (st.tier && st.tier[k]) || 1, conv = c => { const o = {}; for (const k in (c || {})) { const n = c[k] || 0; if (!validKey(k)) continue; const key = skey(k, T(k)); o[key] = (o[key] || 0) + n; } return o; };
+    st.troops = conv(st.troops);
+    if (Array.isArray(st.presets)) st.presets = st.presets.map(p => p ? conv(p) : p);
+    (st.marches || []).forEach(m => { m.send = conv(m.send); if (m.tgt && m.tgt.comp && m.tgt.kind !== 'player') m.tgt.comp = botComp(m.tgt.comp, m.tgt.level || 1); });
+    (st.targets || []).forEach(t => { if (t.comp && t.kind !== 'player') t.comp = botComp(t.comp, t.level || 1); });
+    if (st.train && !st.train.t) st.train.t = T(st.train.type);
+    if (st.upg && st.upg.key) { const c = tierCost(st.upg.key, st.upg.to); for (const r in c) st.res[r] = (st.res[r] || 0) + c[r]; st.upg = null; }
+  }
   if (st.gems === undefined) { st.gems = 0; st.vip = 0; st.daily = 0; st.bought = {}; }
 }
 const tierOf = (st, k) => (st.tier && st.tier[k]) || 1;
@@ -244,6 +254,30 @@ const atkB = st => 1 + 0.06 * st.tech.atk + 0.03 * (heroOf(st).sk.atk || 0) + eq
 const defB = st => 1 + 0.06 * st.tech.def + 0.03 * (heroOf(st).sk.def || 0) + eqB(st, 'def');
 const lootB = st => 1 + 0.05 * (heroOf(st).sk.loot || 0) + eqB(st, 'loot');
 const unitName = (k, t) => TIERN[k][(t || 1) - 1];
+/* Войска лежат отдельными стопками по ступеням: ключ 'spear' — 1 ступень, 'spear3' — 3 ступень. */
+const stype = k => String(k).replace(/\d+$/, '');
+const stier = k => { const m = /(\d+)$/.exec(String(k)); return m ? +m[1] : 1; };
+const skey = (k, t) => t > 1 ? k + t : k;
+const validKey = k => /^(spear|archer|cav)([2-7])?$/.test(String(k));
+const sname = k => unitName(stype(k), stier(k));
+const sortKeys = c => Object.keys(c).sort((a, b) => Object.keys(U).indexOf(stype(a)) - Object.keys(U).indexOf(stype(b)) || stier(a) - stier(b));
+const byType = c => { const o = { spear: 0, archer: 0, cav: 0 }; for (const k in c) { if (validKey(k)) o[stype(k)] += c[k] || 0; } return o; };
+const maxTier = () => { let t = 1; for (let i = 1; i < MAXT; i++) if (lvl('barracks') >= TIER_NEED[i]) t = i + 1; return t; };
+const botComp = (c, L) => { const t = Math.min(MAXT, 1 + Math.floor((Math.max(1, L) - 1) / 4)), o = {}; for (const k in c) if (c[k] > 0) o[skey(stype(k), t)] = (o[skey(stype(k), t)] || 0) + c[k]; return o; };
+const UPG_PCT = 0.65;     // улучшение стоит 65% разницы в цене найма
+const costOf = (k, t, n) => { const o = {}, f = tmul(t); for (const r in U[k].cost) o[r] = Math.round(U[k].cost[r] * f * n); return o; };
+function upgPlan(k, to, only) {
+  const n = {}; let tot = 0, steps = 0; const cost = {};
+  for (const key in S.troops) {
+    if (!validKey(key) || stype(key) !== k) continue;
+    const f = stier(key), c = S.troops[key] || 0;
+    if (c < 1 || f >= to || (only && f !== only)) continue;
+    n[f] = c; tot += c; steps += c * (to - f);
+    for (const r in U[k].cost) cost[r] = (cost[r] || 0) + Math.ceil(U[k].cost[r] * UPG_PCT * (tmul(to) - tmul(f)) * c);
+  }
+  const secs = Math.max(5, Math.min(Math.round(1800 * CFG.t), Math.round(steps * U[k].t * 0.15 / trainRate() * CFG.t * techCut('drill'))));
+  return { n, tot, cost, secs };
+}
 const xpNeed = L => 80 + 60 * L;
 const tierCost = (k, to) => { const f = Math.pow(2.2, to - 2); return { food: Math.round(300 * f), iron: Math.round(200 * f), silver: Math.round(120 * f) }; };
 const tierSecs = to => Math.round(60 * Math.pow(2, to - 2) * CFG.t);
@@ -272,7 +306,7 @@ const canAfford = c => Object.keys(c).every(k => S.res[k] >= c[k]);
 const pay = c => { for (const k in c) S.res[k] -= c[k]; };
 const trainRate = () => 1 + 0.15 * (lvl('barracks') - 1);
 const maxBatch = () => 10 * lvl('barracks') + 10;
-const trainSecs = (k, n) => Math.max(3, Math.round(n * U[k].t / trainRate() * CFG.t * techCut('drill') * (S && S.stat && S.stat.trained < 30 ? 0.4 : 1)));
+const trainSecs = (k, n, t) => Math.max(3, Math.round(n * U[k].t * (1 + 0.15 * ((t || 1) - 1)) / trainRate() * CFG.t * techCut('drill') * (S && S.stat && S.stat.trained < 30 ? 0.4 : 1)));
 const techCost = L => ({ silver: Math.round(120 * grow(L, 1.6, 1.1)), food: Math.round(100 * grow(L, 1.5, 1.1)) });
 const techSecs = L => Math.round(40 * grow(L, 1.55, 1.1) * CFG.t);
 const gatherSecs = () => 25 * CFG.t;
@@ -284,31 +318,32 @@ const addLog = (txt, k, t) => addLogTo(S, txt, k, t);
 function score(st) {
   let s = 0;
   for (const k in B) s += (st.b[k] || 0) * 40;
-  for (const k in U) { let n = st.troops[k] || 0; (st.marches || []).forEach(m => { n += (m.send && m.send[k]) || 0; }); s += n * (U[k].atk + U[k].def) / 2; }
+  const all = Object.assign({}, st.troops); (st.marches || []).forEach(m => { for (const k in (m.send || {})) all[k] = (all[k] || 0) + m.send[k]; });
+  for (const k in all) if (validKey(k)) s += (all[k] || 0) * (U[stype(k)].atk + U[stype(k)].def) / 2 * tmul(stier(k));
   for (const k in st.tech) s += st.tech[k] * 50;
   s += heroOf(st).lv * 30;
   if (st.eq) EQS.forEach(k => { const it = st.eq.s[k]; if (it) s += 15 * (it.r + 1) * it.il; });
-  for (const k in U) s += (tierOf(st, k) - 1) * 60;
   return Math.round(s);
 }
 
 /* ============ Бой ============ */
-function power(comp, other, key, bonus, tiers) {
-  const tot = sum(other) || 1; let p = 0;
-  for (const k in U) {
-    const n = comp[k] || 0; if (!n) continue;
-    const m = 1 + 0.5 * ((other[U[k].counters] || 0) / tot) - 0.35 * ((other[WEAK[k]] || 0) / tot);
-    p += n * U[k][key] * tmul((tiers && tiers[k]) || 1) * m;
+function power(comp, other, key, bonus) {
+  const ot = byType(other), tot = sum(ot) || 1; let p = 0;
+  for (const kk in comp) {
+    const n = comp[kk] || 0; if (!n || !validKey(kk)) continue;
+    const k = stype(kk);
+    const m = 1 + 0.5 * ((ot[U[k].counters] || 0) / tot) - 0.35 * ((ot[WEAK[k]] || 0) / tot);
+    p += n * U[k][key] * tmul(stier(kk)) * m;
   }
   return p * bonus;
 }
-function battle(a, d, ab, db, ta, td) {
-  const pa = power(a, d, 'atk', ab, ta), pd = power(d, a, 'def', db, td);
+function battle(a, d, ab, db) {
+  const pa = power(a, d, 'atk', ab), pd = power(d, a, 'def', db);
   const win = pa > pd; const W = Math.max(pa, pd), L = Math.min(pa, pd);
   const ratio = W > 0 ? L / W : 1;
   const lw = 0.55 * Math.pow(ratio, 1.7), ll = 0.7 + 0.25 * ratio;
   const fa = win ? lw : ll, fd = win ? ll : lw;
-  const lose = (c, f) => { const lost = {}, surv = {}; for (const k in U) { const n = c[k] || 0; const x = Math.min(n, Math.round(n * f)); lost[k] = x; surv[k] = n - x; } return { lost, surv }; };
+  const lose = (c, f) => { const lost = {}, surv = {}; for (const k in c) { if (!validKey(k)) continue; const n = c[k] || 0; const x = Math.min(n, Math.round(n * f)); lost[k] = x; surv[k] = n - x; } return { lost, surv }; };
   const A = lose(a, fa), D = lose(d, fd);
   return { win, pa, pd, ratio, lostA: A.lost, survA: A.surv, lostD: D.lost, survD: D.surv };
 }
@@ -341,14 +376,14 @@ function genTarget(kind) {
   }
   const level = Math.max(1, Math.min(MAXL, ri(Math.max(1, H - 1), H + 2)));
   const base = Math.pow(level, 1.5);
-  const loot = {}; let comp = { spear: 0, archer: 0, cav: 0 }, name, defb = 1, res = null;
+  const loot = {}; let comp = {}, name, defb = 1, res = null;
   if (kind === 'camp') {
-    comp = randComp(Math.round(5 * base + ri(0, 3)), shuffle(Object.keys(U)).slice(0, 2));
+    comp = botComp(randComp(Math.round(5 * base + ri(0, 3)), shuffle(Object.keys(U)).slice(0, 2)), level);
     name = pick(CAMPS);
     const f = 110 * Math.pow(level, 1.3);
     shuffle(RES.map(r => r.id)).slice(0, 3).forEach(r => { loot[r] = Math.round(f * rnd(0.8, 1.3)); });
   } else if (kind === 'jarl') {
-    comp = randComp(Math.round(7 * base + ri(0, 4)), shuffle(Object.keys(U)));
+    comp = botComp(randComp(Math.round(7 * base + ri(0, 4)), shuffle(Object.keys(U))), level);
     name = pick(N1) + ' ' + pick(N2); defb = 1.15;
     const f = 150 * Math.pow(level, 1.3);
     RES.forEach(r => { loot[r.id] = Math.round(f * rnd(0.7, 1.3)); });
@@ -417,23 +452,25 @@ function finishBuild() {
   addLog(`${B[q.id].n} достигла уровня ${q.to}.`, 'good', q.end); toast(`${B[q.id].n}: уровень ${q.to}`);
 }
 function finishTrain() {
-  const t = S.train; S.troops[t.type] += t.n; S.stat.trained += t.n; S.train = null;
-  addLog(`Обучено: ${t.n} × ${U[t.type].n}.`, 'good', t.end); toast(`Обучено: ${t.n} × ${U[t.type].n}`);
+  const t = S.train, tr = t.t || 1, key = skey(t.type, tr); S.troops[key] = (S.troops[key] || 0) + t.n; S.stat.trained += t.n; S.train = null;
+  if (tr > (S.tier[t.type] || 1)) S.tier[t.type] = tr;
+  addLog(`Обучено: ${t.n} × ${unitName(t.type, tr)}.`, 'good', t.end); toast(`Обучено: ${t.n} × ${unitName(t.type, tr)}`);
 }
 function finishUpg() {
-  const u = S.upg; S.tier[u.key] = u.to; S.upg = null;
-  addLog(`Воины улучшены: ${unitName(u.key, u.to)} (ступень ${u.to}).`, 'good', u.end); toast(`Ступень ${u.to}: ${unitName(u.key, u.to)}`);
+  const u = S.upg; let tot = 0; for (const f in u.n) tot += u.n[f];
+  const key = skey(u.k, u.to); S.troops[key] = (S.troops[key] || 0) + tot; if (u.to > (S.tier[u.k] || 1)) S.tier[u.k] = u.to; S.upg = null;
+  addLog(`Улучшено воинов: ${tot} → ${unitName(u.k, u.to)} (ступень ${u.to}).`, 'good', u.end); toast(`Улучшено: ${tot} → ${unitName(u.k, u.to)}`);
 }
 function finishStudy() {
   const s = S.study; S.tech[s.key] = s.to; S.stat.researched++; S.study = null;
   addLog(`Оракул открыл знание «${TECH[s.key].n}», уровень ${s.to}.`, 'good', s.end); toast(`Знание: ${TECH[s.key].n} ${s.to}`);
 }
 function fmtRes(o) { return Object.keys(o).filter(k => o[k] > 0 && RI[k]).map(k => `${RI[k].n} ${fmt(o[k])}`).join(' · ') || 'ничего'; }
-function fmtComp(c) { return Object.keys(U).filter(k => (c[k] || 0) > 0).map(k => `${S ? unitName(k, tierOf(S, k)) : U[k].pl} ${c[k]}`).join(' · '); }
+function fmtComp(c) { return sortKeys(c).filter(k => validKey(k) && (c[k] || 0) > 0).map(k => `${sname(k)} ${c[k]}`).join(' · '); }
 /* Разведка не выдаёт точных цифр: только приблизительно */
 function approxN(n) { if (n <= 0) return 0; if (n < 10) return 10; const st = n < 100 ? 10 : n < 500 ? 50 : n < 2000 ? 100 : n < 10000 ? 500 : 1000; return Math.max(st, Math.round(n / st) * st); }
-function fmtApprox(c) { return Object.keys(U).filter(k => (c[k] || 0) > 0).map(k => `${S ? unitName(k, tierOf(S, k)) : U[k].pl} ~${approxN(c[k])}`).join(' · '); }
-const carryOf = (s, st) => { st = st || S; return Math.round(Object.keys(U).reduce((a, k) => a + (s[k] || 0) * U[k].carry * tmul(tierOf(st, k)), 0) * lootB(st)); };
+function fmtApprox(c) { return sortKeys(c).filter(k => validKey(k) && (c[k] || 0) > 0).map(k => `${sname(k)} ~${approxN(c[k])}`).join(' · '); }
+const carryOf = (s, st) => { st = st || S; return Math.round(Object.keys(s).filter(validKey).reduce((a, k) => a + (s[k] || 0) * U[stype(k)].carry * tmul(stier(k)), 0) * lootB(st)); };
 
 function resolveMarch(m) {
   const tg = m.tgt, t = m.arrive;
@@ -443,7 +480,7 @@ function resolveMarch(m) {
     m.phase = 'gather'; m.gStart = t; m.gEnd = t + gatherSecs() * 1000; return;
   }
   if (tg.kind === 'player') return resolvePlayer(m);
-  const r = battle(m.send, tg.comp, atkB(S), tg.defb, tiersOf(S), botTiers(tg.level));
+  const r = battle(m.send, tg.comp, atkB(S), tg.defb);
   if (r.win) {
     gainXp(tg.kind === 'camp' ? 25 + 10 * tg.level : 35 + 12 * tg.level);
     const carry = carryOf(r.survA);
@@ -471,7 +508,7 @@ function resolvePlayer(m) {
   settle(D, Math.max(t, D.t));
   if (HOOK.sameClan(S.pid, tg.pid)) { m.loot = {}; home(); addLog(`Ярл «${tg.name}» теперь ваш соклановец. Отряд вернулся без боя.`, 'info', t); return; }
   if (D.shield > t) { m.loot = {}; home(); addLog(`Город «${tg.name}» под щитом. Отряд вернулся без боя.`, 'info', t); toast('Цель под щитом'); return; }
-  const r = battle(m.send, D.troops, atkB(A), defB(D), tiersOf(A), tiersOf(D));
+  const r = battle(m.send, D.troops, atkB(A), defB(D));
   D.troops = r.survD;
   const aName = A.name || 'Неизвестный ярл';
   const raid = (win, loot) => { (D.raids || (D.raids = [])).unshift({ t, pid: A.pid, name: aName, win, lost: fmtComp(r.lostD) || '', elost: fmtComp(r.lostA) || '', loot: loot || '' }); if (D.raids.length > 20) D.raids.pop(); };
@@ -515,8 +552,8 @@ function enemyRaid() {
   if (S.shield > t) { S.nextRaid = Math.max(S.nextRaid, S.shield + ri(90, 150) * 60000); return; }   // после щита не сразу
   const H = lvl('hall');
   const n = Math.max(4, Math.round(4 * Math.pow(H, 1.55) * rnd(0.8, 1.5)));
-  const comp = randComp(n, shuffle(Object.keys(U)).slice(0, 2));
-  const r = battle(comp, S.troops, 1, defB(S), botTiers(H), tiersOf(S));
+  const comp = botComp(randComp(n, shuffle(Object.keys(U)).slice(0, 2)), H);
+  const r = battle(comp, S.troops, 1, defB(S));
   S.troops = r.survD;
   if (r.win) {
     const lost = {};
@@ -549,14 +586,15 @@ function startBuild(id) {
   pay(c); const dur = upSecs(id, L) * 1000;
   S.q = { id, to: L + 1, end: nowMs() + dur, dur, sid: 'j' + (S.mid++) };
 }
-function startTrain(k, n) {
+function startTrain(k, n, t) {
   n = Math.floor(Number(n)); if (!isFinite(n)) return;
+  t = Math.floor(Number(t)) || 1;
   const u = U[k]; if (!u) return;
-  if (S.train || lvl('barracks') < u.need || n < 1 || n > maxBatch()) return;
-  const c = {}; for (const r in u.cost) c[r] = u.cost[r] * n;
+  if (S.train || lvl('barracks') < u.need || n < 1 || n > maxBatch() || t < 1 || t > maxTier()) return;
+  const c = costOf(k, t, n);
   if (!canAfford(c)) return;
-  pay(c); const dur = trainSecs(k, n) * 1000;
-  S.train = { type: k, n, end: nowMs() + dur, dur, sid: 'j' + (S.mid++) };
+  pay(c); const dur = trainSecs(k, n, t) * 1000;
+  S.train = { type: k, t, n, end: nowMs() + dur, dur, sid: 'j' + (S.mid++) };
 }
 function startStudy(k) {
   if (!TECH[k]) return;
@@ -566,13 +604,14 @@ function startStudy(k) {
   pay(c); const dur = techSecs(L) * 1000;
   S.study = { key: k, to: L + 1, end: nowMs() + dur, dur, sid: 'j' + (S.mid++) };
 }
-function startUpg(k) {
+function startUpg(k, to, only) {
   if (!U[k] || S.upg) return;
-  const to = tierOf(S, k) + 1;
-  if (to > MAXT || lvl('barracks') < TIER_NEED[to - 1]) return;
-  const c = tierCost(k, to); if (!canAfford(c)) return;
-  pay(c); const dur = tierSecs(to) * 1000;
-  S.upg = { key: k, to, end: nowMs() + dur, dur, sid: 'j' + (S.mid++) };
+  to = Math.floor(Number(to)); only = Math.floor(Number(only)) || 0;
+  if (!(to >= 2) || to > maxTier()) return;
+  const p = upgPlan(k, to, only); if (!p.tot || !canAfford(p.cost)) return;
+  pay(p.cost); for (const f in p.n) { const key = skey(k, +f); S.troops[key] -= p.n[f]; }
+  const dur = p.secs * 1000;
+  S.upg = { k, to, n: p.n, end: nowMs() + dur, dur, sid: 'j' + (S.mid++) };
 }
 function spendSkill(k) {
   const H = S.hero; if (!HSK[k] || H.sp < 1 || (H.sk[k] || 0) >= MAXSK) return;
@@ -584,7 +623,7 @@ const CLAN_COST = { wood: 500, stone: 500 }, CLAN_HALL = 3;
 function jobInfo(kind) {
   const o = jobObj(kind); if (!o) return null;
   if (!o.sid) o.sid = 'j' + (S.mid++);
-  const what = kind === 'q' ? `${B[o.id].n}, ур. ${o.to}` : kind === 'train' ? `${unitName(o.type, tierOf(S, o.type))} ×${o.n}` : kind === 'study' ? `${TECH[o.key].n}, ур. ${o.to}` : `${unitName(o.key, o.to)}`;
+  const what = kind === 'q' ? `${B[o.id].n}, ур. ${o.to}` : kind === 'train' ? `${unitName(o.type, o.t || 1)} ×${o.n}` : kind === 'study' ? `${TECH[o.key].n}, ур. ${o.to}` : `Улучшение до ${unitName(o.k, o.to)}`;
   return { kind, sid: o.sid, end: o.end, dur: o.dur, what };
 }
 function helpJob(kind, sid, cutMs) {
@@ -604,9 +643,9 @@ function sendMarch(tid, send) {
   if (!tg || S.marches.length >= slots(lvl('hall')) || !send || typeof send !== 'object') return false;
   if (tg.kind === 'player' && HOOK.sameClan(S.pid, tg.pid)) { toast('Нельзя нападать на соклановца'); return false; }
   const s = {}; let tot = 0;
-  for (const k in U) { const v = Math.floor(Number(send[k])) || 0; s[k] = Math.max(0, Math.min(S.troops[k] || 0, v)); tot += s[k]; }
+  for (const k in send) { if (!validKey(k)) continue; const v = Math.floor(Number(send[k])) || 0, x = Math.max(0, Math.min(S.troops[k] || 0, v)); if (x > 0) { s[k] = x; tot += x; } }
   if (!tot) return false;
-  for (const k in U) S.troops[k] -= s[k];
+  for (const k in s) S.troops[k] -= s[k];
   const t = nowMs(), dur = marchSecs(tg.dist) * 1000;
   S.marches.push({ id: 'm' + (S.mid++), tgt: JSON.parse(JSON.stringify(tg)), send: s, phase: 'out', arrive: t + dur, back: 0, loot: {}, dur });
   return true;
@@ -766,9 +805,9 @@ function buy(id) {
 function act(a, arg) {
   switch (a) {
     case 'up': if (typeof arg === 'string') startBuild(arg); break;
-    case 'train': if (arg && typeof arg === 'object') startTrain(arg.k, arg.n); break;
+    case 'train': if (arg && typeof arg === 'object') startTrain(arg.k, arg.n, arg.t); break;
     case 'study': if (typeof arg === 'string') startStudy(arg); break;
-    case 'tierup': if (typeof arg === 'string') startUpg(arg); break;
+    case 'tierup': if (arg && typeof arg === 'object') startUpg(arg.k, arg.to, arg.from); break;
     case 'skill': if (typeof arg === 'string') spendSkill(arg); break;
     case 'haste': if (typeof arg === 'string') useHaste(arg); break;
     case 'free': if (typeof arg === 'string') freeFinish(arg); break;
@@ -777,7 +816,7 @@ function act(a, arg) {
     case 'claim': if (typeof arg === 'string') claim(arg); break;
     case 'intro': S.introDone = true; break;
     case 'bag': buyBag(); break;
-    case 'preset': { const i = Math.floor(Number(arg && arg.i)); if (!(i >= 0 && i < 5) || !arg.comp || typeof arg.comp !== 'object') break; const c = {}; for (const k in U) c[k] = Math.max(0, Math.min(1e6, Math.floor(Number(arg.comp[k])) || 0)); if (!Array.isArray(S.presets)) S.presets = []; while (S.presets.length < 5) S.presets.push(null); S.presets[i] = c; break; }
+    case 'preset': { const i = Math.floor(Number(arg && arg.i)); if (!(i >= 0 && i < 5) || !arg.comp || typeof arg.comp !== 'object') break; const c = {}; for (const k in arg.comp) { if (!validKey(k)) continue; const v = Math.max(0, Math.min(1e6, Math.floor(Number(arg.comp[k])) || 0)); if (v) c[k] = v; } if (!Array.isArray(S.presets)) S.presets = []; while (S.presets.length < 5) S.presets.push(null); S.presets[i] = c; break; }
     case 'look': { const n = Math.floor(Number(arg)); if (n >= 1 && n <= LOOKS.length) S.hero.look = n; break; }
     case 'buy': if (typeof arg === 'string') buy(arg); break;
     case 'daily': claimDaily(); break;
@@ -796,7 +835,7 @@ function act(a, arg) {
 function verdict(t) {
   if (t.kind === 'node') return { c: 'frost', t: 'Сбор' };
   if (!sum(S.troops)) return { c: 'mute', t: 'Нет войск' };
-  const r = battle(S.troops, t.comp, atkB(S), t.defb, tiersOf(S), botTiers(t.level || 1));
+  const r = battle(S.troops, t.comp, atkB(S), t.defb);
   if (!r.win) return { c: 'bad', t: 'Поражение' };
   return r.ratio < 0.4 ? { c: 'good', t: 'Лёгкая победа' } : { c: 'warn', t: 'Тяжёлый бой' };
 }
@@ -814,11 +853,11 @@ const API = {
   armyAtk, newItem, giveItem, SLOTS, SLOTK, LOOKS, EQS, slotType, EQ_IL, RARN, EQMAX, BAG_COST, BAG_STEP, eqCap, itemPct, itemName, forgeCost, forgeLvl, scrapOf, eqB,
   RES, RI, B, BORDER, U, WEAK, TECH, QUESTS, MAXL, TMAX, CFG, HOOK, NODE, TIERN, TIER_NEED, MAXT, HSK, MAXHL, MAXSK,
   get S() { return S; },
-  use, newState, update, produce, settle, battle, act, score, verdict,
+  use, ensure, newState, update, produce, settle, battle, act, score, verdict,
   lvl, slots, cap, capAt, rate, prodAt, upCost, upSecs, canUp, canAfford, trainRate, maxBatch, trainSecs, techCost, techSecs, gatherSecs, marchSecs,
   posOf, tgtPos, isLand, snapLand, SHOP, scoutCost, isVip, buy, claimDaily, dailyLeft, streakInfo, claimStreak, STREAK, CONTESTS, PRIZES, PRIZE_PART, weekId, weekEnd, contestOf, wkScoreOf, wkSync, dayId,
   jobInfo, helpJob, chargeClan, CLAN_COST, CLAN_HALL, jobObj,
-  tierOf, heroOf, tmul, tiersOf, botTiers, atkB, defB, lootB, unitName, xpNeed, tierCost, tierSecs,
+  tierOf, heroOf, tmul, tiersOf, botTiers, stype, stier, skey, validKey, sname, sortKeys, byType, maxTier, botComp, costOf, upgPlan, UPG_PCT, atkB, defB, lootB, unitName, xpNeed, tierCost, tierSecs,
   refreshTargets, topUpPlayers, addLogTo, fmt, fmtT, fmtRes, fmtComp, fmtApprox, carryOf,
   setNow(f) { nowMs = f; }, now() { return nowMs(); },
   onToast(f) { toastFn = f; }

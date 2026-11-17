@@ -34,7 +34,7 @@ function loadAll() {
   let n = 0;
   for (const f of fs.readdirSync(DATA_DIR)) {
     if (!/^[0-9a-f]{16}\.json$/.test(f)) continue;
-    try { indexUser(JSON.parse(fs.readFileSync(path.join(DATA_DIR, f), 'utf8'))); n++; }
+    try { const u = JSON.parse(fs.readFileSync(path.join(DATA_DIR, f), 'utf8')); if (u.state) { Core.use(u.state); Core.ensure(u.state); } indexUser(u); n++; }
     catch (e) { console.error('Не удалось прочитать', f, e.message); }
   }
   console.log('Загружено игроков:', n);
@@ -141,7 +141,7 @@ function makeBot(d) {
   Object.assign(st.b, { hall: h, farm: Math.max(1, h - 1), sawmill: Math.max(1, h - 1), quarry: Math.max(1, h - 1), ironmine: Math.max(1, h - 1), silvermine: Math.max(0, h - 3), storehouse: Math.max(1, h - 1), barracks: Math.max(1, h - 1) });
   const t = Math.min(3, 1 + Math.floor(h / 6)); st.tier = { spear: t, archer: t, cav: t };
   const n = 22 * h, tot = Object.values(d.mix).reduce((a, b) => a + b, 0);
-  st.troops = {}; for (const k in d.mix) st.troops[k] = Math.round(n * d.mix[k] / tot);
+  st.troops = {}; st.stk = 1; for (const k in d.mix) st.troops[Core.skey(k, t)] = Math.round(n * d.mix[k] / tot);
   const cp = Core.cap(); for (const k of Object.keys(st.res)) st.res[k] = Math.round(cp * 0.6);
   st.shield = 0; st.nextRaid = 9e15; st.stat.trained = 60; st.introDone = true; st.hero.lv = Math.min(10, h);
   const u = { id, name: d.name, nameKey: key, salt: '', hash: '', tokens: [], state: st, bot: true, bcfg: d, seen: Date.now() };
@@ -159,11 +159,11 @@ function botTick(u) {
     const ks = ['barracks', 'farm', 'sawmill', 'quarry', 'ironmine', 'storehouse', 'hall'].sort((a, b) => (S.b[a] || 0) - (S.b[b] || 0));
     for (const k of ks) { if (k === 'hall' && S.b.hall >= lim) continue; if (Core.canUp(k)) continue; Core.act('up', k); if (S.q) break; }
   }
-  const t = Math.min(3, 1 + Math.floor(S.b.hall / 6)); for (const k of Object.keys(S.tier)) if (S.tier[k] < t) S.tier[k] = t;
+  const t = Math.min(3, 1 + Math.floor(S.b.hall / 6));
   if (!S.train) {
     const ks = Object.keys(d.mix), tot = ks.reduce((a, k) => a + d.mix[k], 0); let x = Math.random() * tot, k = ks[0];
     for (const q of ks) { x -= d.mix[q]; if (x <= 0) { k = q; break; } }
-    for (let n = Core.maxBatch(); n >= 4 && !S.train; n = Math.floor(n / 2)) Core.act('train', { k, n });
+    for (let n = Core.maxBatch(); n >= 4 && !S.train; n = Math.floor(n / 2)) Core.act('train', { k, n, t: Math.min(t, Core.maxTier()) });
   }
   if (S.marches.length === 0 && (!u.nextAtk || now > u.nextAtk)) {
     let cands = S.targets.filter(tg => {
@@ -172,7 +172,7 @@ function botTick(u) {
       if (v.state.b.hall < 3 || v.state.shield > now || (v.seen || 0) < now - 3 * 86400000) return false;
       if (now - (lastBotHit.get(tg.pid) || 0) < 5 * 3600000) return false;
       const send = {}; for (const k in S.troops) send[k] = Math.floor(S.troops[k] * 0.7);
-      const r = Core.battle(send, v.state.troops, Core.atkB(S), Core.defB(v.state), Core.tiersOf(S), Core.tiersOf(v.state));
+      const r = Core.battle(send, v.state.troops, Core.atkB(S), Core.defB(v.state));
       return r.win || r.ratio > 0.8;
     });
     if (cands.length) {
