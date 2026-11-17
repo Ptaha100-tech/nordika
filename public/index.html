@@ -371,6 +371,25 @@ canvas[data-hero]{transform-origin:50% 90%;animation:heroLife 5s ease-in-out inf
 .eqpt.full{transform-origin:50% 80%;animation:heroLife 6s ease-in-out infinite}
 @media (prefers-reduced-motion:reduce){canvas[data-u],canvas[data-hero],.eqpt.full{animation:none!important}}
 .shortc{display:flex;gap:8px;margin:0 0 8px}.shortc .btn{flex:1;font-size:15px;padding:10px 6px}
+
+/* карта и боссы */
+.bossart{position:relative;display:flex;justify-content:center;margin:2px 0 4px;--gl:#7fd6ff}
+.bossart::before{content:"";position:absolute;inset:8% 22% 0;background:radial-gradient(closest-side,var(--gl),transparent 72%);opacity:.35;animation:bossGlow 3.2s ease-in-out infinite}
+.bossart img{position:relative;width:170px;max-width:60%;height:auto;transform-origin:50% 100%;animation:bossIdle 4.2s ease-in-out infinite}
+.ba2{--gl:#ffb35a}.ba3{--gl:#b07cff}.ba4{--gl:#ff8a3a}.ba5{--gl:#6cff7a}
+@keyframes bossIdle{0%,100%{transform:translateY(0) scale(1,1)}50%{transform:translateY(-5px) scale(1.025,1.04)}}
+@keyframes bossGlow{0%,100%{opacity:.22;transform:scale(.92)}50%{opacity:.5;transform:scale(1.08)}}
+.ba5 img{animation-name:bossSway}
+@keyframes bossSway{0%,100%{transform:rotate(-2deg) translateY(0)}50%{transform:rotate(2deg) translateY(-4px)}}
+/* постройки города */
+@keyframes bldLife{0%,100%{transform:translateY(0);filter:brightness(1)}50%{transform:translateY(-1px);filter:brightness(1.07)}}
+@keyframes bldFire{0%,100%{filter:brightness(1) drop-shadow(0 0 0 #ff9a3a00)}25%{filter:brightness(1.12) drop-shadow(0 0 6px #ff9a3a88)}55%{filter:brightness(1.03) drop-shadow(0 0 3px #ff9a3a55)}80%{filter:brightness(1.14) drop-shadow(0 0 7px #ff9a3a99)}}
+@keyframes bldSway{0%,100%{transform:rotate(-.7deg)}50%{transform:rotate(.7deg)}}
+canvas.pic[data-b]{transform-origin:50% 100%;animation:bldLife 5.5s ease-in-out infinite}
+.bld:nth-child(2n) canvas.pic[data-b]{animation-delay:-1.8s}.bld:nth-child(3n) canvas.pic[data-b]{animation-delay:-3.3s}
+canvas.pic[data-b="hall"],canvas.pic[data-b="barracks"],canvas.pic[data-b="ironmine"],canvas.pic[data-b="silvermine"],canvas.pic[data-b="vault"]{animation:bldFire 2.1s ease-in-out infinite}
+canvas.pic[data-b="farm"],canvas.pic[data-b="sawmill"]{animation:bldSway 6s ease-in-out infinite}
+@media (prefers-reduced-motion:reduce){.bossart img,.bossart::before,canvas.pic[data-b]{animation:none!important}}
 </style>
 </head>
 <body>
@@ -1016,6 +1035,8 @@ async function bossHit(t){
   catch(e){toast(e.message||'Не получилось');}
   bbusy=false;
 }
+const BOSSIMG={'Йотун Хримтурс':1,'Ледяной тролль':1,'Гром-Берсерк':2,'Лесной великан':2,'Волк Фенрир':2,'Каменный исполин':2,'Хель, владычица мёртвых':3,'Болотная ведьма':3,'Сурт, огненный ярл':4,'Дракон Нидхёгг':4,'Змей Йормунганд':5,'Змей-хранитель':5};
+function bossArt(name){const n=BOSSIMG[name]||(1+[...String(name)].reduce((a,c)=>a+c.charCodeAt(0),0)%5);return `<div class="bossart ba${n}"><img src="img/boss${n}.webp?v=1" alt="${esc(name)}"></div>`;}
 function bossCard(b,type,left,atk){
   if(!b)return '';
   if(b.none)return `<section class="card"><h3>${type==='clan'?'Клановый босс':'Мировой босс'}</h3><p class="muted sm">${b.none}</p></section>`;
@@ -1025,7 +1046,7 @@ function bossCard(b,type,left,atk){
   if(type==='world'&&b.state!=='active'){st=b.state==='wait'?'Новый босс появится в ближайшую минуту.':`${b.killed?'Босс повержен.':'Босс ушёл.'} Следующий придёт через ${fmtT(Math.max(0,(b.nextAt-Date.now())/1000))}.`;}
   else if(!active&&type==='clan')st=b.killed?'Босс повержен. Новый появится в понедельник.':'Бой окончен.';
   else st=`До конца: ${fmtT(Math.max(0,(b.end-Date.now())/1000))}`;
-  return `<section class="card"><h3>${type==='clan'?'Клановый босс':'Мировой босс'}: ${esc(b.name)}</h3>
+  return `<section class="card">${bossArt(b.name)}<h3>${type==='clan'?'Клановый босс':'Мировой босс'}: ${esc(b.name)}</h3>
     <div class="bar" style="margin:6px 0 2px"><i style="width:${pct}%;background:var(--bad,#c0504d);transition:none"></i></div>
     <p class="sm"><b>${fmt(b.hp)}</b> из ${fmt(b.max)} · <span class="muted">${st}</span></p>
     ${top}<p class="sm muted">Ваш урон: ${fmt(b.me.v)}${b.me.rank?' · место '+b.me.rank:''}</p>
@@ -1232,7 +1253,7 @@ function wmMe(){const j=ui.wm&&ui.wm.j;return j&&j.players.find(p=>p.me);}
 function worldMapHTML(){
   return `<section class="card"><canvas id="wm" class="wmap" aria-label="Карта мира"></canvas>
   <div class="wzb"><button class="btn ghost small" id="wzi" aria-label="Приблизить">＋</button><button class="btn ghost small" id="wzo" aria-label="Отдалить">－</button><button class="btn ghost small" id="wzm">Мой город</button><button class="btn ghost small" id="wzr">Вся карта</button></div>
-  <p class="muted sm" style="margin:6px 0 0">Сведите пальцы, чтобы приблизить; двигайте пальцем, чтобы сдвинуть карту.<br><span style="color:#f2cd75">●</span> вы · <span style="color:#7fb4ff">●</span> ваш клан · <span style="color:#d97b6c">●</span> другие ярлы · <span style="color:#b8442f">▲</span> лагеря разбойников · <span style="color:#4fae7b">◆</span> добыча · линии это идущие отряды (красная: идут на вас)</p></section>
+  <p class="muted sm" style="margin:6px 0 0">Сведите пальцы, чтобы приблизить; двигайте пальцем, чтобы сдвинуть карту.<br>Кольцо под замком: <span style="color:#f2cd75">●</span> вы · <span style="color:#7fb4ff">●</span> ваш клан · <span style="color:#d97b6c">●</span> другие ярлы. Лагерь с черепом — разбойники, остальные постройки — точки добычи. Линии — идущие отряды (красная: идут на вас).</p></section>
   <section class="card" id="wi"></section><section class="card" id="wl"></section>`;
 }
 function wmTargets(){const me=wmMe();return S.targets.filter(t=>t.kind==='node'||t.kind==='camp'||t.kind==='jarl').map(t=>Object.assign({t},Core.tgtPos(S.pid,t)));}
@@ -1259,7 +1280,31 @@ function wmList(){
   el.innerHTML=h;
 }
 let wmAnim=0;
-const wmImg=new Image();wmImg.onerror=()=>{wmImg.failed=1;};wmImg.src='/img/map.webp';
+const RM=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+const WSP={};['mhall1','mhall2','mhall3','mhall4','mhall5','mcamp','mnode-wood','mnode-stone','mnode-silver','mnode-iron','mnode-food'].forEach(n=>{const i=new Image();i.src='/img/'+n+'.webp?v=1';WSP[n]=i;});
+const wmFx={mask:null,wave:null,tmp:null,clouds:[],cl:[]};
+function wmFxInit(){
+  if(wmFx.wave)return;
+  const N=128,w=document.createElement('canvas');w.width=w.height=N;const x=w.getContext('2d'),d=x.createImageData(N,N),T=Math.PI*2/N;
+  for(let j=0;j<N;j++)for(let i=0;i<N;i++){
+    const v=Math.sin(T*(3*i+2*j)+Math.sin(T*2*j)*1.6)+Math.sin(T*(2*i-4*j)+Math.sin(T*3*i)*1.2)+Math.sin(T*(5*i+j));
+    const a=Math.max(0,v-1.35)*150;const k=(j*N+i)*4;d.data[k]=235;d.data[k+1]=248;d.data[k+2]=255;d.data[k+3]=Math.min(150,a);
+  }
+  x.putImageData(d,0,0);wmFx.wave=w;
+  const t=document.createElement('canvas');t.width=t.height=256;wmFx.tmp=t;
+  // облака
+  for(let k=0;k<4;k++){
+    const c=document.createElement('canvas');c.width=220;c.height=110;const g=c.getContext('2d');let sd=11+k*7;const rnd=()=>(sd=(sd*16807)%2147483647)/2147483647;
+    for(let n=0;n<14;n++){const cx=30+rnd()*160,cy=40+rnd()*36,r=16+rnd()*26,gr=g.createRadialGradient(cx,cy,0,cx,cy,r);gr.addColorStop(0,'rgba(255,255,255,.7)');gr.addColorStop(.6,'rgba(255,255,255,.25)');gr.addColorStop(1,'rgba(255,255,255,0)');g.fillStyle=gr;g.beginPath();g.arc(cx,cy,r,0,7);g.fill();}
+    wmFx.cl.push(c);
+    const sh=document.createElement('canvas');sh.width=220;sh.height=110;const sg=sh.getContext('2d');sg.drawImage(c,0,0);sg.globalCompositeOperation='source-in';sg.fillStyle='#06141f';sg.fillRect(0,0,220,110);wmFx.cs=wmFx.cs||[];wmFx.cs.push(sh);
+  }
+  [[8,18,0],[40,8,1],[70,30,2],[20,55,3],[85,62,0],[55,82,1],[10,88,2],[92,12,3]].forEach((q,i)=>wmFx.clouds.push({x:q[0],y:q[1],c:q[2],sp:.7+((i*37)%10)/12,sz:26+(i%3)*9}));
+  const m=document.createElement('canvas');m.width=m.height=256;const mg=m.getContext('2d');
+  const build=()=>{if(!wmImg.naturalWidth)return false;mg.drawImage(wmImg,0,0,256,256);const id=mg.getImageData(0,0,256,256),dd=id.data;for(let k=0;k<dd.length;k+=4){const wat=dd[k+2]>dd[k]+35;dd[k]=dd[k+1]=dd[k+2]=255;dd[k+3]=wat?255:0;}mg.putImageData(id,0,0);wmFx.mask=m;return true;};
+  if(!build())wmImg.addEventListener('load',build);
+}
+const wmImg=new Image();wmImg.onerror=()=>{wmImg.failed=1;};wmImg.src='/img/map.webp?v=3';
 /* вид карты: ui.wz увеличение (1..8), ui.wcx/wcy центр в клетках */
 ui.wz=1;ui.wcx=50;ui.wcy=50;
 function wmClamp(){ui.wz=Math.max(1,Math.min(8,ui.wz));const h=50/ui.wz;ui.wcx=Math.max(h,Math.min(100-h,ui.wcx));ui.wcy=Math.max(h,Math.min(100-h,ui.wcy));}
@@ -1269,20 +1314,30 @@ function wmDraw(){
   if(c.width!==Math.round(W*dpr)){c.width=Math.round(W*dpr);c.height=Math.round(W*dpr);}
   const g=c.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);
   wmClamp();
-  const z=ui.wz,s=W/100*z,X=x=>(x-ui.wcx)*s+W/2,Y=y=>(y-ui.wcy)*s+W/2,tn=Core.now(),tt=Date.now()/1000;
+  const z=ui.wz,s=W/100*z,X=x=>(x-ui.wcx)*s+W/2,Y=y=>(y-ui.wcy)*s+W/2,tn=Core.now(),tt=RM?0:Date.now()/1000;
+  wmFxInit();
   g.fillStyle='#0c161c';g.fillRect(0,0,W,W);
   if(wmImg&&wmImg.complete&&wmImg.naturalWidth){g.drawImage(wmImg,X(0),Y(0),100*s,100*s);g.fillStyle='rgba(8,12,16,.08)';g.fillRect(X(0),Y(0),100*s,100*s);}else{
     // ландшафт: постоянные пятна «воды» и «лесов», чтобы карта не была пустой
     let sd=7;const rnd=()=>(sd=(sd*16807)%2147483647)/2147483647;
     for(let i=0;i<46;i++){const x=rnd()*100,y=rnd()*100,r=4+rnd()*11,wat=rnd()<.35;g.fillStyle=wat?'rgba(40,86,120,.30)':'rgba(46,92,64,.24)';g.beginPath();g.ellipse(X(x),Y(y),r*s,r*s*(.55+rnd()*.5),rnd()*3,0,7);g.fill();}
   }
-  g.strokeStyle='rgba(180,200,210,'+(z>=2?.1:.07)+')';g.lineWidth=1;
-  const gs=z>=4?5:10;
-  for(let i=0;i<=100;i+=gs){g.beginPath();g.moveTo(X(i),Y(0));g.lineTo(X(i),Y(100));g.moveTo(X(0),Y(i));g.lineTo(X(100),Y(i));g.stroke();}
-  g.strokeStyle='rgba(217,164,65,.6)';g.lineWidth=1.5;g.strokeRect(X(0),Y(0),100*s,100*s);
+  /* море: бегущие блики только по воде */
+  if(wmFx.mask&&!RM){
+    const t=wmFx.tmp,tg=t.getContext('2d');tg.globalCompositeOperation='source-over';tg.clearRect(0,0,256,256);
+    const pat=tg.createPattern(wmFx.wave,'repeat');
+    tg.save();tg.translate(-tt*9%128,tt*5%128);tg.fillStyle=pat;tg.fillRect(-128,-128,512,512);tg.restore();
+    tg.save();tg.globalAlpha=.7;tg.translate(tt*6%128,-tt*8%128);tg.scale(1.4,1.4);tg.fillStyle=pat;tg.fillRect(-200,-200,700,700);tg.restore();
+    tg.globalCompositeOperation='destination-in';tg.drawImage(wmFx.mask,0,0);
+    g.save();g.globalAlpha=.55+.2*Math.sin(tt*.8);g.imageSmoothingEnabled=true;g.drawImage(t,X(0),Y(0),100*s,100*s);g.restore();
+  }
+  /* тени облаков */
+  const CL=(shadow)=>wmFx.clouds.forEach(c=>{const cx=((c.x+tt*c.sp*.6)%130)-15,cy=c.y+Math.sin(tt*.2+c.x)*1.2,w=c.sz*s/100*2.6,h=w*.5;
+    if(shadow){g.globalAlpha=.22;g.drawImage(wmFx.cs[c.c],X(cx+2.5),Y(cy+4),w,h);}else{g.globalAlpha=.42;g.drawImage(wmFx.cl[c.c],X(cx),Y(cy),w,h);}});
+  g.save();CL(true);g.restore();g.globalAlpha=1;
   if(!j)return;
   const me=wmMe(),myTag=me&&me.clan,lab=(txt,x,y,r)=>{g.font='600 11px system-ui,sans-serif';g.textAlign='center';g.fillStyle='#ece6d6';g.strokeStyle='rgba(0,0,0,.7)';g.lineWidth=3;const ly=y-r-6<14?y+r+13:y-r-6;g.strokeText(txt,x,ly);g.fillText(txt,x,ly);};
-  const sc=Math.min(1.6,1+(z-1)*.12);                         // значки чуть растут при приближении
+  const sc=Math.min(2.4,1+(z-1)*.28);                         // значки чуть растут при приближении
   // отряды
   j.marches.forEach(m=>{
     const col=m.mine?'#f2cd75':m.inc?'#ff6a55':'#8fb0c4',pu=m.inc?.6+.4*Math.sin(tt*6):1;
@@ -1294,28 +1349,44 @@ function wmDraw(){
     if(m.ph==='gather'){g.strokeStyle=col;g.beginPath();g.arc(x,y,(5+Math.sin(tt*3)*1.5)*sc,0,7);g.stroke();}
   });
   g.globalAlpha=1;
-  // лагеря разбойников и точки добычи (видны только вам)
+  // значки: лагеря, точки добычи, города — нарисованные спрайты с оживлением
+  const hallTier=h=>h>=20?5:h>=15?4:h>=10?3:h>=5?2:1;
+  const spr=(name,x,y,h,ph,glow)=>{
+    const im=WSP[name];if(!im||!im.complete||!im.naturalWidth)return;
+    const bob=RM?0:Math.sin(tt*1.6+ph)*1.3,br=RM?1:1+Math.sin(tt*1.9+ph)*.012,w=h*im.naturalWidth/im.naturalHeight;
+    g.save();g.globalAlpha=.35;g.fillStyle='#000';g.beginPath();g.ellipse(x,y,w*.34,h*.1,0,0,7);g.fill();g.restore();
+    g.save();g.translate(x,y+bob);g.scale(1,br);g.drawImage(im,-w/2,-h,w,h);g.restore();
+    if(glow&&!RM){const f=.55+.45*Math.sin(tt*9+ph*3)*Math.sin(tt*5.3+ph);g.save();g.globalCompositeOperation='lighter';
+      [[-.22,-.42],[.24,-.5]].forEach((o,i)=>{const gx=x+o[0]*w,gy=y+o[1]*h,rr=h*.2,gr=g.createRadialGradient(gx,gy,0,gx,gy,rr);gr.addColorStop(0,'rgba(255,170,60,'+(.5*(i?f:1-f*.5))+')');gr.addColorStop(1,'rgba(255,120,20,0)');g.fillStyle=gr;g.beginPath();g.arc(gx,gy,rr,0,7);g.fill();});
+      g.restore();
+      for(let k=0;k<3;k++){const u=((tt*.35+k/3+ph)%1),px=x+(k-1)*w*.12+Math.sin(u*6+k)*3,py=y-h*.7-u*h*.5;g.fillStyle='rgba(210,205,200,'+(.28*(1-u))+')';g.beginPath();g.arc(px,py,1.5+u*3.2,0,7);g.fill();}
+    }
+  };
+  const hit=[];
   wmTargets().forEach(o=>{
-    const x=X(o.x),y=Y(o.y),sel=o.t.id===ui.wtsel,camp=o.t.kind!=='node';
-    g.save();g.translate(x,y);g.scale(sc,sc);
-    if(sel){g.strokeStyle='#fff';g.lineWidth=1.5;g.beginPath();g.arc(0,0,10,0,7);g.stroke();}
-    if(camp){g.fillStyle='#b8442f';g.beginPath();g.moveTo(0,-7);g.lineTo(6,5);g.lineTo(-6,5);g.closePath();g.fill();g.fillStyle='#1b0d0a';g.fillRect(-1,-2,2,5);}
-    else{g.fillStyle='#4fae7b';g.rotate(.785);g.fillRect(-4.5,-4.5,9,9);g.fillStyle='#10241a';g.fillRect(-1.5,-1.5,3,3);}
-    g.restore();
-    if(z>=3||sel)lab(o.t.name,x,y,9*sc);
+    const x=X(o.x),y=Y(o.y),sel=o.t.id===ui.wtsel,camp=o.t.kind==='camp',nd=o.t.kind==='node',ph=o.t.level*1.7;
+    if(x<-30||y<-30||x>W+30||y>W+40)return;
+    const h=(camp?30:nd?22:25)*sc;
+    if(sel){g.strokeStyle='#fff';g.lineWidth=1.5;g.beginPath();g.ellipse(x,y,h*.45,h*.14,0,0,7);g.stroke();}
+    spr(camp?'mcamp':nd?'mnode-'+(o.t.res||'wood'):'mhall'+hallTier(o.t.level),x,y,h,ph,camp||!nd);
+    if(z>=3||sel)lab(o.t.name,x,y-h*.55,h*.45);
   });
-  // города
   j.players.forEach(p=>{
-    const x=X(p.x),y=Y(p.y),r=(2.4+Math.min(5,p.hall*.22))*sc;
-    if(x<-20||y<-20||x>W+20||y>W+20)return;
+    const x=X(p.x),y=Y(p.y),tr=hallTier(p.hall),h=(22+tr*2)*sc;
+    if(x<-30||y<-30||x>W+30||y>W+40)return;
     const col=p.me?'#f2cd75':(myTag&&p.clan===myTag)?'#7fb4ff':'#d97b6c';
-    if(p.me){g.strokeStyle='rgba(242,205,117,.55)';g.lineWidth=1.5;g.beginPath();g.arc(x,y,r+3+Math.sin(tt*2.4)*1.6,0,7);g.stroke();}
-    if(p.pid===ui.wsel){g.strokeStyle='#fff';g.lineWidth=1.5;g.beginPath();g.arc(x,y,r+5,0,7);g.stroke();}
-    g.fillStyle=col;g.beginPath();g.arc(x,y,r,0,7);g.fill();
-    g.fillStyle='rgba(8,12,16,.55)';g.beginPath();g.arc(x,y,r*.45,0,7);g.fill();
-    if(p.online){g.fillStyle='#fff';g.beginPath();g.arc(x+r*.8,y-r*.8,1.5,0,7);g.fill();}
-    if(p.me||p.pid===ui.wsel||z>=2.2)lab(p.name,x,y,r);
+    g.save();g.strokeStyle=col;g.globalAlpha=p.me?.9:.75;g.lineWidth=p.me?2:1.5;g.beginPath();g.ellipse(x,y,h*.5+(p.me?Math.sin(tt*2.4)*1.5:0),h*.16,0,0,7);g.stroke();g.restore();
+    if(p.pid===ui.wsel){g.strokeStyle='#fff';g.lineWidth=1.5;g.beginPath();g.ellipse(x,y,h*.58,h*.2,0,0,7);g.stroke();}
+    spr('mhall'+tr,x,y,h,p.hall*.9,true);
+    if(p.online){g.fillStyle='#7ee07e';g.beginPath();g.arc(x+h*.42,y-h*.9,2.2,0,7);g.fill();}
+    if(p.me||p.pid===ui.wsel||z>=2.2)lab(p.name,x,y-h*.55,h*.45);
   });
+  /* облака сверху и птицы */
+  g.save();CL(false);g.restore();g.globalAlpha=1;
+  if(!RM)for(let f=0;f<3;f++)for(let b=0;b<3;b++){
+    const u=((tt*(.012+f*.004)+f*.37)%1.3)-.15,bx=X(u*100+b*3.2-(b%2)*1.5),by=Y(15+f*30+Math.sin(tt*.3+f)*4+b*2.4),fl=Math.sin(tt*8+b*1.7+f)*3.2,sz=(4+f)*sc;
+    g.strokeStyle='rgba(30,28,26,.75)';g.lineWidth=1.3;g.beginPath();g.moveTo(bx-sz,by-fl);g.quadraticCurveTo(bx-sz*.4,by-fl*.4-1,bx,by);g.quadraticCurveTo(bx+sz*.4,by-fl*.4-1,bx+sz,by-fl);g.stroke();
+  }
   g.globalAlpha=1;g.font='600 11px system-ui,sans-serif';
   g.fillStyle='rgba(236,230,214,.7)';g.textAlign='left';g.fillText('×'+z.toFixed(1),8,W-8);
 }
@@ -1331,7 +1402,7 @@ function wmInit(){
   const toMap=(cx,cy)=>{const r=rect(),s=r.width/100*ui.wz;return {x:(cx-r.left-r.width/2)/s+ui.wcx,y:(cy-r.top-r.height/2)/s+ui.wcy};};
   const zoomAt=(cx,cy,nz)=>{const before=toMap(cx,cy);ui.wz=Math.max(1,Math.min(8,nz));const r=rect(),s=r.width/100*ui.wz;ui.wcx=before.x-(cx-r.left-r.width/2)/s;ui.wcy=before.y-(cy-r.top-r.height/2)/s;wmClamp();wmDraw();};
   const pick=(cx,cy)=>{
-    const j=ui.wm&&ui.wm.j;if(!j)return;const q=toMap(cx,cy),k=rect().width/100*ui.wz;
+    const j=ui.wm&&ui.wm.j;if(!j)return;const q=toMap(cx,cy+13),k=rect().width/100*ui.wz;
     let best=null,bd=1e9;j.players.forEach(p=>{const d=Math.hypot(p.x-q.x,p.y-q.y);if(d<bd){bd=d;best=p;}});
     let bt=null,bdt=1e9;wmTargets().forEach(o=>{const d=Math.hypot(o.x-q.x,o.y-q.y);if(d<bdt){bdt=d;bt=o;}});
     if(bt&&bdt*k<=16&&bdt<=bd){ui.wtsel=bt.t.id;ui.wsel='';}else{ui.wtsel='';ui.wsel=best&&bd*k<=18?best.pid:'';}
