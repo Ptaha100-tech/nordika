@@ -282,6 +282,23 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--frost);outline-
 .fgw::after{content:"";position:absolute;inset:0;background:url(/img/forge-frame.webp?v=1) 0 0/100% 100% no-repeat;pointer-events:none;z-index:4}
 .fgin{max-height:92vh;height:min(92vh,720px);overflow-y:auto;padding:72px 56px 64px}
 .fgw .eqx{margin-top:8px}
+.eqf{position:relative;padding:0;background:none;border:0;box-shadow:none;max-height:none;overflow:visible;width:min(96vw,calc(96vh*.5133),calc(96dvh*.5133),440px);max-width:none;margin:auto 0}
+.eqfin{position:relative;width:100%;aspect-ratio:1160/2260;container-type:inline-size;background:url(/img/eq-frame.webp?v=1) 0 0/100% 100% no-repeat}
+.eqf .eqp{position:absolute;box-sizing:border-box;margin:0}
+.eqf .eqc{width:100%;height:100%;display:block}.eqf .eqc>span{display:none}
+.eqf .eqs{width:100%;height:100%;aspect-ratio:auto;border:0;border-radius:0;background:transparent;box-shadow:none}
+.eqf .eqs.sel{outline:2px solid #f2b233;outline-offset:-2px}
+.eqf .eqhero{min-height:0;border:0;border-radius:0;background:linear-gradient(#0006,#0003 40%,#000a),url(img/eqbg.webp) 50% 20%/cover #14100d;box-shadow:none}
+.eqf .eqnm b{font-size:5.2cqw}.eqf .eqnm span{font-size:3.1cqw}
+.eqf .eqtt{display:flex;align-items:center;justify-content:center}.eqf .eqtt span{font:700 6cqw/1 Georgia,'Times New Roman',serif;letter-spacing:.12em;text-transform:uppercase;color:#3a2810;text-shadow:0 1px 0 #f0d28a88}
+.eqf .eqbar{height:auto;border-radius:100px;padding:0 3cqw;font-size:3.4cqw;border:0;background:#0f0b09}
+.eqf .eqbar i{border-radius:100px}
+.eqf .eqdet{min-height:0;padding:1.4cqw 2.4cqw;border:0;overflow-y:auto;font-size:3cqw;line-height:1.25;color:#e6d9c0}
+.eqf .eqdet .sm,.eqf .eqdet p{font-size:3cqw;margin:0}
+.eqf .eqb{position:absolute;right:1.6cqw;top:1cqw;margin:0}.eqf .eqdet .btn{padding:3px 10px;font-size:3cqw}
+.eqf .eqcl{display:flex;align-items:center;justify-content:center;border:0;background:transparent;color:#f6dc9a;font-size:5cqw;cursor:pointer;text-shadow:0 1px 3px #000}
+.eqf .eqfg{border:0;background:transparent;font:700 4.6cqw/1 Georgia,serif;letter-spacing:.08em;text-transform:uppercase;color:#3a2810;cursor:pointer;padding:0}
+.eqf .eqfg:active{filter:brightness(1.2)}
 .eqw .rv{position:absolute;width:12px;height:12px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#f3d58a,#8a6a2a 60%,#3a2a10);box-shadow:0 1px 2px #000;z-index:3}
 .eqw .rv.a{left:4px;top:4px}.eqw .rv.b{right:4px;top:4px}.eqw .rv.c{left:4px;bottom:4px}.eqw .rv.d{right:4px;bottom:4px}
 .eqban{position:relative;margin:-8px auto 12px;width:max-content;max-width:90%;padding:6px 26px;background:linear-gradient(#6b5226,#3d2c12);border:2px solid #d8b25a;border-radius:6px;box-shadow:0 2px 8px #000,inset 0 0 0 1px #2a1d0a}
@@ -692,15 +709,18 @@ function eqSheet(){
   const pc=v=>'+'+Math.round(v*1000)/10+'%';
   let det='<p class="muted sm">Нажмите на надетый предмет, чтобы увидеть бонус. Новые предметы куются в Кузнице.</p>';
   if(sel&&sel.slot){const it=E.s[sel.slot];det=it?`${itemLine(it)}<div class="eqb"><button class="btn small ghost" data-act="unequip" data-arg="${sel.slot}">Снять</button></div>`:`<p class="muted sm">Слот «${EQSN[sel.slot]}» пуст. Выберите предмет в Кузнице.</p>`;}
-  $('modal').innerHTML=`<div class="sheet eqw"><i class="rv a"></i><i class="rv b"></i><i class="rv c"></i><i class="rv d"></i>
-    <div class="eqban"><span>Снаряжение</span></div>
-    <div class="eqtop"><div class="eqcol">${['helm','armor','gloves','pants','belt'].map(eqCell).join('')}</div>
-      <div class="eqhero"><img class="eqpt ${S.hero.look?'full':''}" src="${S.hero.look?'img/herop'+S.hero.look+'.webp':'img/hero'+(1+[1,5,10,15,20,25,30].reduce((a,v,k)=>H.lv>=v?k:a,0))+'.webp'}" alt="Ярл"><div class="eqnm"><b>${esc(S.name)}</b><span>Уровень ${H.lv}</span></div></div>
-      <div class="eqcol">${['cloak','weapon','amulet','ring1','ring2'].map(eqCell).join('')}</div></div>
-    <div class="eqbars"><div class="eqbar rd"><i style="width:${Math.min(100,tot.atk*100/0.3)}%"></i><span>Атака</span><b>${pc(tot.atk)}</b></div><div class="eqbar gn"><i style="width:${Math.min(100,tot.def*100/0.3)}%"></i><span>Защита</span><b>${pc(tot.def)}</b></div><div class="eqbar bl"><i style="width:${Math.min(100,tot.loot*100/0.3)}%"></i><span>Ноша</span><b>${pc(tot.loot)}</b></div><div class="eqbar gd"><i style="width:${Math.min(100,tot.eco*100/0.3)}%"></i><span>Добыча</span><b>${pc(tot.eco)}</b></div></div>
-    <div class="eqdet">${det}</div>
-    <button class="btn" style="display:block;margin:10px auto 0" data-act="fgopen" type="button">⚒ Открыть кузницу</button>
-    <button class="eqx" data-act="sheetx" type="button">Назад</button></div>`;
+  const FW=1160,FH=2260,P=(x0,y0,x1,y1)=>`left:${x0*100/FW}%;top:${y0*100/FH}%;width:${(x1-x0)*100/FW}%;height:${(y1-y0)*100/FH}%`;
+  const SY=[245,495,744,994,1244],sl=(keys,x0)=>keys.map((k,n)=>`<div class="eqp" style="${P(x0,SY[n],x0+156,SY[n]+155)}">${eqCell(k)}</div>`).join('');
+  const bars=[['rd','Атака','atk'],['gn','Защита','def'],['bl','Ноша','loot'],['gd','Добыча','eco']],BY=[1537,1618,1698,1779];
+  $('modal').innerHTML=`<div class="sheet eqf"><div class="eqfin">
+    <div class="eqp eqtt" style="${P(250,88,910,178)}"><span>Снаряжение</span></div>
+    <button class="eqp eqcl" style="${P(1020,24,1124,108)}" data-act="sheetx" type="button" aria-label="Закрыть">✕</button>
+    ${sl(['helm','armor','gloves','pants','belt'],90)}${sl(['cloak','weapon','amulet','ring1','ring2'],919)}
+    <div class="eqp eqhero" style="${P(351,292,813,1405)}"><img class="eqpt ${S.hero.look?'full':''}" src="${S.hero.look?'img/herop'+S.hero.look+'.webp':'img/hero'+(1+[1,5,10,15,20,25,30].reduce((a,v,k)=>H.lv>=v?k:a,0))+'.webp'}" alt="Ярл"><div class="eqnm"><b>${esc(S.name)}</b><span>Уровень ${H.lv}</span></div></div>
+    ${bars.map((b,n)=>`<div class="eqp eqbar ${b[0]}" style="${P(101,BY[n],1065,BY[n]+65)}"><i style="width:${Math.min(100,tot[b[2]]*100/0.3)}%"></i><span>${b[1]}</span><b>${pc(tot[b[2]])}</b></div>`).join('')}
+    <div class="eqp eqdet" style="${P(73,1912,1070,2110)}">${det}</div>
+    <button class="eqp eqfg" style="${P(380,2150,780,2260)}" data-act="fgopen" type="button">Кузница</button>
+  </div></div>`;
   $('modal').hidden=false;ui.eqOpen=true;
   try{window.Art&&Art.paintIn&&Art.paintIn($('modal'));}catch(e){}
 }
