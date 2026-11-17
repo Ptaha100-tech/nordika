@@ -732,6 +732,7 @@ function eqSheet(){
   try{window.Art&&Art.paintIn&&Art.paintIn($('modal'));}catch(e){}
 }
 function forgeSheet(){
+  const _sc=!$('modal').hidden&&document.querySelector('.fgin'),_st=_sc?_sc.scrollTop:0;
   ui.eqOpen=false;ui.fgOpen=true;
   const E=S.eq,fc=Core.forgeCost(),can=lvl('hall')>=3&&E.inv.length<Core.eqCap(S)&&S.res.wood>=fc.wood&&S.res.iron>=fc.iron&&S.res.silver>=fc.silver;
   const H=heroOf(S),f=ui.eqF||'all',sel=ui.eqSel;
@@ -762,6 +763,7 @@ function forgeSheet(){
     <button class="btn ghost" style="display:block;margin:8px auto 0" data-act="eq" type="button">Снаряжение ярла</button>
     <button class="eqx" data-act="sheetx" type="button">Назад</button></div></div>`;
   $('modal').hidden=false;
+  if(_st){const n=document.querySelector('.fgin');if(n)n.scrollTop=_st;}
   try{window.Art&&Art.paintIn&&Art.paintIn($('modal'));}catch(e){}
 }
 const TL={atk:'Атака',def:'Защита',eco:'Экономика',bld:'Стройка',fast:'Походы',drill:'Найм'};
