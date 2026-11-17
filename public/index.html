@@ -812,6 +812,10 @@ function newsHTML(c){
   const n=(c.news||[]).slice().reverse();
   return n.length?n.map(x=>`<p class="bd" style="margin:6px 0"><span class="muted sm">${ago?ago(x.t):''}</span><br>${esc(x.text)}</p>`).join(''):'<p class="muted sm">Пока новостей нет.</p>';
 }
+function clanLogHTML(c){
+  const n=(c.log||[]).slice().reverse();
+  return `<section class="card"><h2>Хроника клана</h2>${n.length?n.slice(0,20).map(x=>`<p class="sm" style="margin:5px 0"><span class="muted">${ago?ago(x.t):''}</span> · ${esc(x.text)}</p>`).join(''):'<p class="muted sm">Пока событий нет.</p>'}</section>`;
+}
 function viewClan(){
   const d=ui.clan;
   if(!d)return '<p class="muted sm">Загрузка…</p>';
@@ -840,6 +844,7 @@ function viewClan(){
     ${goalH}
     <section class="card"><h2>Помощь соклановцев</h2>${help}${canAll?'<button class="btn" style="margin-top:10px" data-act="chelpall">Помочь всем</button>':''}
       <p class="note">Каждая помощь сокращает дело на 2% (не меньше 30 секунд), всего до ${d.helpMax} раз. Помогать можно один раз с каждым делом.</p></section>
+    ${clanLogHTML(c)}
     <section class="card"><h2>Новости клана</h2>${newsHTML(c)}
       ${iAmLeader?`<div class="crow"><input id="cnews" data-keep maxlength="300" placeholder="Новость для клана" autocomplete="off" enterkeyhint="send"><button class="btn small" data-act="cnews">Опубликовать</button></div>`:'<p class="note">Новости пишет предводитель. Общаться с кланом можно во вкладке «Чат» → «Клан».</p>'}</section>
     <section class="card"><h2>Участники</h2>${members}</section>

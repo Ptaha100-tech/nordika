@@ -14,7 +14,12 @@ function newStore() { return { clans: {}, of: {}, seq: 1 }; }
 const clean = (s, n) => String(s == null ? '' : s).replace(/[\u0000-\u001f\u007f<>]/g, '').replace(/\s+/g, ' ').trim().slice(0, n);
 const clanOf = (st, pid) => { const id = st.of[pid]; return id ? st.clans[id] || null : null; };
 
+function clog(c, ctx, text) {
+  if (!c.log) c.log = c.chat.filter(m => m.sys).map(m => ({ t: m.t, text: m.text }));
+  c.log.push({ t: ctx.now(), text }); if (c.log.length > 60) c.log.splice(0, c.log.length - 60);
+}
 function sys(c, ctx, text) {
+  clog(c, ctx, text);
   c.chat.push({ t: ctx.now(), sys: true, text });
   if (c.chat.length > MAXCHAT) c.chat.splice(0, c.chat.length - MAXCHAT);
 }
@@ -59,6 +64,7 @@ function view(st, ctx, pid) {
     id: c.id, name: c.name, tag: c.tag, leader: c.leader, power: members.reduce((a, m) => a + m.score, 0), members,
     chat: c.chat.slice(-40),
     news: (c.news || []).slice(-10),
+    log: (c.log || c.chat.filter(m => m.sys).map(m => ({ t: m.t, text: m.text }))).slice(-30),
     reqs: c.reqs.map(r => ({ id: r.id, pid: r.pid, name: c.members[r.pid] ? c.members[r.pid].name : '?', what: r.what, end: r.end, n: r.n, max: r.max, mine: r.pid === pid, done: r.by.includes(pid) }))
   };
   return out;
@@ -143,6 +149,7 @@ function act(st, ctx, pid, a, p) {
         if (!ctx.helpApply(r.pid, r.kind, r.sid, cut)) { r.end = 0; continue; }
         r.n++; r.by.push(pid); r.end -= cut; done++; saved += cut;
         c.members[pid].helps = (c.members[pid].helps || 0) + 1;
+        clog(c, ctx, `${c.members[pid].name} помог игроку ${c.members[r.pid] ? c.members[r.pid].name : '?'}: «${r.what}».`);
         ctx.notify(r.pid, `${c.members[pid].name} помог: «${r.what}» быстрее на ${Math.round(cut / 1000)} с.`);
       }
       purge(c, ctx);
