@@ -136,6 +136,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--frost);outline-
 .stat{background:var(--surface2);border-radius:4px;padding:8px 6px;text-align:center}
 .stat b{display:block;font:700 22px/1.1 var(--display);font-variant-numeric:tabular-nums}
 .stat span{font-size:12px;color:var(--muted)}
+.stepper.st5{display:grid;grid-template-columns:1fr 1fr 1.9fr 1fr 1fr;gap:4px}.stepper.st5 .btn{padding:4px 0}.stepper.st5 .tnin{width:100%}.stepper.st5 [data-act=tnmax]{grid-column:1/-1}
 .tnin{width:64px;text-align:center;font:700 18px var(--display);background:var(--surface2);color:var(--fg);border:1px solid var(--line);border-radius:4px;padding:6px 2px;min-width:0}
 .eqck{position:absolute;right:2px;top:0;color:#9bf09b;font-size:16px;text-shadow:0 1px 3px #000;z-index:3}.eqmulti{padding:8px;border:1px dashed #6b4a36;border-radius:6px;margin:6px 0}
 .subtabs.cht{display:flex;gap:5px;margin-bottom:6px}.subtabs.cht .btn{flex:1;min-height:30px;padding:3px 4px;font-size:12px}
@@ -643,7 +644,7 @@ function viewTroops(){
     if(!ok)h+=`<p class="note">Нужна Казарма ур. ${u.need}</p>`;
     else{
       if(mt>1)h+=`<div class="subtabs" style="margin:4px 0">${Array.from({length:mt},(_,i)=>`<button class="btn small ${i+1===tr?'':'ghost'}" data-act="tsel" data-arg="${k}:${i+1}" type="button">Ст.${i+1}</button>`).join('')}</div>`;
-      h+=`<div class="stepper"><button class="btn ghost small" data-act="tn" data-arg="${k}:-5">−5</button><button class="btn ghost small" data-act="tn" data-arg="${k}:-1">−1</button><input class="tnin" type="number" inputmode="numeric" min="1" max="${maxBatch()}" value="${n}" data-tn="${k}" aria-label="Сколько обучить"><button class="btn ghost small" data-act="tn" data-arg="${k}:1">+1</button><button class="btn ghost small" data-act="tn" data-arg="${k}:5">+5</button><button class="btn ghost small" data-act="tnmax" data-arg="${k}">Макс</button></div>`;
+      h+=`<div class="stepper st5"><button class="btn ghost small" data-act="tn" data-arg="${k}:-5">−5</button><button class="btn ghost small" data-act="tn" data-arg="${k}:-1">−1</button><input class="tnin" type="number" inputmode="numeric" min="1" max="${maxBatch()}" value="${n}" data-tn="${k}" aria-label="Сколько обучить"><button class="btn ghost small" data-act="tn" data-arg="${k}:1">+1</button><button class="btn ghost small" data-act="tn" data-arg="${k}:5">+5</button><button class="btn ghost small" data-act="tnmax" data-arg="${k}">Макс</button></div>`;
       h+=costHTML(c);
       h+=S.train?`<p class="note">Казарма занята</p>`:`<button class="btn" data-act="train" data-arg="${k}" data-gate="1">Обучить ${n} · ${fmtT(trainSecs(k,n,tr))}</button>`;
       if(tr>1){
@@ -1076,8 +1077,9 @@ async function bossHit(t){
   catch(e){toast(e.message||'Не получилось');}
   bbusy=false;
 }
-const BOSSIMG={'Ледяной страж':1,'Берсерк Хрольв':2,'Вещая Вороница':3,'Огненный мореход':4,'Змей фьорда':5,'Йотун Хримтурс':1,'Ледяной тролль':1,'Гром-Берсерк':2,'Лесной великан':2,'Волк Фенрир':2,'Каменный исполин':2,'Хель, владычица мёртвых':3,'Болотная ведьма':3,'Сурт, огненный ярл':4,'Дракон Нидхёгг':4,'Змей Йормунганд':5,'Змей-хранитель':5};
-function bossArt(name){const n=BOSSIMG[name]||(1+[...String(name)].reduce((a,c)=>a+c.charCodeAt(0),0)%5);return `<div class="bossart ba${n}"><img src="img/boss${n}.webp?v=1" alt="${esc(name)}"></div>`;}
+const BOSSIMG={'Ледяной страж':6,'Берсерк Хрольв':8,'Вещая Вороница':11,'Огненный мореход':12,'Змей фьорда':13,'Йотун Хримтурс':1,'Ледяной тролль':7,'Гром-Берсерк':2,'Лесной великан':9,'Волк Фенрир':2,'Каменный исполин':2,'Хель, владычица мёртвых':3,'Болотная ведьма':14,'Сурт, огненный ярл':4,'Дракон Нидхёгг':4,'Змей Йормунганд':5,'Змей-хранитель':15};
+const BOSSBASE={6:1,7:1,8:2,9:2,11:3,12:4,13:5,14:3,15:5};
+function bossArt(name){const n=BOSSIMG[name]||(1+[...String(name)].reduce((a,c)=>a+c.charCodeAt(0),0)%5);return `<div class="bossart ba${BOSSBASE[n]||n}"><img src="img/boss${n}.webp?v=1" alt="${esc(name)}"></div>`;}
 function bossCard(b,type,left,atk){
   if(!b)return '';
   const TT=type==='clan'?'Клановый босс':type==='daily'?'Дневной босс':'Мировой босс';
