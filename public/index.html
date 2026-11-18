@@ -137,11 +137,11 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--frost);outline-
 .stat b{display:block;font:700 22px/1.1 var(--display);font-variant-numeric:tabular-nums}
 .stat span{font-size:12px;color:var(--muted)}
 .stepper.st5{display:grid;grid-template-columns:1fr 1fr 1.9fr 1fr 1fr;gap:4px}.stepper.st5 .btn{padding:4px 0}.stepper.st5 .tnin{width:100%}.stepper.st5 [data-act=tnmax]{grid-column:1/-1}
-.tav{max-width:420px}.wheelbox{position:relative;width:260px;height:260px;margin:14px auto 8px}
-.wdisk{position:relative;width:260px;height:260px;border-radius:50%;border:8px solid #b88a2e;box-sizing:border-box;box-shadow:0 0 0 3px #4a3210,0 6px 18px #000a,inset 0 0 22px #000a}
-.wl{position:absolute;left:50%;top:50%;width:0;height:0}.wl img{position:absolute;width:38px;height:38px;left:-19px;top:-19px;object-fit:contain;filter:drop-shadow(0 1px 2px #000)}
-.whub{position:absolute;left:50%;top:50%;width:46px;height:46px;margin:-23px;border-radius:50%;background:radial-gradient(#f0d28a,#8a5f1c);border:3px solid #4a3210}
-.wptr{position:absolute;left:50%;top:-12px;margin-left:-13px;width:0;height:0;border:13px solid transparent;border-top:26px solid #e8453c;z-index:3;filter:drop-shadow(0 2px 2px #000)}
+.tav{max-width:420px}.wheelbox{position:relative;width:min(100%,340px);aspect-ratio:720/938;margin:6px auto 2px;background:url(/img/wheel-base.webp?v=2) center/100% 100% no-repeat;filter:drop-shadow(0 8px 10px #0008)}
+.wd1{position:absolute;left:12.95%;top:18.84%;width:69.13%;height:58.33%}
+.wd2{position:absolute;left:0;top:50%;width:100%;aspect-ratio:1;margin-top:-50%;transform:scaleY(1.0992)}
+.wd3{position:absolute;inset:0;background:url(/img/wheel-disk.webp?v=1) center/100% 100% no-repeat;border-radius:50%}
+.wl{position:absolute;width:13%;aspect-ratio:1;margin:-6.5%}.wl img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 1px 2px #000)}
 .wres{min-height:28px;text-align:center;font-weight:700;margin:6px 0 8px;color:#f6dc9a}.wres.pop{animation:wpop .5s}@keyframes wpop{0%{transform:scale(.6);opacity:0}70%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
 .dtable{display:flex;justify-content:space-around;margin:10px 0}.dtable small{display:block;text-align:center;color:var(--muted)}.drow{display:flex;gap:6px;justify-content:center}.dc{font-size:56px;line-height:1;color:#f1e6cc;text-shadow:0 2px 4px #000}.dc.roll{animation:droll .18s linear infinite}@keyframes droll{50%{transform:rotate(14deg) translateY(-4px)}}
 .tnin{width:64px;text-align:center;font:700 18px var(--display);background:var(--surface2);color:var(--fg);border:1px solid var(--line);border-radius:4px;padding:6px 2px;min-width:0}
@@ -1683,8 +1683,9 @@ function uSheet(k){
 function closeModal(){ui.tvOpen=false;ui.topOpen=false;ui.eqOpen=false;ui.fgOpen=false;ui.orOpen=false;ui.modal=null;$('modal').hidden=true;$('modal').innerHTML='';}
 
 /* ---------- таверна: колесо фортуны и кости ---------- */
-const WCOL=['#c9a227','#8a5a2b','#6f7a85','#3e4753','#b9c2cc','#3a7bd5','#7a3fb0','#b34de0'];
 const WICO=['res-food','res-wood','res-stone','res-iron','res-silver','ui-haste','ui-forge','ui-gem'];
+const WSLOT=[0,1,2,7,3,4,5,6,0,1,5,3,2,4];
+const WCEN=[12.5,40,67.5,94,116,138,161.5,189,218,248,274.5,298.5,322,346.5];
 const DF=['⚀','⚁','⚂','⚃','⚄','⚅'];
 const dface=a=>`<span class="dc">${DF[a[0]-1]}</span><span class="dc">${DF[a[1]-1]}</span>`;
 function dres(d){const a=d.p[0]+d.p[1],b=d.b[0]+d.b[1];return d.delta>0?`Вы: ${a}, Ульф: ${b}. Победа! +${fmt(d.delta)} серебра`:d.delta<0?`Вы: ${a}, Ульф: ${b}. Проигрыш: −${fmt(-d.delta)} серебра`:`Вы: ${a}, Ульф: ${b}. Ничья, ставка вернулась`;}
@@ -1696,12 +1697,11 @@ function tavernSheet(anim){
   if(tab==='wheel'){
     const cost=Core.wheelCost(),left=Core.WHEEL_SILVER.length-m.sp,pl=Core.WHEEL_PAID_MAX-m.ps;
     const startRot=ui.wrot||0;let rot=startRot;
-    if(isNew&&last.k==='wheel'){const target=-(last.i*45+22.5);rot=Math.floor(startRot/360)*360+360*6+((target%360)+360)%360;ui.wrot=rot;wf=rot;}
-    const grad=WCOL.map((c,i)=>`${c} ${i*45}deg ${(i+1)*45}deg`).join(',');
-    const labs=Core.WHEEL.map((w,i)=>`<span class="wl" style="transform:rotate(${i*45+22.5}deg) translateY(-92px)"><img src="/img/${WICO[i]}.webp?v=1" alt="${w.t}"></span>`).join('');
+    if(isNew&&last.k==='wheel'){const sl=WSLOT.map((p,j)=>p===last.i?j:-1).filter(j=>j>=0),j=sl[Math.floor(Math.random()*sl.length)];const target=-(WCEN[j]+(Math.random()-.5)*12);rot=Math.floor(startRot/360)*360+360*6+((target%360)+360)%360;ui.wrot=rot;wf=rot;}
+    const labs=WCEN.map((c,j)=>{const r=.70*50,a=c*Math.PI/180;return `<span class="wl" style="left:${(50+r*Math.sin(a)).toFixed(2)}%;top:${(50-r*Math.cos(a)).toFixed(2)}%;transform:rotate(${c}deg)"><img src="/img/${WICO[WSLOT[j]]}.webp?v=1" alt=""></span>`;}).join('');
     const can=!ui.tvSpin&&!wf&&(cost?canAfford(cost):((S.gems||0)>=Core.WHEEL_GEMS&&pl>0));
     const btn=cost?`Крутить · ${fmtRes(cost)}`:(pl>0?`Крутить · ${Core.WHEEL_GEMS} ${IG}`:'На сегодня всё');
-    body=`<div class="wheelbox"><i class="wptr"></i><div class="wdisk" id="wdisk" style="background:conic-gradient(${grad});transform:rotate(${wf!=null?startRot:rot}deg)">${labs}<span class="whub"></span></div></div>
+    body=`<div class="wheelbox"><div class="wd1"><div class="wd2"><div class="wd3" id="wdisk" style="transform:rotate(${wf!=null?startRot:rot}deg)">${labs}</div></div></div></div>
     <p class="sm muted" style="text-align:center">За серебро осталось: <b>${left}</b> из ${Core.WHEEL_SILVER.length}${cost?` (следующая за ${fmtRes(cost)})`:` · за рунные камни: ${pl} из ${Core.WHEEL_PAID_MAX}`}</p>
     <div id="wres" class="wres">${last&&last.k==='wheel'&&!wf?`Выпало: ${esc(last.text)}`:'&nbsp;'}</div>
     <button class="btn" data-act="spin" type="button" ${can?'':'disabled'}>${btn}</button>
