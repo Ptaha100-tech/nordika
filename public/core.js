@@ -52,7 +52,11 @@ const TECH = {
   eco: { n: 'Дары земли',       d: '+5% к добыче за уровень', r: 'ᚠ' },
   bld: { n: 'Мастера-строители', d: '−3% ко времени стройки за уровень', r: 'ᛒ' },
   fast: { n: 'Быстрые драккары', d: '−3% ко времени походов за уровень', r: 'ᚱ' },
-  drill: { n: 'Выучка дружины', d: '−3% ко времени обучения войск за уровень', r: 'ᛗ' }
+  drill: { n: 'Выучка дружины', d: '−3% ко времени обучения войск за уровень', r: 'ᛗ' },
+  jstr: { n: 'Мощь удара',   d: '+4% к силе удара ярла за уровень', r: 'ᛏ', j: 1 },
+  jvit: { n: 'Крепость тела', d: '+5% к здоровью ярла за уровень', r: 'ᛃ', j: 1 },
+  jarm: { n: 'Закалка брони', d: '+4% к броне ярла за уровень', r: 'ᚺ', j: 1 },
+  jcrt: { n: 'Глаз ворона',   d: '+0,5% к шансу крита ярла за уровень', r: 'ᚨ', j: 1 }
 };
 const CAMPS = ['Лагерь разбойников', 'Стоянка мародёров', 'Логово берсерков', 'Засада изгоев'];
 const N1 = ['Бьорн', 'Ульф', 'Рагнар', 'Гуннар', 'Эйрик', 'Свейн', 'Торвальд', 'Хальвдан', 'Ивар', 'Олаф', 'Харальд', 'Сигурд', 'Ингвар', 'Гейр'];
@@ -135,34 +139,77 @@ const QUESTS = [
 const armyAtk = st => { let a = 0; for (const k in st.troops) if (validKey(k)) a += (st.troops[k] || 0) * U[stype(k)].atk * tmul(stier(k)); return a * atkB(st); };
 /* ============ Снаряжение ярла ============ */
 const SLOTS = {
-  weapon: { n: 'Оружие',  stat: 'atk',  base: 3, w: 'к атаке всех воинов',      names: ['Дубовый топор', 'Стальная секира', 'Клинок ярла'] },
-  armor:  { n: 'Броня',   stat: 'def',  base: 3, w: 'к защите всех воинов',     names: ['Кожаная броня', 'Кольчуга', 'Доспех берсерка'] },
-  helm:   { n: 'Шлем',    stat: 'loot', base: 4, w: 'к ноше в походах',         names: ['Кожаный шлем', 'Шлем с наносником', 'Рогатый шлем'] },
-  amulet: { n: 'Амулет',  stat: 'eco',  base: 3, w: 'к добыче в городе',        names: ['Костяной амулет', 'Молот Тора', 'Руна Одина'] },
-  gloves: { n: 'Перчатки', stat: 'atk', base: 2, w: 'к атаке всех воинов',      names: ['Кожаные рукавицы', 'Стальные перчатки', 'Перчатки берсерка'] },
-  pants:  { n: 'Штаны',   stat: 'def',  base: 2, w: 'к защите всех воинов',     names: ['Шерстяные штаны', 'Кольчужные поножи', 'Поножи ярла'] },
-  cloak:  { n: 'Плащ',    stat: 'def',  base: 2, w: 'к защите всех воинов',     names: ['Тканый плащ', 'Волчий плащ', 'Медвежья шкура'] },
-  belt:   { n: 'Пояс',    stat: 'loot', base: 3, w: 'к ноше в походах',         names: ['Кожаный пояс', 'Пояс с пряжкой', 'Пояс великана'] },
-  ring:   { n: 'Кольцо',  stat: 'eco',  base: 2, w: 'к добыче в городе',        names: ['Медное кольцо', 'Серебряное кольцо', 'Золотое кольцо'] }
+  weapon: { n: 'Оружие',  stat: 'atk',  base: 3, w: 'к атаке всех воинов',      js: ['str', 12], names: ['Дубовый топор', 'Серебряная секира', 'Золотой клинок', 'Секира Рагнарёка'] },
+  armor:  { n: 'Броня',   stat: 'def',  base: 3, w: 'к защите всех воинов',     js: ['arm', 8],  names: ['Кожаная броня', 'Серебряная кольчуга', 'Золотой доспех', 'Доспех Валгаллы'] },
+  helm:   { n: 'Шлем',    stat: 'loot', base: 4, w: 'к ноше в походах',         js: ['vit', 40], names: ['Кожаный шлем', 'Серебряный шлем', 'Золотой шлем', 'Корона бури'] },
+  amulet: { n: 'Амулет',  stat: 'eco',  base: 3, w: 'к добыче в городе',        js: ['crt', 3],  names: ['Костяной амулет', 'Серебряный молот Тора', 'Золотая руна', 'Око Одина'] },
+  gloves: { n: 'Перчатки', stat: 'atk', base: 2, w: 'к атаке всех воинов',      js: ['str', 6],  names: ['Кожаные рукавицы', 'Серебряные перчатки', 'Золотые перчатки', 'Хватка Фенрира'] },
+  pants:  { n: 'Штаны',   stat: 'def',  base: 2, w: 'к защите всех воинов',     js: ['arm', 5],  names: ['Шерстяные штаны', 'Серебряные поножи', 'Золотые поножи', 'Поножи Хеймдалля'] },
+  cloak:  { n: 'Плащ',    stat: 'def',  base: 2, w: 'к защите всех воинов',     js: ['vit', 20], names: ['Тканый плащ', 'Волчий плащ', 'Золотой плащ', 'Крыло ворона'] },
+  belt:   { n: 'Пояс',    stat: 'loot', base: 3, w: 'к ноше в походах',         js: ['vit', 25], names: ['Кожаный пояс', 'Серебряный пояс', 'Золотой пояс', 'Пояс Йормунганда'] },
+  ring:   { n: 'Кольцо',  stat: 'eco',  base: 2, w: 'к добыче в городе',        js: ['crt', 2],  names: ['Медное кольцо', 'Серебряное кольцо', 'Золотое кольцо', 'Кольцо Драупнир'] }
 };
 /* места на ярле: два кольца делят один тип предметов */
 const EQS = ['helm', 'cloak', 'armor', 'gloves', 'pants', 'belt', 'weapon', 'amulet', 'ring1', 'ring2'];
 const slotType = k => (k === 'ring1' || k === 'ring2') ? 'ring' : k;
 const LOOKS = ['Берсерк', 'Щитоносец', 'Копейщик', 'Секирщик', 'Элитный воин'];
-const SLOTK = Object.keys(SLOTS), RARN = ['Обычное', 'Редкое', 'Эпическое'], EQMAX = 30, EQ_IL = 5, BAG_STEP = 5, BAG_COST = [20, 30, 45, 65, 90];
+const SLOTK = Object.keys(SLOTS), RARN = ['Обычное', 'Серебряное', 'Золотое', 'Эпическое'], EQMAX = 30, EQ_IL = 0, BAG_STEP = 5, BAG_COST = [20, 30, 45, 65, 90], MAXPLUS = 10;
 const eqCap = st => EQMAX + BAG_STEP * ((st && st.eq && st.eq.bag) || 0);
-const itemPct = it => Math.round(SLOTS[it.slot].base * [1, 1.7, 2.6][it.r] * (1 + 0.2 * (it.il - 1)) * 10) / 10;
+/* Сила предмета: тир и заточка. Для армии и города рост мягче, для ярла (арена) круче. */
+const TM = [1, 2.2, 4.2, 8], AM = [1, 1.5, 2, 2.6];
+const plusOf = it => Math.max(0, Math.min(MAXPLUS, it.plus || 0));
+const jMul = it => TM[it.r] * (1 + 0.1 * plusOf(it));
+const aMul = it => AM[it.r] * (1 + 0.05 * plusOf(it));
+/* Добавка предмета: [вид, множитель разброса 0.7..1.3]. Виды: личные (str vit arm crt) и армейские (atk def loot eco). */
+const AFF = { str: 4, vit: 15, arm: 3, crt: 1, atk: 1.5, def: 1.5, loot: 2, eco: 1.5 };
+const AFN = { str: 'Сила', vit: 'Живучесть', arm: 'Броня', crt: 'Крит, %', atk: 'атака армии, %', def: 'защита армии, %', loot: 'ноша, %', eco: 'добыча, %' };
+const itemPct = it => Math.round(SLOTS[it.slot].base * aMul(it) * 10) / 10;
+const affVal = it => !it.af ? 0 : (it.af[0] in { atk: 1, def: 1, loot: 1, eco: 1 } ? Math.round(AFF[it.af[0]] * it.af[1] * aMul(it) * 10) / 10 : Math.round(AFF[it.af[0]] * it.af[1] * jMul(it) * 10) / 10);
+const jMain = it => Math.round(SLOTS[it.slot].js[1] * jMul(it) * 10) / 10;
 function eqB(st, stat) {
   if (!st || !st.eq) return 0; let v = 0;
-  EQS.forEach(k => { const it = st.eq.s[k]; if (it && SLOTS[slotType(k)].stat === stat) v += itemPct(it) / 100; });
-  return v;
+  EQS.forEach(k => { const it = st.eq.s[k]; if (!it) return; if (SLOTS[slotType(k)].stat === stat) v += itemPct(it) / 100; if (it.af && it.af[0] === stat) v += affVal(it) / 100; });
+  return v * (1 + setBonus(st));
+}
+/* Полный набор из 10 вещей даёт надбавку к бонусам армии по самому слабому тиру. */
+const SETB = [0.05, 0.08, 0.12, 0.18];
+function setBonus(st) {
+  if (!st || !st.eq) return 0; let mn = 9;
+  for (const k of EQS) { const it = st.eq.s[k]; if (!it) return 0; mn = Math.min(mn, it.r); }
+  return SETB[mn] || 0;
 }
 const itemName = it => SLOTS[it.slot].names[it.r];
-const forgeLvl = () => Math.min(EQ_IL, 1 + Math.floor(lvl('hall') / 5));
-const forgeCost = () => { const il = forgeLvl(); return { wood: 300 * il, iron: 200 * il, silver: 100 * il }; };
-function newItem(il, w) {
-  const x = Math.random() * (w[0] + w[1] + w[2]), r = x < w[0] ? 0 : x < w[0] + w[1] ? 1 : 2;
-  return { id: 'i' + (S.mid++), slot: pick(SLOTK), r, il: Math.max(1, Math.min(EQ_IL, il)) };
+/* Личные характеристики ярла: уровень, предметы, знания Оракула. */
+function jarlStats(st) {
+  const H = heroOf(st), T = st.tech || {};
+  const sum = { str: 0, vit: 0, arm: 0, crt: 0 };
+  if (st.eq) EQS.forEach(k => { const it = st.eq.s[k]; if (!it) return; const m = SLOTS[slotType(k)].js; sum[m[0]] += jMain(it); if (it.af && it.af[0] in sum) sum[it.af[0]] += affVal(it); });
+  const sb = 1 + setBonus(st) * 2;
+  return {
+    str: Math.round((10 + 2 * H.lv + sum.str * sb) * (1 + 0.04 * (T.jstr || 0))),
+    hp: Math.round((300 + 40 * H.lv + sum.vit * sb) * (1 + 0.05 * (T.jvit || 0))),
+    arm: Math.round((5 + H.lv + sum.arm * sb) * (1 + 0.04 * (T.jarm || 0))),
+    crt: Math.min(60, Math.round((5 + sum.crt * sb + 0.5 * (T.jcrt || 0)) * 10) / 10)
+  };
+}
+/* Мощь ярла: уровень, очки навыков, вещи и знания Оракула. */
+const itemPower = it => Math.round(30 * jMul(it) * (SLOTS[it.slot].base >= 3 ? 1 : 0.7));
+function jarlPower(st) {
+  const H = heroOf(st), T = st.tech || {}; let p = 50 * H.lv;
+  for (const k in (H.sk || {})) p += 25 * (H.sk[k] || 0);
+  if (st.eq) EQS.forEach(k => { const it = st.eq.s[k]; if (it) p += itemPower(it); });
+  for (const k in T) p += (TECH[k] && TECH[k].j ? 30 : 10) * (T[k] || 0);
+  return Math.round(p * (1 + setBonus(st)));
+}
+/* Обычная ковка: нужна Палата 3, предмет всегда обычный, слот выбирает игрок. */
+const FORGE_COST = { wood: 220, iron: 140, silver: 40 };
+const forgeCost = () => Object.assign({}, FORGE_COST);
+const forgeLvl = () => 1;
+function rollAf() { const k = pick(Object.keys(AFF)); return [k, Math.round(rnd(0.7, 1.3) * 100) / 100]; }
+/* Предмет из награды: w = веса [обычное, серебряное, золотое]; золотые и эпические добываются только ковкой по рецептам. */
+function newItem(il, w, slot) {
+  const x = Math.random() * ((w ? w[0] + w[1] : 1) || 1), r = w && x >= w[0] ? 1 : 0;
+  return { id: 'i' + (S.mid++), slot: slot && SLOTS[slot] ? slot : pick(SLOTK), r, plus: 0, af: rollAf() };
 }
 function giveItem(it, why, t) {
   if (S.eq.inv.length >= eqCap(S)) { addLog(`Находка «${itemName(it)}» пропала: сумка полна.`, 'info', t); return false; }
@@ -175,11 +222,12 @@ function buyBag() {
   if ((S.gems || 0) < BAG_COST[n]) { toast('Не хватает рунных камней'); return; }
   S.gems -= BAG_COST[n]; S.eq.bag = n + 1; addLog(`Сумка расширена: теперь ${eqCap(S)} мест.`, 'good'); toast(`Сумка: ${eqCap(S)} мест`);
 }
-function forge() {
+function forge(slot) {
   if (lvl('hall') < 3) { toast('Ковка открывается с Палаты ярла 3'); return; }
   if (S.eq.inv.length >= eqCap(S)) { toast('Сумка полна'); return; }
+  if (!SLOTS[slot]) { toast('Выберите, что ковать'); return; }
   const c = forgeCost(); if (!canAfford(c)) { toast('Не хватает ресурсов'); return; }
-  pay(c); giveItem(newItem(forgeLvl(), [72, 23, 5]), 'Кузнец выковал');
+  pay(c); giveItem(newItem(1, null, slot), 'Кузнец выковал');
 }
 function equip(id) {
   const i = S.eq.inv.findIndex(x => x.id === id); if (i < 0) return;
@@ -190,7 +238,8 @@ function unequip(slot) {
   const it = S.eq.s[slot]; if (!it || S.eq.inv.length >= eqCap(S)) return;
   S.eq.s[slot] = null; S.eq.inv.push(it);
 }
-const scrapOf = it => ({ iron: 60 * it.il * (it.r + 1), silver: 30 * it.il * (it.r + 1) });
+const SCRAP_K = [1, 3, 8, 20];
+const scrapOf = it => { const k = SCRAP_K[it.r] * (1 + 0.2 * plusOf(it)); return { iron: Math.round(50 * k), silver: Math.round(20 * k) }; };
 function scrap(id) {
   const i = S.eq.inv.findIndex(x => x.id === id); if (i < 0) return;
   const g = scrapOf(S.eq.inv[i]); S.eq.inv.splice(i, 1);
@@ -207,15 +256,6 @@ function scrapMany(ids) {
   if (!n) return;
   for (const k in g) S.res[k] = Math.max(S.res[k], Math.min(cap(), S.res[k] + g[k]));
   toast(`Разобрано предметов: ${n}. ${fmtRes(g)}`);
-}
-function mergeItems(arg) {
-  const [slot, r0] = String(arg).split(':'), r = Number(r0);
-  if (!SLOTS[slot] || !(r >= 0 && r < 2)) return;
-  const same = S.eq.inv.filter(x => x.slot === slot && x.r === r).slice(0, 3);
-  if (same.length < 3) { toast('Нужно три одинаковых предмета'); return; }
-  S.eq.inv = S.eq.inv.filter(x => !same.includes(x));
-  const il = Math.round(same.reduce((a, x) => a + x.il, 0) / 3);
-  S.eq.inv.push({ id: 'i' + (S.mid++), slot, r: r + 1, il }); toast('Слияние удалось: ' + RARN[r + 1].toLowerCase() + ' предмет');
 }
 
 
@@ -239,7 +279,9 @@ function use(st) { S = st; }
 /* Старые сохранения без героя и ступеней получают их при первом обновлении. */
 function ensure(st) {
   if (st.tech) { if (st.tech.bld === undefined) st.tech.bld = 0; if (st.tech.fast === undefined) st.tech.fast = 0; if (st.tech.drill === undefined) st.tech.drill = 0; }
+  if (st.tech) ['jstr', 'jvit', 'jarm', 'jcrt'].forEach(k => { if (st.tech[k] === undefined) st.tech[k] = 0; });
   if (!st.eq) st.eq = { s: { weapon: null, armor: null, helm: null, amulet: null }, inv: [] };
+  { const fix = it => { if (it && it.plus === undefined) { it.plus = 0; if (!(it.r >= 0 && it.r <= 3)) it.r = 0; delete it.il; } }; (st.eq.inv || []).forEach(fix); Object.keys(st.eq.s || {}).forEach(k => fix(st.eq.s[k])); }
   if (!st.tier) st.tier = { spear: 1, archer: 1, cav: 1 };
   if (!st.hero) st.hero = { lv: 1, xp: 0, sp: 0, sk: { atk: 0, def: 0, loot: 0 } };
   if (!(st.hero.look >= 1 && st.hero.look <= 5)) st.hero.look = 1;
@@ -303,7 +345,7 @@ function gainXp(n) {
 }
 const lvl = id => S.b[id] || 0;
 const slots = h => 1 + (h >= 4 ? 1 : 0) + (h >= 8 ? 1 : 0) + (h >= 14 ? 1 : 0) + (h >= 20 ? 1 : 0);
-const capAt = (st, h) => 2000 + 1500 * (st - 1) + 250 * (h - 1);
+const capAt = (st, h) => Math.round(3000 + 1800 * (st - 1) * (1 + 0.1 * (st - 1)) + 300 * (h - 1));
 const isVip = () => (S.vip || 0) > nowMs();
 const cap = () => Math.round(capAt(lvl('storehouse'), lvl('hall')) * (isVip() ? 1.2 : 1));
 const ecoMul = () => (1 + 0.05 * S.tech.eco + eqB(S, 'eco')) * (isVip() ? 1.15 : 1);
@@ -336,7 +378,7 @@ function score(st) {
   for (const k in all) if (validKey(k)) s += (all[k] || 0) * (U[stype(k)].atk + U[stype(k)].def) / 2 * tmul(stier(k));
   for (const k in st.tech) s += st.tech[k] * 50;
   s += heroOf(st).lv * 30;
-  if (st.eq) EQS.forEach(k => { const it = st.eq.s[k]; if (it) s += 15 * (it.r + 1) * it.il; });
+  s += jarlPower(st) * 0.3;
   return Math.round(s);
 }
 
@@ -896,12 +938,11 @@ function act(a, arg) {
     case 'scout': if (typeof arg === 'string') scout(arg); break;
     case 'ptarget': if (typeof arg === 'string') addPlayerTarget(arg); break;
     case 'revenge': if (typeof arg === 'string') revenge(arg); break;
-    case 'forge': forge(); break;
+    case 'forge': forge(String(arg || '')); break;
     case 'equip': if (typeof arg === 'string') equip(arg); break;
     case 'unequip': if (typeof arg === 'string' && EQS.includes(arg)) unequip(arg); break;
     case 'scrap': if (typeof arg === 'string') scrap(arg); break;
     case 'scrapmany': scrapMany(arg); break;
-    case 'merge': if (typeof arg === 'string') mergeItems(arg); break;
   }
 }
 
@@ -924,7 +965,7 @@ function fmtT(sec) {
 }
 
 const API = {
-  armyAtk, newItem, giveItem, SLOTS, SLOTK, LOOKS, EQS, slotType, EQ_IL, RARN, EQMAX, BAG_COST, BAG_STEP, eqCap, itemPct, itemName, forgeCost, forgeLvl, scrapOf, eqB,
+  armyAtk, newItem, giveItem, SLOTS, SLOTK, LOOKS, EQS, slotType, EQ_IL, RARN, EQMAX, BAG_COST, BAG_STEP, eqCap, itemPct, itemName, forgeCost, forgeLvl, scrapOf, eqB, jarlStats, jarlPower, setBonus, jMain, affVal, plusOf, itemPower, AFN, MAXPLUS, TM, SETB,
   RES, RI, B, BORDER, U, WEAK, TECH, QUESTS, MAXL, TMAX, CFG, HOOK, NODE, TIERN, TIER_NEED, MAXT, HSK, MAXHL, MAXSK,
   get S() { return S; },
   use, ensure, newState, update, produce, settle, battle, act, score, verdict,

@@ -138,6 +138,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--frost);outline-
 .stat span{font-size:12px;color:var(--muted)}
 .stepper.st5{display:grid;grid-template-columns:1fr 1fr 1.9fr 1fr 1fr;gap:4px}.stepper.st5 .btn{padding:4px 0}.stepper.st5 .tnin{width:100%}.stepper.st5 [data-act=tnmax]{grid-column:1/-1}
 .wmenu{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}.vq.good{color:var(--ok)}.vq.warn{color:var(--accent)}.vq.bad{color:var(--blood)}
+.fgslots{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.fgslots .btn{padding:6px 1px;white-space:nowrap;min-width:0;font-size:12.5px;overflow:hidden}
 .tav{max-width:420px}.wheelbox{position:relative;width:min(100%,340px);aspect-ratio:720/858;margin:6px auto 2px;background:url(/img/wheel-base2.webp?v=2) center/100% 100% no-repeat;filter:drop-shadow(0 8px 10px #0008)}
 .wd1{position:absolute;left:11.59%;top:16.70%;width:76.40%;height:64.11%}
 .wd2{position:absolute;inset:0}
@@ -304,7 +305,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--frost);outline-
 .fgw .eqforge{font-size:13px}.fgw::after{content:"";position:absolute;inset:0;background:url(/img/forge-frame.webp?v=1) 0 0/100% 100% no-repeat;pointer-events:none;z-index:4}
 .fgin{position:absolute;inset:12.5% 11.5% 9% 12%;overflow-y:auto;overflow-x:hidden;padding:6px 6px 8px;z-index:2}
 .fgw .eqx{margin-top:8px}
-.eqf{position:relative;padding:0;background:none;border:0;box-shadow:none;max-height:none;overflow:visible;width:min(96vw,max(300px,calc((100dvh - 175px)*.4503)),440px);max-width:none;margin:auto 0}
+.eqf{position:relative;padding:0;background:none;border:0;box-shadow:none;max-height:none;overflow:visible;width:min(96vw,max(300px,calc((100dvh - 195px)*.4503)),440px);max-width:none;margin:auto 0}
 .eqfin{position:relative;width:100%;aspect-ratio:1160/2260;container-type:inline-size;background:url(/img/eq-frame.webp?v=1) 0 0/100% 100% no-repeat}
 .eqfin.eq2{aspect-ratio:1160/2576;background-image:url(/img/eq-frame2.webp?v=1)}
 .eqf .eqp{position:absolute;box-sizing:border-box;margin:0}
@@ -319,7 +320,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--frost);outline-
 .eqf .eqs{touch-action:manipulation;-webkit-touch-callout:none;user-select:none}
 .eqmenu{position:absolute;left:7%;right:7%;top:34%;z-index:6;background:#15100dee;border:2px solid #b58a3c;border-radius:8px;padding:3cqw;font-size:3.4cqw;color:#e6d9c0;box-shadow:0 8px 24px #000c}.eqmenu p{margin:2px 0}.eqmb{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
 .eqctl{display:flex;gap:6px;align-items:center;justify-content:space-between;flex-wrap:nowrap;margin-top:8px;padding:6px;border-radius:8px;background:#120d0bf0;border:1px solid #4a3827}.eqctl .btn{white-space:nowrap}.eqsorts{display:flex;gap:4px;flex-wrap:wrap}.eqpg{display:flex;gap:6px;align-items:center;color:#f1e6cc}
-.eqhint{display:none}.eqhint0{font-size:12px;color:var(--muted);text-align:center;margin:6px 0 0}
+.eqhint{font-size:12px;color:#d9c9a8;text-align:center;margin:6px 0 0}.eqhint0{font-size:12px;color:var(--muted);text-align:center;margin:6px 0 0}
 .eqf .eqbar{height:auto;border-radius:100px;padding:0 3cqw;font-size:3.4cqw;border:0;background:#0f0b09}
 .eqf .eqbar i{border-radius:100px}
 .eqf .eqdet{min-height:0;padding:1.4cqw 2.4cqw;border:0;overflow-y:auto;font-size:3cqw;line-height:1.25;color:#e6d9c0}
@@ -346,7 +347,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--frost);outline-
 .eqc{display:flex;flex-direction:column;align-items:center;font-size:10px;color:#c9b48c}
 .eqs{position:relative;width:58px;height:58px;border-radius:4px;border:2px solid #7a5c36;background:radial-gradient(#2a211b,#0f0b09);box-shadow:inset 0 0 8px #000;display:flex;align-items:center;justify-content:center;padding:0;overflow:hidden;font-size:26px}
 .eqs.empty{opacity:.35;background:#e9cdbd22}
-.eqs.r1{border-color:#6fa8ff}.eqs.r2{border-color:#c78bff;box-shadow:0 0 8px #c78bff88}.eqs.sel{outline:2px solid #f2b233}
+.eqs.r1{border-color:#b9c9da}.eqs.r2{border-color:#e8c15a;box-shadow:0 0 8px #e8c15a88}.eqs.r3{border-color:#c78bff;box-shadow:0 0 10px #c78bffaa}.eqs.sel{outline:2px solid #f2b233}
 .eqs .eqg{opacity:.85}.eqs .eqi{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#1c1411}
 .eqil{position:absolute;right:3px;bottom:1px;font-size:10px;font-style:normal;color:#ffe08a;text-shadow:0 0 3px #000}
 .eqhero{position:relative;overflow:hidden;border:3px solid #6b5230;border-radius:4px;min-height:388px;background:linear-gradient(#0006,#0003 40%,#000a),url(img/eqbg.webp) 50% 20%/cover #14100d;box-shadow:inset 0 0 20px #000}
@@ -359,9 +360,9 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--frost);outline-
 .eqforge{display:flex;gap:10px;justify-content:space-between;align-items:center;margin-top:10px;padding-top:8px;border-top:1px solid #6b4a36}
 
 /* оживление предметов: блик у редких, свечение и искры у эпических */
-.eqs.r1::after,.eqs.r2::after{content:"";position:absolute;inset:-20% auto -20% -60%;width:40%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.35),transparent);transform:skewX(-18deg);animation:eqsh 4.5s ease-in-out infinite;pointer-events:none}
+.eqs.r1::after,.eqs.r2::after,.eqs.r3::after{content:"";position:absolute;inset:-20% auto -20% -60%;width:40%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.35),transparent);transform:skewX(-18deg);animation:eqsh 4.5s ease-in-out infinite;pointer-events:none}
 .eqs.r2::after{animation-duration:3s;background:linear-gradient(100deg,transparent,rgba(255,235,170,.5),transparent)}
-.eqs.r2{animation:eqglow 2.6s ease-in-out infinite}
+.eqs.r2,.eqs.r3{animation:eqglow 2.6s ease-in-out infinite}
 .eqs.r2 .eqi{animation:eqbr 2.6s ease-in-out infinite}
 .eqs.t-amulet2 .eqi{animation:eqrune 1.8s ease-in-out infinite}
 .eqs.t-ring1::before,.eqs.t-ring2::before{content:"✦";position:absolute;left:52%;top:30%;font-size:12px;color:#fff;text-shadow:0 0 6px #7fd0ff;animation:eqtw 2.4s ease-in-out infinite;z-index:2;pointer-events:none}
@@ -689,7 +690,8 @@ function viewTroops(){
 function oracleHTML(){
   let h='';
   if(!lvl('oracle'))h+=`<section class="card"><p class="note">Постройте Оракул, чтобы изучать знания.</p></section>`;
-  Object.keys(TECH).forEach(k=>{
+  h+=`<div class="subtabs" style="margin:0 0 8px"><button class="btn small ${ui.orTab==='j'?'ghost':'on'}" data-act="ortab" data-arg="a" type="button">Войска и город</button><button class="btn small ${ui.orTab==='j'?'on':'ghost'}" data-act="ortab" data-arg="j" type="button">Ярл</button></div>`;
+  Object.keys(TECH).filter(k=>!!TECH[k].j===(ui.orTab==='j')).forEach(k=>{
     const t=TECH[k],L=S.tech[k];
     let act='';
     if(L>=TMAX)act=`<p class="note">Максимальный уровень</p>`;
@@ -718,17 +720,18 @@ function heroHTML(){
   h+=`<p class="note">Опыт приходит за победы, сбор и отбитые набеги. Каждый уровень даёт очко навыка.</p></section>`;
   return h+eqHTML();
 }
-const RC=['var(--fg)','#6fa8ff','#c78bff'];
-function itemLine(it){return `<b style="color:${RC[it.r]}">${Core.itemName(it)}</b> <span class="muted sm">${Core.RARN[it.r].toLowerCase()}, ур. ${it.il}</span><p class="sm muted" style="margin:0">+${Core.itemPct(it)}% ${Core.SLOTS[it.slot].w}</p><p class="sm muted" style="margin:0">Уровень предмета ${it.il} из ${Core.EQ_IL}: каждый уровень добавляет +20% к бонусу${it.il<Core.EQ_IL?`, на ${it.il+1}-м уровне было бы +${Core.itemPct({slot:it.slot,r:it.r,il:it.il+1})}%`:''}.</p>`;}
+const RC=['var(--fg)','#b9c9da','#e8c15a','#c78bff'],ART=[0,1,2,2];
+function itemLine(it){const pl=Core.plusOf(it),sl=Core.SLOTS[it.slot],jm=sl.js,JN={str:'Сила',vit:'Живучесть',arm:'Броня',crt:'Крит, %'};
+  return `<b style="color:${RC[it.r]}">${Core.itemName(it)}${pl?' +'+pl:''}</b> <span class="muted sm">${Core.RARN[it.r].toLowerCase()}</span><p class="sm muted" style="margin:0">+${Core.itemPct(it)}% ${sl.w}</p><p class="sm muted" style="margin:0">${JN[jm[0]]} ярла +${Core.jMain(it)}${it.af?` · ${Core.AFN[it.af[0]]} +${Core.affVal(it)}`:''}</p><p class="sm muted" style="margin:0">Мощь предмета ${Core.itemPower(it)}</p>`;}
 const EQG={helm:'⛑',cloak:'🧥',armor:'🛡',gloves:'🧤',pants:'👖',belt:'🎗',weapon:'⚔',amulet:'🧿',ring:'💍'};
 const EQSN={helm:'Шлем',cloak:'Плащ',armor:'Броня',gloves:'Перчатки',pants:'Штаны',belt:'Пояс',weapon:'Оружие',amulet:'Амулет',ring1:'Кольцо',ring2:'Кольцо'};
 function eqIcon(it,k){
   const t=it?it.slot:Core.slotType(k);
-  return `<span class="eqg">${EQG[t]}</span>${it?`<img class="eqi" src="img/eq-${it.slot}${it.r}.webp" alt="" onerror="this.remove()">`:''}`;
+  return `<span class="eqg">${EQG[t]}</span>${it?`<img class="eqi" src="img/eq-${it.slot}${ART[it.r]}.webp" alt="" onerror="this.remove()">`:''}`;
 }
 function eqCell(k){
   const it=S.eq.s[k],sel=ui.eqSel&&ui.eqSel.slot===k;
-  return `<div class="eqc"><button class="eqs ${it?'r'+it.r+' t-'+it.slot+it.r:''} ${sel?'sel':''}" data-act="eqsel" data-arg="s:${k}" type="button">${eqIcon(it,k)}${it?`<i class="eqil">${it.il}</i>`:''}</button><span>${EQSN[k]}</span></div>`;
+  return `<div class="eqc"><button class="eqs ${it?'r'+it.r+' t-'+it.slot+it.r:''} ${sel?'sel':''}" data-act="eqsel" data-arg="s:${k}" type="button">${eqIcon(it,k)}${it?`<i class="eqil">${Core.plusOf(it)?'+'+Core.plusOf(it):''}</i>`:''}</button><span>${EQSN[k]}</span></div>`;
 }
 function eqHTML(){
   return `<section class="card"><h2>Снаряжение ярла</h2><p class="sm muted">Шлем, броня, оружие, кольца и другое дают бонусы к атаке, защите, ноше и добыче.</p><button class="btn" data-act="eq" type="button">Открыть снаряжение</button></section>`;
@@ -753,20 +756,21 @@ function eqSheet(){
   const FW=1160,FH=2576,P=(x0,y0,x1,y1)=>`left:${x0*100/FW}%;top:${y0*100/FH}%;width:${(x1-x0)*100/FW}%;height:${(y1-y0)*100/FH}%`;
   const SY=[[214,358],[426,567],[630,764],[823,952],[1009,1136]],sl=(keys,x0,x1)=>keys.map((k,n)=>`<div class="eqp" style="${P(x0,SY[n][0],x1,SY[n][1])}">${eqCell(k)}</div>`).join('');
   const bars=[['rd','Атака','atk'],['gn','Защита','def'],['bl','Ноша','loot'],['gd','Добыча','eco']],BY=[1225,1282,1338,1394];
-  const so=ui.eqSort||'r',EQO=Object.keys(Core.SLOTS),SORTN={r:'s',s:'l',l:'p',p:'r'},SORTT={r:'редкость',s:'слот',l:'уровень',p:'бонус'};
-  const inv=E.inv.slice().sort((a,b)=>so==='s'?EQO.indexOf(a.slot)-EQO.indexOf(b.slot)||b.r-a.r||b.il-a.il:so==='l'?b.il-a.il||b.r-a.r:so==='p'?Core.itemPct(b)-Core.itemPct(a):b.r-a.r||b.il-a.il);
+  const so=ui.eqSort||'r',EQO=Object.keys(Core.SLOTS),SORTN={r:'s',s:'l',l:'p',p:'r'},SORTT={r:'тир',s:'слот',l:'заточка',p:'бонус'};
+  const inv=E.inv.slice().sort((a,b)=>so==='s'?EQO.indexOf(a.slot)-EQO.indexOf(b.slot)||b.r-a.r||Core.plusOf(b)-Core.plusOf(a):so==='l'?Core.plusOf(b)-Core.plusOf(a)||b.r-a.r:so==='p'?Core.itemPct(b)-Core.itemPct(a):b.r-a.r||Core.plusOf(b)-Core.plusOf(a));
   const pages=Math.max(1,Math.ceil(inv.length/25));if(ui.eqPg==null||ui.eqPg>=pages)ui.eqPg=Math.max(0,pages-1);
   const pg=inv.slice(ui.eqPg*25,ui.eqPg*25+25),CX=[117,310,503,696,889],CY=[1572,1759,1958,2143,2327],mid=ui.eqMenu&&ui.eqMenu.id;
-  const cells=pg.map((it,n)=>`<div class="eqp" style="${P(CX[n%5],CY[Math.floor(n/5)],CX[n%5]+158,CY[Math.floor(n/5)]+151)}"><button class="eqs r${it.r} t-${it.slot}${it.r} ${mid===it.id?'sel':''}" data-act="eqsel" data-arg="i:${it.id}" type="button">${eqIcon(it)}<i class="eqil">${it.il}</i></button></div>`).join('');
+  const cells=pg.map((it,n)=>`<div class="eqp" style="${P(CX[n%5],CY[Math.floor(n/5)],CX[n%5]+158,CY[Math.floor(n/5)]+151)}"><button class="eqs r${it.r} t-${it.slot}${it.r} ${mid===it.id?'sel':''}" data-act="eqsel" data-arg="i:${it.id}" type="button">${eqIcon(it)}<i class="eqil">${Core.plusOf(it)?'+'+Core.plusOf(it):''}</i></button></div>`).join('');
   $('modal').innerHTML=`<div class="sheet eqf"><div class="eqfin eq2">
     <div class="eqp eqtt" style="${P(235,65,935,170)}"><span>Снаряжение</span></div>
     <button class="eqp eqcl" style="${P(985,40,1115,140)}" data-act="sheetx" type="button" aria-label="Закрыть">✕</button>
     ${sl(['helm','armor','gloves','pants','belt'],76,250)}${sl(['cloak','weapon','amulet','ring1','ring2'],913,1088)}
-    <div class="eqp eqhero" style="${P(358,272,808,1105)}"><img class="eqpt ${S.hero.look?'full':''}" src="${S.hero.look?'img/herop'+S.hero.look+'.webp':'img/hero'+(1+[1,5,10,15,20,25,30].reduce((a,v,k)=>H.lv>=v?k:a,0))+'.webp'}" alt="Ярл"><div class="eqnm"><b>${esc(S.name)}</b><span>Уровень ${H.lv}</span></div></div>
+    <div class="eqp eqhero" style="${P(358,272,808,1105)}"><img class="eqpt ${S.hero.look?'full':''}" src="${S.hero.look?'img/herop'+S.hero.look+'.webp':'img/hero'+(1+[1,5,10,15,20,25,30].reduce((a,v,k)=>H.lv>=v?k:a,0))+'.webp'}" alt="Ярл"><div class="eqnm"><b>${esc(S.name)}</b><span>Ур. ${H.lv} · Мощь ${Core.jarlPower(S)}</span></div></div>
     ${bars.map((b,n)=>`<div class="eqp eqgr ${b[0]}" style="${P(100,BY[n],1065,BY[n]+40)}"><i style="width:${Math.min(100,tot[b[2]]*100/0.3)}%"></i><span>${b[1]}</span><b>${pc(tot[b[2]])}</b></div>`).join('')}
     ${cells}${eqMenuHTML()}
   </div>
   <div class="eqctl"><button class="btn small" data-act="fgopen" type="button">Кузница</button><button class="btn small ghost" data-act="eqsort" data-arg="${SORTN[so]}" type="button">↕ ${SORTT[so]}</button><span class="eqpg"><button class="btn small ghost" data-act="eqpg" data-arg="-1" type="button" ${ui.eqPg>0?'':'disabled'}>◀</button><b>${ui.eqPg+1}/${pages}</b><button class="btn small ghost" data-act="eqpg" data-arg="1" type="button" ${ui.eqPg<pages-1?'':'disabled'}>▶</button></span></div>
+  <p class="eqhint">${(()=>{const j=Core.jarlStats(S),sb=Core.setBonus(S);return `Сила ${j.str} · Здоровье ${j.hp} · Броня ${j.arm} · Крит ${j.crt}%${sb?` · Полный сет +${Math.round(sb*100)}%`:''}`;})()}</p>
 </div>`;
   $('modal').hidden=false;ui.eqOpen=true;
   try{window.Art&&Art.paintIn&&Art.paintIn($('modal'));}catch(e){}
@@ -776,10 +780,10 @@ function forgeSheet(){
   ui.eqOpen=false;ui.fgOpen=true;
   const E=S.eq,fc=Core.forgeCost(),can=lvl('hall')>=3&&E.inv.length<Core.eqCap(S)&&S.res.wood>=fc.wood&&S.res.iron>=fc.iron&&S.res.silver>=fc.silver;
   const H=heroOf(S),f=ui.eqF||'all',sel=ui.eqSel;
-  const so=ui.eqSort||'r',EQO=Object.keys(Core.SLOTS),inv=E.inv.slice().sort((a,b)=>so==='s'?EQO.indexOf(a.slot)-EQO.indexOf(b.slot)||b.r-a.r||b.il-a.il:so==='l'?b.il-a.il||b.r-a.r:so==='p'?Core.itemPct(b)-Core.itemPct(a):b.r-a.r||b.il-a.il).filter(it=>f==='all'||(f==='w'&&['weapon','gloves','ring','amulet'].includes(it.slot))||(f==='a'&&['armor','helm','pants','cloak','belt'].includes(it.slot)));
+  const so=ui.eqSort||'r',EQO=Object.keys(Core.SLOTS),inv=E.inv.slice().sort((a,b)=>so==='s'?EQO.indexOf(a.slot)-EQO.indexOf(b.slot)||b.r-a.r||Core.plusOf(b)-Core.plusOf(a):so==='l'?Core.plusOf(b)-Core.plusOf(a)||b.r-a.r:so==='p'?Core.itemPct(b)-Core.itemPct(a):b.r-a.r||Core.plusOf(b)-Core.plusOf(a)).filter(it=>f==='all'||(f==='w'&&['weapon','gloves','ring','amulet'].includes(it.slot))||(f==='a'&&['armor','helm','pants','cloak','belt'].includes(it.slot)));
   const pk=ui.eqPick||(ui.eqPick={}),mm=!!ui.eqMulti;
   Object.keys(pk).forEach(id=>{if(!E.inv.some(x=>x.id===id))delete pk[id];});
-  let cells=inv.map(it=>`<button class="eqs r${it.r} t-${it.slot}${it.r} ${(mm?pk[it.id]:sel&&sel.id===it.id)?'sel':''}" data-act="eqsel" data-arg="i:${it.id}" type="button">${eqIcon(it)}<i class="eqil">${it.il}</i>${mm&&pk[it.id]?'<b class="eqck">✓</b>':''}</button>`).join('');
+  let cells=inv.map(it=>`<button class="eqs r${it.r} t-${it.slot}${it.r} ${(mm?pk[it.id]:sel&&sel.id===it.id)?'sel':''}" data-act="eqsel" data-arg="i:${it.id}" type="button">${eqIcon(it)}<i class="eqil">${Core.plusOf(it)?'+'+Core.plusOf(it):''}</i>${mm&&pk[it.id]?'<b class="eqck">✓</b>':''}</button>`).join('');
   for(let n=inv.length;n<Math.max(15,Math.ceil(inv.length/5)*5);n++)cells+='<div class="eqs empty"></div>';
   const pcw=v=>v;
   let det='<p class="muted sm">Нажмите на предмет в сумке, чтобы увидеть бонус.</p>';
@@ -787,26 +791,24 @@ function forgeSheet(){
     det=`${itemLine(it)}${cur?`<p class="sm" style="margin:2px 0;color:${Core.itemPct(it)>Core.itemPct(cur)?'var(--good,#7ad07a)':'var(--muted)'}">Сейчас надето: +${Core.itemPct(cur)}%</p>`:''}<div class="eqb"><button class="btn small" data-act="equip" data-arg="${it.id}">Надеть</button><button class="btn small ghost" data-act="scrap" data-arg="${it.id}">Разобрать (${fmtRes(sc)})</button></div>`;}}
   const pids=Object.keys(pk).filter(id=>pk[id]),ptot={iron:0,silver:0};pids.forEach(id=>{const it=E.inv.find(x=>x.id===id);if(it){const r=Core.scrapOf(it);ptot.iron+=r.iron;ptot.silver+=r.silver;}});
   const multiBar=mm?`<div class="eqmulti"><p class="sm" style="margin:0 0 6px">Выбрано: <b>${pids.length}</b>${pids.length?` · получите ${fmtRes(ptot)}`:''}</p><div class="subtabs" style="margin:0 0 6px"><button class="btn small ghost" data-act="eqpickall" data-arg="c" type="button">Все обычные</button><button class="btn small ghost" data-act="eqpickall" data-arg="v" type="button">Все показанные</button><button class="btn small ghost" data-act="eqpickall" data-arg="0" type="button">Сбросить</button></div>${pids.length?(ui.eqConf?`<button class="btn small" data-act="scrapmany" type="button">Подтвердить: разобрать ${pids.length}</button> <button class="btn small ghost" data-act="eqconf" data-arg="0" type="button">Отмена</button>`:`<button class="btn small" data-act="eqconf" data-arg="1" type="button">Разобрать выбранные (${pids.length})</button>`):''}</div>`:'';
-  const grp={};E.inv.forEach(it=>{if(it.r<2){const g=it.slot+':'+it.r;grp[g]=(grp[g]||0)+1;}});
-  const mg=Object.keys(grp).filter(g=>grp[g]>=3);
   const tabs=[['all','Все'],['w','Оружие'],['a','Броня']];
   $('modal').innerHTML=`<div class="sheet fgw"><div class="fgin">
-    <div class="eqforge"><div style="min-width:0"><b>Кузница</b><p class="sm muted" style="margin:0">Куёт случайный предмет (чаще обычный, реже редкий и эпический). Нужна Палата ярла 3. Уровень предмета зависит от Палаты ярла: сейчас куётся ур. ${Core.forgeLvl()} из ${Core.EQ_IL}. Палата 5 даёт ур. 2, Палата 10 ур. 3, Палата 15 ур. 4, Палата 20 ур. 5. Три одинаковых предмета можно слить в один следующей редкости.</p><div class="costs" style="margin:4px 0 0">${Object.keys(fc).map(k=>cpHTML(k,fc[k])).join('')}</div></div><button class="btn small ${can?'':'off'}" data-act="forge">Ковать</button></div>
+    <div class="subtabs" style="margin:0 0 8px"><button class="btn small ${ui.fgTab==='e'?'ghost':'on'}" data-act="fgtab" data-arg="c" type="button">Обычный крафт</button><button class="btn small ${ui.fgTab==='e'?'on':'ghost'}" data-act="fgtab" data-arg="e" type="button">Эпический крафт</button></div>
+    ${ui.fgTab==='e'?`<div class="eqforge"><div style="min-width:0"><b>Эпический крафт</b><p class="sm muted" style="margin:0">Серебряные, золотые и эпические вещи куются из вещи прошлого тира, рецепта от купца в Таверне и ресурсов охоты. Откроется в одном из ближайших обновлений.</p></div></div>`:`<div class="eqforge" style="display:block"><b>Обычный крафт</b><p class="sm muted" style="margin:0 0 4px">Выберите, что ковать. Предмет получится обычным, со случайной добавкой. Нужна Палата ярла 3.</p><div class="costs" style="margin:4px 0">${Object.keys(fc).map(k=>cpHTML(k,fc[k])).join('')}</div><div class="fgslots">${['weapon','armor','helm','amulet','gloves','pants','cloak','belt','ring'].map(k=>`<button class="btn small ${can?'':'off'}" data-act="forge" data-arg="${k}" type="button">${EQG[k]} ${Core.SLOTS[k].n}</button>`).join('')}</div></div>`}
     <div class="eqdet">${det}</div>
     <div class="eqhd"><span>Сумка</span><span class="lv">${E.inv.length}/${Core.eqCap(S)}</span></div>
     ${(E.bag||0)<Core.BAG_COST.length?`<button class="btn small ghost" style="display:block;margin:6px auto 0" data-act="bag" type="button">Расширить сумку на ${Core.BAG_STEP} мест · ${Core.BAG_COST[E.bag||0]} рунных камней</button>`:''}
     <div class="subtabs" style="margin:6px 0">${tabs.map(t=>`<button class="btn small ${t[0]===f?'on':'ghost'}" data-act="eqf" data-arg="${t[0]}">${t[1]}</button>`).join('')}</div>
-    <div class="subtabs sm" style="margin:2px 0 6px;align-items:center"><span class="muted sm">Порядок:</span>${[['r','редкость'],['s','слот'],['l','уровень'],['p','бонус']].map(t=>`<button class="btn small ${t[0]===so?'on':'ghost'}" data-act="eqsort" data-arg="${t[0]}">${t[1]}</button>`).join('')}</div>
+    <div class="subtabs sm" style="margin:2px 0 6px;align-items:center"><span class="muted sm">Порядок:</span>${[['r','тир'],['s','слот'],['l','заточка'],['p','бонус']].map(t=>`<button class="btn small ${t[0]===so?'on':'ghost'}" data-act="eqsort" data-arg="${t[0]}">${t[1]}</button>`).join('')}</div>
     <div class="subtabs" style="margin:6px 0"><button class="btn small ${mm?'on':'ghost'}" data-act="eqmulti" type="button">${mm?'Готово':'Выбрать несколько для разбора'}</button></div>${multiBar}
     <div class="eqgrid">${cells}</div>
-    ${mg.length?`<p class="sm muted" style="margin:8px 0 2px">Слияние: три одинаковых предмета дают один следующей редкости.</p>`+mg.map(g=>{const [sl,r]=g.split(':');return `<button class="btn small" style="margin:3px" data-act="merge" data-arg="${g}">${Core.SLOTS[sl].n}: 3 ${Core.RARN[r].toLowerCase()}х → ${Core.RARN[+r+1].toLowerCase()}</button>`;}).join(''):''}
     <button class="btn ghost" style="display:block;margin:8px auto 0" data-act="eq" type="button">Снаряжение ярла</button>
     <button class="eqx" data-act="sheetx" type="button">Назад</button></div></div>`;
   $('modal').hidden=false;
   if(_st){const n=document.querySelector('.fgin');if(n)n.scrollTop=_st;}
   try{window.Art&&Art.paintIn&&Art.paintIn($('modal'));}catch(e){}
 }
-const TL={atk:'Атака',def:'Защита',eco:'Экономика',bld:'Стройка',fast:'Походы',drill:'Найм'};
+const TL={atk:'Атака',def:'Защита',eco:'Экономика',bld:'Стройка',fast:'Походы',drill:'Найм',jstr:'Сила',jvit:'Тело',jarm:'Броня',jcrt:'Крит'};
 const KIND={node:'Ресурсная точка',camp:'Разбойники',jarl:'Ярл',player:'Игрок'};
 ui.msub='world';
 const MSUB=[['node','Сбор'],['camp','Охота'],['pvp','ПВП'],['boss','Боссы'],['world','Мир']];
@@ -1052,10 +1054,10 @@ function dmHTML(t,me){
   return t.msgs.map(m=>msgH(m.from,m.from===me?'Вы':t.name,'',m.t,m.text,{...MX(m),ch:'d',me:m.from===me})).join('');
 }
 function peekSheet(p){
-  const E=p.eq||{},cell=k=>{const it=E[k];return `<div class="eqc"><div class="eqs ${it?'r'+it.r+' t-'+it.slot+it.r:''}">${eqIcon(it,k)}${it?`<i class="eqil">${it.il}</i>`:''}</div><span>${EQSN[k]}</span></div>`;};
+  const E=p.eq||{},cell=k=>{const it=E[k];return `<div class="eqc"><div class="eqs ${it?'r'+it.r+' t-'+it.slot+it.r:''}">${eqIcon(it,k)}${it?`<i class="eqil">${Core.plusOf(it)?'+'+Core.plusOf(it):''}</i>`:''}</div><span>${EQSN[k]}</span></div>`;};
   const tot={atk:0,def:0,loot:0,eco:0};Object.keys(E).forEach(k=>{const it=E[k],st=Core.SLOTS[it.slot].stat;if(tot[st]!==undefined)tot[st]+=Core.itemPct(it);});
   const pc=v=>'+'+Math.round(v*10)/10+'%';
-  const list=Object.keys(E).map(k=>`<p class="sm" style="margin:2px 0"><b style="color:${RC[E[k].r]}">${Core.itemName(E[k])}</b> <span class="muted">· ур. ${E[k].il} · +${Core.itemPct(E[k])}% ${Core.SLOTS[E[k].slot].w}</span></p>`).join('')||'<p class="muted sm">Снаряжения пока нет.</p>';
+  const list=Object.keys(E).map(k=>`<p class="sm" style="margin:2px 0"><b style="color:${RC[E[k].r]}">${Core.itemName(E[k])}</b> <span class="muted">${E[k].plus?'· +'+E[k].plus+' ':''}· +${Core.itemPct(E[k])}% ${Core.SLOTS[E[k].slot].w}</span></p>`).join('')||'<p class="muted sm">Снаряжения пока нет.</p>';
   $('modal').innerHTML=`<div class="sheet eqw"><i class="rv a"></i><i class="rv b"></i><i class="rv c"></i><i class="rv d"></i>
     <div class="eqban"><span>${esc(p.name)}</span></div>
     <div class="eqtop"><div class="eqcol">${['helm','armor','gloves','pants','belt'].map(cell).join('')}</div>
@@ -1836,6 +1838,8 @@ function onAct(act,arg){
     case 'eqconf':ui.eqConf=arg==='1';forgeSheet();return;
     case 'eqpickall':{const pk=ui.eqPick=ui.eqPick||{};ui.eqConf=false;if(arg==='0')ui.eqPick={};else{const f=ui.eqF||'all';S.eq.inv.filter(it=>arg==='v'?(f==='all'||(f==='w'&&['weapon','gloves','ring','amulet'].includes(it.slot))||(f==='a'&&['armor','helm','pants','cloak','belt'].includes(it.slot))):it.r<1).forEach(it=>{pk[it.id]=true;});}forgeSheet();return;}
     case 'scrapmany':{const ids=Object.keys(ui.eqPick||{}).filter(k=>ui.eqPick[k]);ui.eqPick={};ui.eqConf=false;if(ids.length)act2('scrapmany',ids);return;}
+    case 'fgtab':ui.fgTab=arg;forgeSheet();return;
+    case 'ortab':ui.orTab=arg;oracleSheet();return;
     case 'eqmx':ui.eqMenu=null;eqSheet();return;
     case 'eqpg':ui.eqPg=Math.max(0,(ui.eqPg||0)+parseInt(arg,10));ui.eqMenu=null;eqSheet();return;
     case 'equip':case 'unequip':case 'scrap':ui.eqMenu=null;act2(act,arg);return;
@@ -1915,7 +1919,10 @@ function boot(){
     if(t>70&&!hd.classList.contains('mini')){hd.classList.add('mini');$('h1').classList.remove('off');}
     else if(t<8&&hd.classList.contains('mini')){hd.classList.remove('mini');$('h1').classList.add('off');}
   },{passive:true});
-  document.addEventListener('change',e=>{if(e.target&&e.target.id==='pf'&&e.target.files&&e.target.files[0])sendPhoto(e.target.files[0]);});
+  (function(){const m=$('modal');if(!m||!window.MutationObserver)return;
+  new MutationObserver(()=>{const sh=m.querySelector('.sheet');if(!sh||m.hidden||sh.querySelector('.eqx,.eqcl,[data-act="sheetx"]')||sh.classList.contains('eqf')||sh.classList.contains('fgw'))return;
+    sh.insertAdjacentHTML('beforeend','<button class="btn ghost" data-act="sheetx" type="button" style="display:block;margin:10px auto 0;min-width:50%">Закрыть</button>');}).observe(m,{childList:true,subtree:true});})();
+document.addEventListener('change',e=>{if(e.target&&e.target.id==='pf'&&e.target.files&&e.target.files[0])sendPhoto(e.target.files[0]);});
 (function(){let tm=null,sx=0,sy=0;
   const stop=()=>{clearTimeout(tm);tm=null;};
   document.addEventListener('pointerdown',e=>{const b=e.target.closest&&e.target.closest('.eqf .eqs[data-arg]');if(!b||ui.fgOpen)return;ui.eqLP=false;sx=e.clientX;sy=e.clientY;stop();
