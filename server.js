@@ -473,7 +473,98 @@ function saveEvs() { try { fs.writeFileSync(EV_FILE + '.tmp', JSON.stringify(evs
 const backup = require('./backup.js')(DATA_DIR, () => flush());
 backup.start();
 setTimeout(eventsTick, 5000).unref(); setInterval(eventsTick, 60000).unref();
-const adminApi = require('./admin.js')({ users, byName, byToken, DATA_DIR, Core, Clan, Social, sstore, cstore, sctx, cctx, json, readBody, limited, ipOf, markDirty, touchState, ranking, flush, backup,
+/* ---------- Телеграм: уведомления игрокам ----------
+   Токен бота хранится в DATA_DIR/telegram.json (его вносит владелец в админ-панели), в код он не попадает. */
+const https = require('https');
+const TG_FILE = path.join(DATA_DIR, 'telegram.json');
+let tgCfg = {}; try { tgCfg = JSON.parse(fs.readFileSync(TG_FILE, 'utf8')) || {}; } catch (e) { tgCfg = {}; }
+const tgToken = () => process.env.TG_TOKEN || tgCfg.token || '';
+const tgCodes = new Map();          // код привязки -> { pid, until }
+let tgOffset = 0, tgPolling = false, tgErr = '';
+function tgCall(method, body, ms) {
+  return new Promise(resolve => {
+    const tok = tgToken(); if (!tok) return resolve(null);
+    const data = JSON.stringify(body || {});
+    const rq = https.request({ hostname: 'api.telegram.org', path: `/bot${tok}/${method}`, method: 'POST', timeout: ms || 15000,
+      headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(data) } }, rs => {
+      let d = ''; rs.on('data', c => { d += c; });
+      rs.on('end', () => { try { resolve(JSON.parse(d)); } catch (e) { resolve(null); } });
+    });
+    rq.on('timeout', () => { tgErr = 'нет ответа от Телеграма'; rq.destroy(); resolve(null); });
+    rq.on('error', e => { tgErr = e.message; resolve(null); });
+    rq.end(data);
+  });
+}
+const tgSend = (chat, text) => tgCall('sendMessage', { chat_id: chat, text, disable_web_page_preview: true }).catch(() => null);
+async function tgSetToken(tok) {
+  tgCfg = { token: tok };
+  const r = await tgCall('getMe', {}, 12000);
+  if (!r || !r.ok) { tgCfg = {}; return { error: 'Токен не подошёл' + (tgErr ? ' (' + tgErr + ')' : '') + '.' }; }
+  tgCfg = { token: tok, bot: r.result.username, name: r.result.first_name };
+  fs.writeFileSync(TG_FILE, JSON.stringify(tgCfg), { mode: 0o600 });
+  tgErr = ''; tgOffset = 0; tgLoop();
+  return { ok: true, bot: tgCfg.bot };
+}
+const tgUserByChat = chat => { for (const u of users.values()) if (u.tg && u.tg.chat === chat) return u; return null; };
+function tgLinkOf(u) { return !!(u && u.tg && u.tg.chat); }
+const TG_HELP = 'Это бот игры «Нордика». Чтобы получать уведомления, в игре откройте свой профиль, нажмите «Подключить Телеграм» и перейдите по выданной ссылке.';
+async function tgHandle(m) {
+  const chat = m.chat && m.chat.id; if (!chat || !m.text) return;
+  const t = String(m.text).trim();
+  const mm = /^\/start(?:@\w+)?\s+([A-Z0-9]{8})$/.exec(t);
+  if (mm) {
+    const c = tgCodes.get(mm[1]);
+    if (!c || c.until < Date.now()) return tgSend(chat, 'Код устарел. Получите новый в игре.');
+    tgCodes.delete(mm[1]);
+    const u = users.get(c.pid); if (!u) return;
+    const old = tgUserByChat(chat); if (old && old !== u) { delete old.tg; markDirty(old); }
+    u.tg = { chat, on: { b: 1, m: 1, a: 1 }, sent: [] }; markDirty(u);
+    return tgSend(chat, `✅ Готово, ярл ${u.name}! Теперь сюда будут приходить вести: что достроено, кто вернулся из похода и кто напал на ваш город. Отключить можно командой /stop.`);
+  }
+  if (/^\/stop/.test(t)) { const u = tgUserByChat(chat); if (u) { delete u.tg; markDirty(u); } return tgSend(chat, 'Уведомления отключены.'); }
+  return tgSend(chat, TG_HELP);
+}
+async function tgLoop() {
+  if (tgPolling) return; tgPolling = true;
+  try {
+    while (tgToken()) {
+      const r = await tgCall('getUpdates', { offset: tgOffset, timeout: 25, allowed_updates: ['message'] }, 35000);
+      if (!r || !r.ok) { await new Promise(ok => setTimeout(ok, 8000)); continue; }
+      for (const up of r.result) { tgOffset = up.update_id + 1; try { await tgHandle(up.message || {}); } catch (e) { /* не критично */ } }
+    }
+  } finally { tgPolling = false; }
+}
+function tgNotify(u, kind, key, text) {
+  if (!tgLinkOf(u) || !u.tg.on || !u.tg.on[kind]) return;
+  const sent = u.tg.sent || (u.tg.sent = []);
+  if (key) { if (sent.includes(key)) return; sent.push(key); if (sent.length > 60) sent.shift(); markDirty(u); }
+  tgSend(u.tg.chat, text);
+}
+Core.HOOK.alert = (pid, text, kind) => { const u = users.get(pid); if (u) tgNotify(u, kind || 'a', '', text); };
+/* Раз в 20 секунд смотрим, что у игроков с Телеграмом закончилось. */
+function tgTick() {
+  if (!tgToken()) return;
+  const now = Date.now();
+  for (const u of users.values()) {
+    if (!tgLinkOf(u) || u.banned) continue;
+    try {
+      Core.use(u.state);
+      for (const k of ['q', 'q2', 'train', 'study', 'upg']) {
+        const i = Core.jobObj(k) && Core.jobInfo(k);
+        if (i && i.end <= now + 2000) tgNotify(u, 'b', k + ':' + i.end, `🏗 Готово: ${i.what}.`);
+      }
+      for (const m of (u.state.marches || [])) {
+        const back = m.back || m.end;
+        if (m.phase === 'back' && back && back <= now + 2000) tgNotify(u, 'm', 'm:' + m.id, '⚔ Отряд вернулся из похода домой.');
+      }
+      touchState(u);
+    } catch (e) { /* пропускаем одного игрока */ }
+  }
+}
+setInterval(tgTick, 20000).unref();
+setTimeout(() => { if (tgToken()) tgLoop(); }, 4000).unref();
+
+const adminApi = require('./admin.js')({ tgSetToken, tgInfo: () => ({ on: !!tgToken(), bot: tgCfg.bot || '', err: tgErr, linked: [...users.values()].filter(tgLinkOf).length }), users, byName, byToken, DATA_DIR, Core, Clan, Social, sstore, cstore, sctx, cctx, json, readBody, limited, ipOf, markDirty, touchState, ranking, flush, backup,
   setSdirty: () => { sdirty = true; }, setCdirty: () => { cdirty = true; }, hashPw,
   newsApi: { list: () => news, add: (title, text) => { news.push({ id: 'n' + Date.now().toString(36), t: Date.now(), title, text }); if (news.length > 60) news.shift(); saveNews(); pubCache.at = 0; }, del: id => { news = news.filter(x => x.id !== id); saveNews(); pubCache.at = 0; } } });
 
@@ -629,6 +720,22 @@ async function api(req, res, url) {
     return json(res, 200, Object.assign(Clan.view(cstore, cctx, u.id), { result: r }));
   }
   if (req.method === 'GET' && url === '/api/shop') return json(res, 200, { pay: payInfo() });
+  if (url === '/api/tg') {
+    if (req.method === 'GET') return json(res, 200, { on: !!tgToken() && !!tgCfg.bot, bot: tgCfg.bot || '', linked: tgLinkOf(u), opts: tgLinkOf(u) ? u.tg.on : null });
+    if (req.method === 'POST') {
+      let b; try { b = await readBody(req); } catch (e) { return json(res, 400, { error: 'Некорректный запрос' }); }
+      if (b.a === 'link') {
+        if (!tgToken() || !tgCfg.bot) return json(res, 400, { error: 'Телеграм пока не подключён к игре.' });
+        if (limited('tgl:' + u.id, 5, 60000)) return json(res, 429, { error: 'Слишком часто.' });
+        const code = crypto.randomBytes(5).toString('hex').toUpperCase().slice(0, 8);
+        tgCodes.set(code, { pid: u.id, until: Date.now() + 15 * 60000 });
+        return json(res, 200, { url: `https://t.me/${tgCfg.bot}?start=${code}`, bot: tgCfg.bot });
+      }
+      if (b.a === 'unlink') { if (u.tg) { delete u.tg; markDirty(u); } return json(res, 200, { ok: true }); }
+      if (b.a === 'opts' && tgLinkOf(u)) { for (const k of ['b', 'm', 'a']) if (k in b) u.tg.on[k] = b[k] ? 1 : 0; markDirty(u); return json(res, 200, { opts: u.tg.on }); }
+      return json(res, 400, { error: 'Неизвестное действие' });
+    }
+  }
   if (req.method === 'POST' && url === '/api/chatimg') {
     if (limited('cimg:' + u.id, 3, 30000)) return json(res, 429, { error: 'Слишком часто. Подождите немного.' });
     let b; try { b = await readBody(req, 80000); } catch (e) { return json(res, 400, { error: 'Фото слишком большое.' }); }

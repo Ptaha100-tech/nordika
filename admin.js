@@ -6,7 +6,7 @@ const path = require('path');
 const crypto = require('crypto');
 
 module.exports = function makeAdmin(env) {
-  const { users, byName, byToken, DATA_DIR, Core, Clan, Social, sstore, cstore, sctx, cctx, json, readBody, limited, ipOf, markDirty, touchState, ranking, flush, setSdirty, setCdirty, hashPw, newsApi, backup } = env;
+  const { tgSetToken, tgInfo, users, byName, byToken, DATA_DIR, Core, Clan, Social, sstore, cstore, sctx, cctx, json, readBody, limited, ipOf, markDirty, touchState, ranking, flush, setSdirty, setCdirty, hashPw, newsApi, backup } = env;
   let cfg = null;
   try { cfg = JSON.parse(fs.readFileSync(path.join(__dirname, 'admin.json'), 'utf8')); } catch (e) { cfg = null; }
   const sessions = new Map();               // токен -> до какого времени действует
@@ -60,7 +60,7 @@ module.exports = function makeAdmin(env) {
         new24: all.filter(u => (u.state.created || 0) > t - 86400000).length, new7: all.filter(u => (u.state.created || 0) > t - 7 * 86400000).length,
         active24: all.filter(u => (u.seen || 0) > t - 86400000).length, active7: all.filter(u => (u.seen || 0) > t - 7 * 86400000).length,
         clans: Object.keys(cstore.clans).length, worldMsgs: sstore.world.length, reports: sstore.reports.length,
-        banned: all.filter(u => u.banned).length, gems, vip, buys, bought, timeMul: Core.CFG.t,
+        banned: all.filter(u => u.banned).length, gems, vip, buys, bought, timeMul: Core.CFG.t, tg: tgInfo(),
         newest: all.sort((a, b) => (b.state.created || 0) - (a.state.created || 0)).slice(0, 8).map(row), log: recent, backups: backup.list().slice(0, 5), backupErr: backup.err()
       });
     }
@@ -96,6 +96,7 @@ module.exports = function makeAdmin(env) {
       const need = () => { if (!u) { json(res, 404, { error: 'Нет такого игрока.' }); return false; } return true; };
       const ok = (msg) => json(res, 200, { ok: true, msg });
       switch (a) {
+        case 'tgset': { const tok = String(b.token || '').trim(); if (!/^\d{6,12}:[A-Za-z0-9_-]{30,50}$/.test(tok)) return json(res, 400, { error: 'Так токен не выглядит. Он вида 123456789:AAF...' }); const r = await tgSetToken(tok); if (r.error) return json(res, 400, { error: r.error }); audit('Подключён Телеграм-бот @' + r.bot); return ok('Бот @' + r.bot + ' подключён'); }
         case 'backup': return backup.make(err => err ? json(res, 500, { error: 'Не удалось: ' + err.message }) : (audit('Создана копия данных'), ok('Копия создана')));
         case 'say': { const t = String(b.text || '').trim(); if (!t) return json(res, 400, { error: 'Пустое сообщение.' }); Social.admin.say(sstore, sctx, t); setSdirty(); audit('Объявление в чат: ' + t.slice(0, 80)); return ok('Отправлено в общий чат'); }
         case 'newsadd': { const ti = String(b.title || '').trim().slice(0, 80), tx = String(b.text || '').trim().slice(0, 600); if (!ti || !tx) return json(res, 400, { error: 'Нужны заголовок и текст.' }); newsApi.add(ti, tx); audit('Новость: ' + ti); return ok('Новость опубликована на сайте'); }

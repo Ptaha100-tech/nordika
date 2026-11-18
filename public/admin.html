@@ -79,6 +79,7 @@ function overView(){
   <div class="card"><h2>Что покупают</h2><p class="muted sm">${esc(bt)}</p></div>
   <div class="card"><h2>Новые игроки</h2>${d.newest.map(pRow).join('')||'<p class="muted">Пока никого.</p>'}</div>
   <div class="card"><h2>Журнал действий</h2>${d.log.length?d.log.map(l=>`<div class="row"><p class="sm">${esc(l.what)}</p><span class="muted sm">${fmtD(l.t)}</span></div>`).join(''):'<p class="muted sm">Пусто.</p>'}</div>
+  <div class="card"><h2>Телеграм-бот</h2><p class="muted sm">${d.tg&&d.tg.on?'Подключён: @'+esc(d.tg.bot)+'. Игроков с уведомлениями: '+d.tg.linked+'.':'Не подключён.'}${d.tg&&d.tg.err?' <b>Ошибка связи: '+esc(d.tg.err)+'</b>':''}</p><div class="acts"><input id="tgtok" placeholder="Токен бота от @BotFather" autocomplete="off" style="flex:1;min-width:0"><button class="s" id="tgsave">Подключить</button></div></div>
   <div class="card"><h2>Копии данных</h2><p class="muted sm">Делаются сами раз в сутки, хранятся последние 10.${d.backupErr?' <b style="color:var(--bad,#e66)">Последняя ошибка: '+esc(d.backupErr)+'</b>':''}</p>${(d.backups||[]).map(b=>`<div class="row"><p class="sm">${esc(b.name)} · ${(b.size/1048576).toFixed(1)} МБ</p><button class="s g" data-bk="${esc(b.name)}">Скачать</button></div>`).join('')||'<p class="muted sm">Пока нет, первая появится в течение минуты после запуска.</p>'}<div class="acts"><button class="s g" id="bknow">Сделать копию сейчас</button></div></div>
   <p class="muted sm">Темп игры: ×${d.timeMul}. Обновить: нажмите «Обзор» ещё раз.</p>`;
 }
@@ -156,6 +157,7 @@ function bind(){
   const pqi=$('pq');if(pqi){let h;pqi.oninput=()=>{pq=pqi.value;clearTimeout(h);h=setTimeout(async()=>{try{data.pl=await api('GET','/api/admin/players?q='+encodeURIComponent(pq)+'&page=0&sort='+psort);ppage=0;const keep=document.activeElement;render0();}catch(e){}},350);};}
   const on=(id,f)=>{const e=$(id);if(e)e.onclick=f;};
   on('back',()=>{cur=null;load();});
+  on('tgsave',async()=>{const v=$('tgtok').value.trim();if(!v)return;if(await act('tgset',{token:v})){$('tgtok').value='';load();}});
   on('bknow',async()=>{if(await act('backup'))load();});
   document.querySelectorAll('[data-bk]').forEach(b=>b.onclick=async()=>{try{const r=await fetch('/api/admin/backup?name='+encodeURIComponent(b.dataset.bk),{headers:{Authorization:'Bearer '+tok}});if(!r.ok)throw new Error('Ошибка '+r.status);const u=URL.createObjectURL(await r.blob()),a=document.createElement('a');a.href=u;a.download=b.dataset.bk;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);}catch(e){toast(e.message,1);}});
   on('grant',()=>{const give={};['gems','haste','vipDays','shieldH','food','wood','stone','iron','silver'].forEach(k=>{const v=Number($('g-'+k).value);if(v>0)give[k]=v;});act('grant',{give});});

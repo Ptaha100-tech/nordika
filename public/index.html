@@ -1199,8 +1199,9 @@ async function meSheet(){
     <h3 style="margin-top:10px">Знания Оракула</h3><div style="display:flex;flex-wrap:wrap;gap:4px">${tc}</div>
     <h3 style="margin-top:10px">Дела</h3>
     <p class="sm">Обучено воинов ${st.trained} · побед в походах ${st.wins} · лагерей разгромлено ${st.campWins} · точек собрано ${st.gathered} · городов игроков разграблено ${st.pvpWins} · набегов отбито ${st.defWins} · знаний изучено ${st.researched}</p>
+    <h3 style="margin-top:10px">Уведомления в Телеграм</h3><div id="tgbox" class="sm muted">Загрузка…</div>
     <button class="btn ghost" id="sw" data-act="switch" type="button" style="margin-top:12px">Сменить аккаунт</button></div>`;
-  $('modal').hidden=false;
+  $('modal').hidden=false;tgLoad();
   const up=$('avup'),inp=$('avf');
   if(up&&inp){up.onclick=()=>inp.click();inp.onchange=async()=>{const f=inp.files&&inp.files[0];if(!f)return;try{saveAv({img:await photoToData(f)});}catch(e){toast(e.message);}};}
 }
@@ -1278,6 +1279,16 @@ async function loadSoc(){
 async function openProf(q){
   try{const j=await call('GET','/api/profile?'+(q.name!==undefined?'name='+encodeURIComponent(q.name):'id='+encodeURIComponent(q.id)));ui.soc.prof=j;render();}
   catch(e){toast(e.message||'Игрок не найден');}
+}
+async function tgLoad(){
+  const box=$('tgbox');if(!box)return;
+  try{const j=await call('GET','/api/tg');
+    if(!j.on){box.textContent='Пока недоступно.';return;}
+    if(!j.linked){box.innerHTML='<p>Получайте вести на телефон: что достроено, кто вернулся из похода, кто напал на город.</p><button class="btn small" data-act="tglink" type="button">Подключить Телеграм</button>';return;}
+    const o=j.opts||{},ck=(k,t)=>`<label class="sm" style="display:block;margin:4px 0"><input type="checkbox" data-tgo="${k}" ${o[k]?'checked':''}> ${t}</label>`;
+    box.innerHTML=`<p>✅ Телеграм подключён.</p>${ck('b','Стройка, обучение, исследования')}${ck('m','Возвращение из походов')}${ck('a','Нападения на мой город')}<button class="btn small ghost" data-act="tgoff" type="button" style="margin-top:6px">Отключить</button>`;
+    box.querySelectorAll('[data-tgo]').forEach(c=>c.onchange=()=>call('POST','/api/tg',{a:'opts',[c.dataset.tgo]:c.checked?1:0}).catch(e=>toast(e.message)));
+  }catch(e){box.textContent='Не удалось загрузить.';}
 }
 async function sact(a,p){
   if(sbusy)return;sbusy=true;
@@ -1880,6 +1891,9 @@ function onAct(act,arg){
     case 'tsel':{const[k,t]=arg.split(':');ui.tt[k]=+t;render();return;}
     case 'tierup':{const[k,t]=arg.split(':');act2('tierup',{k,to:+t});return;}
     case 'logout':logout(false);return;
+    case 'tglink':call('POST','/api/tg',{a:'link'}).then(j=>{const b=$('tgbox');if(b)b.innerHTML=`<p>Нажмите кнопку, откроется Телеграм. Там нажмите «Запустить» (Start). Код действует 15 минут.</p><a class="btn small" href="${j.url}" target="_blank" rel="noopener">Открыть @${esc(j.bot)}</a> <button class="btn small ghost" data-act="tgchk" type="button">Я нажал Start</button>`;}).catch(e=>toast(e.message));return;
+    case 'tgchk':tgLoad();return;
+    case 'tgoff':call('POST','/api/tg',{a:'unlink'}).then(tgLoad).catch(e=>toast(e.message));return;
     case 'invshare':{const l=inviteLink(),txt='Играй со мной в Nordika: сердце фьорда, стратегию про викингов. Ссылка: '+l;
       if(navigator.share){navigator.share({title:'Nordika',text:txt,url:l}).catch(()=>{});}
       else{try{navigator.clipboard.writeText(l).then(()=>toast('Ссылка скопирована'),()=>{const i=$('invl');if(i){i.select();}toast('Выделите и скопируйте ссылку');});}catch(e){const i=$('invl');if(i)i.select();}}return;}

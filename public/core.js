@@ -71,7 +71,8 @@ const HOOK = {
   pickPlayers: () => [],
   sameClan: () => false,
   getState: () => null,
-  touch: () => {}
+  touch: () => {},
+  alert: () => {}
 };
 
 const rnd = (a, b) => a + Math.random() * (b - a);
@@ -532,7 +533,7 @@ function resolvePlayer(m) {
     RES.forEach(x => { const a = Math.floor(Math.max(0, D.res[x.id] - pr) * 0.25); take[x.id] = a; tot += a; });
     const f = tot > 0 ? Math.min(1, carryOf(r.survA) / tot) : 0;
     m.loot = {}; RES.forEach(x => { const g = Math.floor(take[x.id] * f); m.loot[x.id] = g; D.res[x.id] -= g; });
-    D.shield = t + 45 * 60000; raid(true, fmtRes(m.loot));
+    D.shield = t + 45 * 60000; raid(true, fmtRes(m.loot)); HOOK.alert(D.pid, `⚔ Ярл «${aName}» разграбил ваш город. Унесли: ${fmtRes(m.loot)}.`, 'a');
     addLogTo(D, `Ярл «${aName}» разграбил ваш город. Унесли: ${fmtRes(m.loot)}. Ваши потери: ${fmtComp(r.lostD) || 'нет'}. Нападавшие потеряли: ${fmtComp(r.lostA) || 'нет'}. Щит на 45 минут.`, 'bad', t);
     m.send = r.survA; home();
     A.stat.wins++; A.stat.pvpWins++; gainXp(60 + 15 * (tg.level || 1));
@@ -540,7 +541,7 @@ function resolvePlayer(m) {
     toast(`Победа над «${tg.name}»`);
     S.targets = S.targets.filter(x => x.id !== tg.id); S.targets.push(genTarget('player'));
   } else {
-    D.stat.defWins++; raid(false);
+    D.stat.defWins++; raid(false); HOOK.alert(D.pid, `🛡 Вы отбили нападение ярла «${aName}».`, 'a');
     addLogTo(D, `Вы отбили нападение ярла «${aName}». Ваши потери: ${fmtComp(r.lostD) || 'нет'}. Нападавшие потеряли: ${fmtComp(r.lostA) || 'нет'}.`, 'good', t);
     m.loot = {}; m.send = r.survA;
     addLog(`Поражение у ярла «${tg.name}». Ваши потери: ${fmtComp(r.lostA) || 'нет'}. Потери врага: ${fmtComp(r.lostD) || 'нет'}.`, 'bad', t);
