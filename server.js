@@ -70,7 +70,20 @@ function flushSocial() {
   catch (e) { console.error('Ошибка записи общения', e.message); }
 }
 const ONLINE_MS = 3 * 60 * 1000;
+/* Фото в чате: лежат файлами в DATA_DIR/chatimg, в сообщениях только id. */
+const IMG_DIR = path.join(DATA_DIR, 'chatimg');
+try { fs.mkdirSync(IMG_DIR, { recursive: true }); } catch (e) {}
+const imgPath = id => path.join(IMG_DIR, id + '.jpg');
+const imgOk = id => /^[a-f0-9]{16}$/.test(id) && fs.existsSync(imgPath(id));
+const imgDrop = id => { if (/^[a-f0-9]{16}$/.test(id)) fs.unlink(imgPath(id), () => {}); };
+function imgPrune() {
+  try {
+    const fl = fs.readdirSync(IMG_DIR).map(f => ({ f, t: fs.statSync(path.join(IMG_DIR, f)).mtimeMs })).sort((a, b) => b.t - a.t);
+    fl.slice(500).forEach(x => fs.unlink(path.join(IMG_DIR, x.f), () => {}));
+  } catch (e) {}
+}
 const sctx = {
+  imgOk, imgDrop,
   now: () => Date.now(),
   exists: pid => users.has(pid),
   nameOf: pid => (users.get(pid) || {}).name || '?',
@@ -81,6 +94,7 @@ const sctx = {
   isVip: pid => { const u = users.get(pid); return !!(u && (u.state.vip || 0) > Date.now()); }
 };
 const cctx = {
+  imgOk, imgDrop,
   now: () => Date.now(),
   nameOf: pid => (users.get(pid) || {}).name || '?',
   scoreOf: pid => { const u = users.get(pid); return u ? Core.score(u.state) : 0; },
@@ -615,6 +629,17 @@ async function api(req, res, url) {
     return json(res, 200, Object.assign(Clan.view(cstore, cctx, u.id), { result: r }));
   }
   if (req.method === 'GET' && url === '/api/shop') return json(res, 200, { pay: payInfo() });
+  if (req.method === 'POST' && url === '/api/chatimg') {
+    if (limited('cimg:' + u.id, 3, 30000)) return json(res, 429, { error: 'Слишком часто. Подождите немного.' });
+    let b; try { b = await readBody(req, 80000); } catch (e) { return json(res, 400, { error: 'Фото слишком большое.' }); }
+    const m = typeof b.img === 'string' && /^data:image\/jpeg;base64,([A-Za-z0-9+\/=]+)$/.exec(b.img);
+    if (!m || m[1].length > 70000) return json(res, 400, { error: 'Не подходит это фото.' });
+    const buf = Buffer.from(m[1], 'base64');
+    if (buf.length < 200 || buf[0] !== 0xff || buf[1] !== 0xd8) return json(res, 400, { error: 'Не подходит это фото.' });
+    const id = crypto.randomBytes(8).toString('hex');
+    fs.writeFileSync(imgPath(id), buf); imgPrune();
+    return json(res, 200, { id });
+  }
   if (req.method === 'GET' && url === '/api/social') {
     const q = new URL(req.url, 'http://x').searchParams;
     return json(res, 200, Social.view(sstore, sctx, u.id, (q.get('peer') || '').slice(0, 16)));
@@ -737,6 +762,14 @@ function serveStatic(req, res, url) {
 
 const server = http.createServer((req, res) => {
   const url = req.url || '/';
+  const cim = /^\/ci\/([a-f0-9]{16})$/.exec(url.split('?')[0]);
+  if (cim && (req.method === 'GET' || req.method === 'HEAD')) {
+    return fs.readFile(imgPath(cim[1]), (err, buf) => {
+      if (err) return send(res, 404, 'Не найдено', { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.writeHead(200, Object.assign({}, SEC, { 'Content-Type': 'image/jpeg', 'Cache-Control': 'public, max-age=31536000, immutable', 'Content-Length': buf.length }));
+      res.end(req.method === 'HEAD' ? undefined : buf);
+    });
+  }
   if (url.startsWith('/api/')) {
     api(req, res, url.split('?')[0]).catch(e => { console.error('Ошибка запроса', e); if (!res.headersSent) json(res, 500, { error: 'Ошибка сервера' }); });
   } else if (req.method === 'GET' || req.method === 'HEAD') serveStatic(req, res, url);

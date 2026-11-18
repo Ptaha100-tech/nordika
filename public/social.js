@@ -38,6 +38,27 @@ function checkText(st, ctx, pid, raw, gap) {
   return { text: clean2 };
 }
 
+const newId = n => n.toString(36) + Math.random().toString(36).slice(2, 6);
+const snip = m => ({ n: m.name || '', x: clean(m.text, 60) || (m.img ? 'Фото' : '') });
+/* Проверка текста с возможным фото: пустой текст допустим, если есть фото. */
+function prep(st, ctx, pid, raw, gap, img) {
+  if (img && !clean(raw, 200)) {
+    const left = muteLeft(st, ctx, pid); if (left) return { error: 'Вам запрещено писать ещё ' + fmtLeft(left) + '.' };
+    const n = ctx.now(), l = st.last[pid] || { t: 0, x: '', xt: 0 };
+    if (n - l.t < Math.max(gap, 4000)) return { error: 'Не так быстро.' };
+    l.t = n; st.last[pid] = l; return { text: '' };
+  }
+  return checkText(st, ctx, pid, raw, gap);
+}
+function editText(st, ctx, pid, raw, hasImg) {
+  const left = muteLeft(st, ctx, pid); if (left) return { error: 'Вам запрещено писать ещё ' + fmtLeft(left) + '.' };
+  const text = clean(raw, 200);
+  if (!text) return hasImg ? { text: '' } : { error: 'Пустое сообщение.' };
+  if (LINK.test(text)) return { error: 'Ссылки в чате запрещены.' };
+  return { text: mask(text) };
+}
+const okImg = (ctx, id) => (id && ctx.imgOk && ctx.imgOk(String(id))) ? String(id) : '';
+
 function blockedBy(st, a, b) { return has(st.blocks, b, a); }   // b заблокировал a
 
 function unread(st, pid, peer) {
@@ -61,7 +82,7 @@ function view(st, ctx, pid, peer) {
     const [a, b] = k.split('|'); if (a !== pid && b !== pid) continue;
     const o = a === pid ? b : a; if (!ctx.exists(o) || blk.includes(o)) continue;
     const msgs = st.dm[k], last = msgs[msgs.length - 1];
-    th.push({ pid: o, name: ctx.nameOf(o), text: last.text, t: last.t, mine: last.from === pid, unread: unread(st, pid, o), online: ctx.online(o) });
+    th.push({ pid: o, name: ctx.nameOf(o), text: last.text || (last.img ? '📷 Фото' : ''), t: last.t, mine: last.from === pid, unread: unread(st, pid, o), online: ctx.online(o) });
   }
   th.sort((a, b) => b.t - a.t);
   out.threads = th.slice(0, 40);
@@ -79,23 +100,48 @@ function act(st, ctx, pid, a, p) {
   const n = ctx.now();
   switch (a) {
     case 'wsay': {
-      const r = checkText(st, ctx, pid, p.text, 2000); if (r.error != null) return r;
-      st.world.push({ t: n, pid, name: ctx.nameOf(pid), tag: ctx.tagOf(pid) || '', vip: !!(ctx.isVip && ctx.isVip(pid)), text: r.text });
-      if (st.world.length > MAXW) st.world.splice(0, st.world.length - MAXW);
+      const img = okImg(ctx, p.img);
+      const r = prep(st, ctx, pid, p.text, 2000, img); if (r.error != null) return r;
+      const m = { id: newId(n), t: n, pid, name: ctx.nameOf(pid), tag: ctx.tagOf(pid) || '', vip: !!(ctx.isVip && ctx.isVip(pid)), text: r.text };
+      if (img) m.img = img;
+      const q = p.rp && st.world.find(x => x.id === String(p.rp)); if (q) m.rp = snip(q);
+      st.world.push(m);
+      if (st.world.length > MAXW) { const gone = st.world.splice(0, st.world.length - MAXW); gone.forEach(g => g.img && ctx.imgDrop && ctx.imgDrop(g.img)); }
       return { ok: true };
+    }
+    case 'wedit': case 'wdel': {
+      const i = st.world.findIndex(x => x.id === String(p.id || '') && x.pid === pid);
+      if (i < 0) return { error: 'Сообщение не найдено.' };
+      const m = st.world[i];
+      if (a === 'wdel') { if (m.img && ctx.imgDrop) ctx.imgDrop(m.img); st.world.splice(i, 1); return { ok: true }; }
+      const r = editText(st, ctx, pid, p.text, !!m.img); if (r.error != null) return r;
+      m.text = r.text; m.ed = 1; return { ok: true };
     }
     case 'dsay': {
       const to = String(p.to || '');
       if (to === pid || !ctx.exists(to)) return { error: 'Нет такого игрока.' };
       if (blockedBy(st, pid, to)) return { error: 'Этот игрок вас заблокировал.' };
       if (has(st.blocks, pid, to)) return { error: 'Вы заблокировали этого игрока. Сначала разблокируйте.' };
-      const r = checkText(st, ctx, pid, p.text, 800); if (r.error != null) return r;
+      const img = okImg(ctx, p.img);
+      const r = prep(st, ctx, pid, p.text, 800, img); if (r.error != null) return r;
       const k = key(pid, to), t = st.dm[k] || (st.dm[k] = []);
-      t.push({ t: n, from: pid, text: r.text });
-      if (t.length > MAXD) t.splice(0, t.length - MAXD);
+      const m = { id: newId(n), t: n, from: pid, text: r.text };
+      if (img) m.img = img;
+      const q = p.rp && t.find(x => x.id === String(p.rp)); if (q) m.rp = { n: q.from === pid ? 'Вы' : ctx.nameOf(q.from), x: clean(q.text, 60) || (q.img ? 'Фото' : '') };
+      t.push(m);
+      if (t.length > MAXD) { const gone = t.splice(0, t.length - MAXD); gone.forEach(g => g.img && ctx.imgDrop && ctx.imgDrop(g.img)); }
       (st.read[pid] || (st.read[pid] = {}))[to] = n;
       ctx.ping && ctx.ping(to);
       return { ok: true };
+    }
+    case 'dedit': case 'ddel': {
+      const t = st.dm[key(pid, String(p.to || ''))] || [];
+      const i = t.findIndex(x => x.id === String(p.id || '') && x.from === pid);
+      if (i < 0) return { error: 'Сообщение не найдено.' };
+      const m = t[i];
+      if (a === 'ddel') { if (m.img && ctx.imgDrop) ctx.imgDrop(m.img); t.splice(i, 1); return { ok: true }; }
+      const r = editText(st, ctx, pid, p.text, !!m.img); if (r.error != null) return r;
+      m.text = r.text; m.ed = 1; return { ok: true };
     }
     case 'read': { (st.read[pid] || (st.read[pid] = {}))[String(p.peer || '')] = n; return { ok: true }; }
     case 'fadd': {

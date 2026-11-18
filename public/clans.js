@@ -123,10 +123,23 @@ function act(st, ctx, pid, a, p) {
     }
     case 'say': {
       if (!c) return { error: 'Вы не в клане.' };
-      const text = clean(p.text, 200); if (!text) return { error: '' };
-      c.chat.push({ t, pid, name: c.members[pid].name, text });
+      const text = clean(p.text, 200), img = (p.img && ctx.imgOk && ctx.imgOk(String(p.img))) ? String(p.img) : '';
+      if (!text && !img) return { error: '' };
+      const m = { id: t.toString(36) + Math.random().toString(36).slice(2, 6), t, pid, name: c.members[pid].name, text };
+      if (img) m.img = img;
+      const q = p.rp && c.chat.find(x => x.id === String(p.rp) && !x.sys); if (q) m.rp = { n: q.name || '', x: clean(q.text, 60) || (q.img ? 'Фото' : '') };
+      c.chat.push(m);
       if (c.chat.length > MAXCHAT) c.chat.splice(0, c.chat.length - MAXCHAT);
       return { ok: true };
+    }
+    case 'sedit': case 'sdel': {
+      if (!c) return { error: 'Вы не в клане.' };
+      const i = c.chat.findIndex(x => x.id === String(p.id || '') && x.pid === pid);
+      if (i < 0) return { error: 'Сообщение не найдено.' };
+      const m = c.chat[i];
+      if (a === 'sdel') { if (m.img && ctx.imgDrop) ctx.imgDrop(m.img); c.chat.splice(i, 1); return { ok: true }; }
+      const text = clean(p.text, 200); if (!text && !m.img) return { error: 'Пустое сообщение.' };
+      m.text = text; m.ed = 1; return { ok: true };
     }
     case 'ask': {
       if (!c) return { error: 'Вы не в клане.' };
