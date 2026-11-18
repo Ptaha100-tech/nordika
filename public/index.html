@@ -175,6 +175,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--frost);outline-
 #nav button.on{color:var(--accent);border-top-color:var(--accent)}
 #nav .dot{position:absolute;top:6px;left:calc(50% + 10px);width:8px;height:8px;border-radius:50%;background:var(--blood)}
 
+#modal:has(.eqf){background:#000b}
 #modal{position:fixed;inset:0;background:rgba(4,7,9,.74);display:flex;align-items:flex-end;justify-content:center;z-index:20}
 .rpl{background:none;border:0;color:var(--muted);font-size:14px;margin-left:6px;padding:0 4px;cursor:pointer}
 .cbox .ment{background:#f2cd7518;border-left:2px solid var(--accent);padding-left:6px}
@@ -298,8 +299,9 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--frost);outline-
 .fgw .eqforge{font-size:13px}.fgw::after{content:"";position:absolute;inset:0;background:url(/img/forge-frame.webp?v=1) 0 0/100% 100% no-repeat;pointer-events:none;z-index:4}
 .fgin{position:absolute;inset:12.5% 11.5% 9% 12%;overflow-y:auto;overflow-x:hidden;padding:6px 6px 8px;z-index:2}
 .fgw .eqx{margin-top:8px}
-.eqf{position:relative;padding:0;background:none;border:0;box-shadow:none;max-height:none;overflow:visible;width:min(96vw,calc(96vh*.5133),calc(96dvh*.5133),440px);max-width:none;margin:auto 0}
+.eqf{position:relative;padding:0;background:none;border:0;box-shadow:none;max-height:none;overflow:visible;width:min(96vw,max(300px,calc((100dvh - 175px)*.4503)),440px);max-width:none;margin:auto 0}
 .eqfin{position:relative;width:100%;aspect-ratio:1160/2260;container-type:inline-size;background:url(/img/eq-frame.webp?v=1) 0 0/100% 100% no-repeat}
+.eqfin.eq2{aspect-ratio:1160/2576;background-image:url(/img/eq-frame2.webp?v=1)}
 .eqf .eqp{position:absolute;box-sizing:border-box;margin:0}
 .eqf .eqc{width:100%;height:100%;display:block}.eqf .eqc>span{display:none}
 .eqf .eqs{width:100%;height:100%;aspect-ratio:auto;border:0;border-radius:0;background:transparent;box-shadow:none}
@@ -307,6 +309,12 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--frost);outline-
 .eqf .eqhero{min-height:0;border:0;border-radius:0;background:linear-gradient(#0006,#0003 40%,#000a),url(img/eqbg.webp) 50% 20%/cover #14100d;box-shadow:none}
 .eqf .eqnm b{font-size:5.2cqw}.eqf .eqnm span{font-size:3.1cqw}
 .eqf .eqtt{display:flex;align-items:center;justify-content:center}.eqf .eqtt span{font:700 6cqw/1 Georgia,'Times New Roman',serif;letter-spacing:.12em;text-transform:uppercase;color:#3a2810;text-shadow:0 1px 0 #f0d28a88}
+.eqf .eqgr{position:absolute;overflow:hidden;border-radius:100px;display:flex;align-items:center;justify-content:space-between;padding:0 3cqw;font-size:3.2cqw;color:#f1e6cc;text-shadow:0 1px 2px #000;box-sizing:border-box}.eqf .eqgr i{position:absolute;left:0;top:0;bottom:0;min-width:4px;border-radius:100px;opacity:.75}.eqf .eqgr span,.eqf .eqgr b{position:relative}
+.eqf .eqgr.rd i{background:linear-gradient(#e0504a,#7a1b18)}.eqf .eqgr.gn i{background:linear-gradient(#59b84a,#1f5a1a)}.eqf .eqgr.bl i{background:linear-gradient(#4a9ae0,#18417a)}.eqf .eqgr.gd i{background:linear-gradient(#e0b04a,#7a5a18)}
+.eqf .eqs{touch-action:manipulation;-webkit-touch-callout:none;user-select:none}
+.eqmenu{position:absolute;left:7%;right:7%;top:34%;z-index:6;background:#15100dee;border:2px solid #b58a3c;border-radius:8px;padding:3cqw;font-size:3.4cqw;color:#e6d9c0;box-shadow:0 8px 24px #000c}.eqmenu p{margin:2px 0}.eqmb{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.eqctl{display:flex;gap:6px;align-items:center;justify-content:space-between;flex-wrap:nowrap;margin-top:8px;padding:6px;border-radius:8px;background:#120d0bf0;border:1px solid #4a3827}.eqctl .btn{white-space:nowrap}.eqsorts{display:flex;gap:4px;flex-wrap:wrap}.eqpg{display:flex;gap:6px;align-items:center;color:#f1e6cc}
+.eqhint{display:none}.eqhint0{font-size:12px;color:var(--muted);text-align:center;margin:6px 0 0}
 .eqf .eqbar{height:auto;border-radius:100px;padding:0 3cqw;font-size:3.4cqw;border:0;background:#0f0b09}
 .eqf .eqbar i{border-radius:100px}
 .eqf .eqdet{min-height:0;padding:1.4cqw 2.4cqw;border:0;overflow-y:auto;font-size:3cqw;line-height:1.25;color:#e6d9c0}
@@ -719,25 +727,41 @@ function eqCell(k){
 function eqHTML(){
   return `<section class="card"><h2>Снаряжение ярла</h2><p class="sm muted">Шлем, броня, оружие, кольца и другое дают бонусы к атаке, защите, ноше и добыче.</p><button class="btn" data-act="eq" type="button">Открыть снаряжение</button></section>`;
 }
+function eqMenuHTML(){
+  const m=ui.eqMenu;if(!m)return '';
+  const E=S.eq;let body='',acts='';
+  if(m.id){const it=E.inv.find(x=>x.id===m.id);if(!it){ui.eqMenu=null;return '';}
+    const k=it.slot==='ring'?(!E.s.ring1?'ring1':!E.s.ring2?'ring2':'ring1'):it.slot,cur=E.s[k],sc=Core.scrapOf(it);
+    body=itemLine(it)+(cur?`<p class="sm" style="margin:2px 0;color:${Core.itemPct(it)>Core.itemPct(cur)?'var(--good,#7ad07a)':'var(--muted)'}">Сейчас надето: +${Core.itemPct(cur)}%</p>`:'');
+    acts=`<button class="btn small" data-act="equip" data-arg="${it.id}" type="button">Надеть</button><button class="btn small ghost" data-act="scrap" data-arg="${it.id}" type="button">Разобрать (${fmtRes(sc)})</button>`;
+  }else{const it=E.s[m.slot];
+    body=it?itemLine(it):`<p class="muted sm">Слот «${EQSN[m.slot]}» пуст. Выберите предмет в сумке и нажмите «Надеть».</p>`;
+    acts=it?`<button class="btn small ghost" data-act="unequip" data-arg="${m.slot}" type="button">Снять</button>`:'';}
+  return `<div class="eqmenu">${body}<div class="eqmb">${acts}<button class="btn small ghost" data-act="eqmx" type="button">Закрыть</button></div></div>`;
+}
 function eqSheet(){
   ui.fgOpen=false;
-  const E=S.eq,H=heroOf(S),sel=ui.eqSel;
+  const E=S.eq,H=heroOf(S);
   const tot={atk:Core.eqB(S,'atk'),def:Core.eqB(S,'def'),loot:Core.eqB(S,'loot'),eco:Core.eqB(S,'eco')};
   const pc=v=>'+'+Math.round(v*1000)/10+'%';
-  let det='<p class="muted sm">Нажмите на надетый предмет, чтобы увидеть бонус. Новые предметы куются в Кузнице.</p>';
-  if(sel&&sel.slot){const it=E.s[sel.slot];det=it?`${itemLine(it)}<div class="eqb"><button class="btn small ghost" data-act="unequip" data-arg="${sel.slot}">Снять</button></div>`:`<p class="muted sm">Слот «${EQSN[sel.slot]}» пуст. Выберите предмет в Кузнице.</p>`;}
-  const FW=1160,FH=2260,P=(x0,y0,x1,y1)=>`left:${x0*100/FW}%;top:${y0*100/FH}%;width:${(x1-x0)*100/FW}%;height:${(y1-y0)*100/FH}%`;
-  const SY=[245,495,744,994,1244],sl=(keys,x0)=>keys.map((k,n)=>`<div class="eqp" style="${P(x0,SY[n],x0+156,SY[n]+155)}">${eqCell(k)}</div>`).join('');
-  const bars=[['rd','Атака','atk'],['gn','Защита','def'],['bl','Ноша','loot'],['gd','Добыча','eco']],BY=[1537,1618,1698,1779];
-  $('modal').innerHTML=`<div class="sheet eqf"><div class="eqfin">
-    <div class="eqp eqtt" style="${P(250,88,910,178)}"><span>Снаряжение</span></div>
-    <button class="eqp eqcl" style="${P(1020,24,1124,108)}" data-act="sheetx" type="button" aria-label="Закрыть">✕</button>
-    ${sl(['helm','armor','gloves','pants','belt'],90)}${sl(['cloak','weapon','amulet','ring1','ring2'],919)}
-    <div class="eqp eqhero" style="${P(351,292,813,1405)}"><img class="eqpt ${S.hero.look?'full':''}" src="${S.hero.look?'img/herop'+S.hero.look+'.webp':'img/hero'+(1+[1,5,10,15,20,25,30].reduce((a,v,k)=>H.lv>=v?k:a,0))+'.webp'}" alt="Ярл"><div class="eqnm"><b>${esc(S.name)}</b><span>Уровень ${H.lv}</span></div></div>
-    ${bars.map((b,n)=>`<div class="eqp eqbar ${b[0]}" style="${P(101,BY[n],1065,BY[n]+65)}"><i style="width:${Math.min(100,tot[b[2]]*100/0.3)}%"></i><span>${b[1]}</span><b>${pc(tot[b[2]])}</b></div>`).join('')}
-    <div class="eqp eqdet" style="${P(73,1912,1070,2110)}">${det}</div>
-    <button class="eqp eqfg" style="${P(380,2150,780,2260)}" data-act="fgopen" type="button">Кузница</button>
-  </div></div>`;
+  const FW=1160,FH=2576,P=(x0,y0,x1,y1)=>`left:${x0*100/FW}%;top:${y0*100/FH}%;width:${(x1-x0)*100/FW}%;height:${(y1-y0)*100/FH}%`;
+  const SY=[[214,358],[426,567],[630,764],[823,952],[1009,1136]],sl=(keys,x0,x1)=>keys.map((k,n)=>`<div class="eqp" style="${P(x0,SY[n][0],x1,SY[n][1])}">${eqCell(k)}</div>`).join('');
+  const bars=[['rd','Атака','atk'],['gn','Защита','def'],['bl','Ноша','loot'],['gd','Добыча','eco']],BY=[1225,1282,1338,1394];
+  const so=ui.eqSort||'r',EQO=Object.keys(Core.SLOTS),SORTN={r:'s',s:'l',l:'p',p:'r'},SORTT={r:'редкость',s:'слот',l:'уровень',p:'бонус'};
+  const inv=E.inv.slice().sort((a,b)=>so==='s'?EQO.indexOf(a.slot)-EQO.indexOf(b.slot)||b.r-a.r||b.il-a.il:so==='l'?b.il-a.il||b.r-a.r:so==='p'?Core.itemPct(b)-Core.itemPct(a):b.r-a.r||b.il-a.il);
+  const pages=Math.max(1,Math.ceil(inv.length/25));if(ui.eqPg==null||ui.eqPg>=pages)ui.eqPg=Math.max(0,pages-1);
+  const pg=inv.slice(ui.eqPg*25,ui.eqPg*25+25),CX=[117,310,503,696,889],CY=[1572,1759,1958,2143,2327],mid=ui.eqMenu&&ui.eqMenu.id;
+  const cells=pg.map((it,n)=>`<div class="eqp" style="${P(CX[n%5],CY[Math.floor(n/5)],CX[n%5]+158,CY[Math.floor(n/5)]+151)}"><button class="eqs r${it.r} t-${it.slot}${it.r} ${mid===it.id?'sel':''}" data-act="eqsel" data-arg="i:${it.id}" type="button">${eqIcon(it)}<i class="eqil">${it.il}</i></button></div>`).join('');
+  $('modal').innerHTML=`<div class="sheet eqf"><div class="eqfin eq2">
+    <div class="eqp eqtt" style="${P(235,65,935,170)}"><span>Снаряжение</span></div>
+    <button class="eqp eqcl" style="${P(985,40,1115,140)}" data-act="sheetx" type="button" aria-label="Закрыть">✕</button>
+    ${sl(['helm','armor','gloves','pants','belt'],76,250)}${sl(['cloak','weapon','amulet','ring1','ring2'],913,1088)}
+    <div class="eqp eqhero" style="${P(358,272,808,1105)}"><img class="eqpt ${S.hero.look?'full':''}" src="${S.hero.look?'img/herop'+S.hero.look+'.webp':'img/hero'+(1+[1,5,10,15,20,25,30].reduce((a,v,k)=>H.lv>=v?k:a,0))+'.webp'}" alt="Ярл"><div class="eqnm"><b>${esc(S.name)}</b><span>Уровень ${H.lv}</span></div></div>
+    ${bars.map((b,n)=>`<div class="eqp eqgr ${b[0]}" style="${P(100,BY[n],1065,BY[n]+40)}"><i style="width:${Math.min(100,tot[b[2]]*100/0.3)}%"></i><span>${b[1]}</span><b>${pc(tot[b[2]])}</b></div>`).join('')}
+    ${cells}${eqMenuHTML()}
+  </div>
+  <div class="eqctl"><button class="btn small" data-act="fgopen" type="button">Кузница</button><button class="btn small ghost" data-act="eqsort" data-arg="${SORTN[so]}" type="button">↕ ${SORTT[so]}</button><span class="eqpg"><button class="btn small ghost" data-act="eqpg" data-arg="-1" type="button" ${ui.eqPg>0?'':'disabled'}>◀</button><b>${ui.eqPg+1}/${pages}</b><button class="btn small ghost" data-act="eqpg" data-arg="1" type="button" ${ui.eqPg<pages-1?'':'disabled'}>▶</button></span></div>
+</div>`;
   $('modal').hidden=false;ui.eqOpen=true;
   try{window.Art&&Art.paintIn&&Art.paintIn($('modal'));}catch(e){}
 }
@@ -1750,11 +1774,11 @@ function onAct(act,arg){
     case 'me':meSheet();return;
     case 'looks':looksSheet();return;
     case 'look':act2('look',Number(arg)).then(()=>{if(!$('modal').hidden)looksSheet();});return;
-    case 'eq':ui.eqSel=null;eqSheet();return;
+    case 'eq':ui.eqSel=null;ui.eqMenu=null;eqSheet();return;
     case 'oracle':oracleSheet();return;
     case 'peek':{const p=ui.soc.prof;if(p)peekSheet(p);return;}
     case 'fgopen':ui.eqSel=null;forgeSheet();return;
-    case 'eqsort':ui.eqSort=arg;forgeSheet();return;
+    case 'eqsort':ui.eqSort=arg;if(ui.fgOpen)forgeSheet();else eqSheet();return;
     case 'tavern':ui.tvTab=ui.tvTab||'wheel';ui.mseen=(Core.miniDay().last||{}).n||0;tavernSheet();return;
     case 'tvtab':if(ui.tvSpin)return;ui.tvTab=arg;tavernSheet();return;
     case 'dbet':if(ui.tvSpin)return;ui.dbet=+arg;tavernSheet();return;
@@ -1766,7 +1790,10 @@ function onAct(act,arg){
     case 'eqconf':ui.eqConf=arg==='1';forgeSheet();return;
     case 'eqpickall':{const pk=ui.eqPick=ui.eqPick||{};ui.eqConf=false;if(arg==='0')ui.eqPick={};else{const f=ui.eqF||'all';S.eq.inv.filter(it=>arg==='v'?(f==='all'||(f==='w'&&['weapon','gloves','ring','amulet'].includes(it.slot))||(f==='a'&&['armor','helm','pants','cloak','belt'].includes(it.slot))):it.r<1).forEach(it=>{pk[it.id]=true;});}forgeSheet();return;}
     case 'scrapmany':{const ids=Object.keys(ui.eqPick||{}).filter(k=>ui.eqPick[k]);ui.eqPick={};ui.eqConf=false;if(ids.length)act2('scrapmany',ids);return;}
-    case 'eqsel':{const [a,v]=String(arg).split(':');if(ui.eqMulti&&ui.fgOpen&&a==='i'){const pk=ui.eqPick=ui.eqPick||{};pk[v]=!pk[v];ui.eqConf=false;forgeSheet();return;}ui.eqSel=a==='i'?{id:v}:{slot:v};if(ui.fgOpen)forgeSheet();else eqSheet();return;}
+    case 'eqmx':ui.eqMenu=null;eqSheet();return;
+    case 'eqpg':ui.eqPg=Math.max(0,(ui.eqPg||0)+parseInt(arg,10));ui.eqMenu=null;eqSheet();return;
+    case 'equip':case 'unequip':case 'scrap':ui.eqMenu=null;act2(act,arg);return;
+    case 'eqsel':{const [a,v]=String(arg).split(':');if(!ui.fgOpen){if(ui.eqLP){ui.eqLP=false;return;}ui.eqMenu=a==='i'?{id:v}:{slot:v};eqSheet();return;}if(ui.eqMulti&&ui.fgOpen&&a==='i'){const pk=ui.eqPick=ui.eqPick||{};pk[v]=!pk[v];ui.eqConf=false;forgeSheet();return;}ui.eqSel=a==='i'?{id:v}:{slot:v};if(ui.fgOpen)forgeSheet();else eqSheet();return;}
     case 'frame':saveAv({fr:Number(arg)});return;
     case 'avclr':saveAv({clear:true});return;
     case 'top':topSheet();return;
@@ -1839,7 +1866,15 @@ function boot(){
     if(t>70&&!hd.classList.contains('mini')){hd.classList.add('mini');$('h1').classList.remove('off');}
     else if(t<8&&hd.classList.contains('mini')){hd.classList.remove('mini');$('h1').classList.add('off');}
   },{passive:true});
-  document.addEventListener('click',e=>{
+  (function(){let tm=null,sx=0,sy=0;
+  const stop=()=>{clearTimeout(tm);tm=null;};
+  document.addEventListener('pointerdown',e=>{const b=e.target.closest&&e.target.closest('.eqf .eqs[data-arg]');if(!b||ui.fgOpen)return;ui.eqLP=false;sx=e.clientX;sy=e.clientY;stop();
+    tm=setTimeout(()=>{tm=null;const[a,v]=String(b.dataset.arg).split(':');ui.eqLP=true;ui.eqMenu=a==='i'?{id:v}:{slot:v};try{navigator.vibrate&&navigator.vibrate(15);}catch(e){}eqSheet();setTimeout(()=>{ui.eqLP=false;},400);},450);});
+  document.addEventListener('pointermove',e=>{if(tm&&Math.hypot(e.clientX-sx,e.clientY-sy)>10)stop();});
+  document.addEventListener('pointerup',stop);document.addEventListener('pointercancel',stop);
+  document.addEventListener('contextmenu',e=>{if(e.target.closest&&e.target.closest('.eqf'))e.preventDefault();});
+})();
+document.addEventListener('click',e=>{
     if(e.target.id==='modal'){closeModal();return;}
     window.Snd&&Snd.unlock();
     const el=e.target.closest('[data-act]');if(!el)return;
