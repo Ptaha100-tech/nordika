@@ -244,6 +244,8 @@ function ensure(st) {
   if (!(st.hero.look >= 1 && st.hero.look <= 5)) st.hero.look = 1;
   if (!Array.isArray(st.presets)) st.presets = [];
   if (st.upg === undefined) st.upg = null;
+  if (st.q2 === undefined) st.q2 = null;
+  if (!st.mini) st.mini = { d: -1, sp: 0, ps: 0, dc: 0, last: null };
   if (!st.stk) {          // перевод на стопки по ступеням: все нынешние воины встают в стопку своей ступени
     st.stk = 1;
     const T = k => (st.tier && st.tier[k]) || 1, conv = c => { const o = {}; for (const k in (c || {})) { const n = c[k] || 0; if (!validKey(k)) continue; const key = skey(k, T(k)); o[key] = (o[key] || 0) + n; } return o; };
@@ -421,7 +423,8 @@ function produce(to) {
 }
 function nextEvent(tn) {
   const c = [];
-  if (S.q && S.q.end <= tn) c.push({ time: S.q.end, run: finishBuild });
+  if (S.q && S.q.end <= tn) c.push({ time: S.q.end, run: () => finishBuild('q') });
+  if (S.q2 && S.q2.end <= tn) c.push({ time: S.q2.end, run: () => finishBuild('q2') });
   if (S.train && S.train.end <= tn) c.push({ time: S.train.end, run: finishTrain });
   if (S.study && S.study.end <= tn) c.push({ time: S.study.end, run: finishStudy });
   if (S.upg && S.upg.end <= tn) c.push({ time: S.upg.end, run: finishUpg });
@@ -447,7 +450,8 @@ function settle(D, to) {
   try {
     for (let g = 0; g < 20; g++) {
       const c = [];
-      if (S.q && S.q.end <= to) c.push({ time: S.q.end, run: finishBuild });
+      if (S.q && S.q.end <= to) c.push({ time: S.q.end, run: () => finishBuild('q') });
+      if (S.q2 && S.q2.end <= to) c.push({ time: S.q2.end, run: () => finishBuild('q2') });
       if (S.train && S.train.end <= to) c.push({ time: S.train.end, run: finishTrain });
       if (S.study && S.study.end <= to) c.push({ time: S.study.end, run: finishStudy });
       if (S.upg && S.upg.end <= to) c.push({ time: S.upg.end, run: finishUpg });
@@ -458,8 +462,8 @@ function settle(D, to) {
     produce(to);
   } finally { S = keep; quiet = kq; }
 }
-function finishBuild() {
-  const q = S.q; S.b[q.id] = q.to; S.q = null; S.stat.built++;
+function finishBuild(key) {
+  key = key || 'q'; const q = S[key]; S.b[q.id] = q.to; S[key] = null; S.stat.built++;
   addLog(`${B[q.id].n} достигла уровня ${q.to}.`, 'good', q.end); toast(`${B[q.id].n}: уровень ${q.to}`);
 }
 function finishTrain() {
@@ -591,11 +595,14 @@ function canUp(id) {
   return '';
 }
 function startBuild(id) {
-  if (!B[id] || S.q || canUp(id)) return;
+  if (!B[id] || canUp(id)) return;
+  if ((S.q && S.q.id === id) || (S.q2 && S.q2.id === id)) return;
+  const key = !S.q ? 'q' : (S.helper && !S.q2 ? 'q2' : null);
+  if (!key) return;
   const L = lvl(id), c = upCost(id, L);
   if (!canAfford(c)) return;
   pay(c); const dur = upSecs(id, L) * 1000;
-  S.q = { id, to: L + 1, end: nowMs() + dur, dur, sid: 'j' + (S.mid++) };
+  S[key] = { id, to: L + 1, end: nowMs() + dur, dur, sid: 'j' + (S.mid++) };
 }
 function startTrain(k, n, t) {
   n = Math.floor(Number(n)); if (!isFinite(n)) return;
@@ -628,13 +635,13 @@ function spendSkill(k) {
   const H = S.hero; if (!HSK[k] || H.sp < 1 || (H.sk[k] || 0) >= MAXSK) return;
   H.sp--; H.sk[k] = (H.sk[k] || 0) + 1;
 }
-function jobObj(kind) { return kind === 'q' ? S.q : kind === 'train' ? S.train : kind === 'study' ? S.study : kind === 'upg' ? S.upg : null; }
+function jobObj(kind) { return kind === 'q' ? S.q : kind === 'q2' ? S.q2 : kind === 'train' ? S.train : kind === 'study' ? S.study : kind === 'upg' ? S.upg : null; }
 /* ---- клан: помощь соклановцев ---- */
 const CLAN_COST = { wood: 500, stone: 500 }, CLAN_HALL = 3;
 function jobInfo(kind) {
   const o = jobObj(kind); if (!o) return null;
   if (!o.sid) o.sid = 'j' + (S.mid++);
-  const what = kind === 'q' ? `${B[o.id].n}, ур. ${o.to}` : kind === 'train' ? `${unitName(o.type, o.t || 1)} ×${o.n}` : kind === 'study' ? `${TECH[o.key].n}, ур. ${o.to}` : `Улучшение до ${unitName(o.k, o.to)}`;
+  const what = (kind === 'q' || kind === 'q2') ? `${B[o.id].n}, ур. ${o.to}` : kind === 'train' ? `${unitName(o.type, o.t || 1)} ×${o.n}` : kind === 'study' ? `${TECH[o.key].n}, ур. ${o.to}` : `Улучшение до ${unitName(o.k, o.to)}`;
   return { kind, sid: o.sid, end: o.end, dur: o.dur, what };
 }
 function helpJob(kind, sid, cutMs) {
@@ -672,6 +679,7 @@ function claim(id) {
 /* ============ Магазин ============ */
 /* Все покупки идут за рунные камни и проверяются на сервере. */
 const SHOP = [
+  { id: 'helper',  g: 'build',  t: 'Помощник строителя', d: 'Навсегда: вторая очередь стройки. Строите два здания одновременно.', gems: 300, helper: true, once: true },
   { id: 'haste5',   g: 'haste',  t: 'Ускорение ×5',    d: 'Пять ускорений. Каждое сокращает дело на 5 минут.',          gems: 15,  haste: 5 },
   { id: 'haste25',  g: 'haste',  t: 'Ускорение ×25',   d: 'Двадцать пять ускорений. Выгоднее на 20%.',                  gems: 60,  haste: 25 },
   { id: 'haste100', g: 'haste',  t: 'Ускорение ×100',  d: 'Сто ускорений. Выгоднее на 33%.',                            gems: 200, haste: 100 },
@@ -802,15 +810,61 @@ function claimStreak() {
 function buy(id) {
   const it = SHOP.find(x => x.id === id);
   if (!it) return false;
+  if (it.once && S.bought[id]) { toast('Уже куплено'); return false; }
   if (S.gems < it.gems) { toast('Не хватает рунных камней'); return false; }
   const t = nowMs();
   S.gems -= it.gems;
   if (it.haste) S.haste += it.haste;
   if (it.shieldH) S.shield = Math.max(S.shield, t) + it.shieldH * 3600000;
   if (it.resH) { const c = cap(); for (const r of RES) { const id2 = r.id; if (id2 === 'silver' && !lvl('silvermine')) continue; S.res[id2] = Math.min(Math.max(c, S.res[id2]), S.res[id2] + rate(id2) * it.resH); } }
+  if (it.helper) S.helper = true;
   if (it.vipD) S.vip = Math.max(S.vip || 0, t) + it.vipD * 86400000;
   S.bought[id] = (S.bought[id] || 0) + 1;
   addLog(`Покупка: ${it.t}.`, 'good'); toast('Куплено: ' + it.t);
+  return true;
+}
+/* ============ Мини-игры ============ */
+const WHEEL_SILVER = [1000, 1500, 2000, 3000, 4000], WHEEL_GEMS = 5, WHEEL_PAID_MAX = 15, DICE_BETS = [100, 500, 2000, 10000], DICE_MAX = 20;
+const WHEEL = [
+  { k: 'food', t: 'Еда', w: 14 }, { k: 'wood', t: 'Дерево', w: 14 }, { k: 'stone', t: 'Камень', w: 14 }, { k: 'iron', t: 'Железо', w: 14 },
+  { k: 'silver', t: 'Серебро', w: 14 }, { k: 'haste', t: 'Ускорения', w: 12 }, { k: 'item', t: 'Предмет', w: 12 }, { k: 'gems', t: 'Рунные камни', w: 6 }
+];
+function miniDay() {
+  const d = dayId(nowMs());
+  if (!S.mini || S.mini.d !== d) S.mini = { d, sp: 0, ps: 0, dc: 0, last: null, seq: (S.mini && S.mini.seq) || 0 };
+  return S.mini;
+}
+const wheelCost = () => { const m = miniDay(); return m.sp < WHEEL_SILVER.length ? { silver: WHEEL_SILVER[m.sp] } : null; };
+function spinWheel() {
+  const m = miniDay(); let paid = false;
+  if (m.sp < WHEEL_SILVER.length) {
+    const c = { silver: WHEEL_SILVER[m.sp] }; if (!canAfford(c)) { toast('Не хватает серебра'); return false; }
+    pay(c); m.sp++;
+  } else {
+    if (m.ps >= WHEEL_PAID_MAX) { toast('На сегодня прокруток больше нет'); return false; }
+    if ((S.gems || 0) < WHEEL_GEMS) { toast('Не хватает рунных камней'); return false; }
+    S.gems -= WHEEL_GEMS; m.ps++; paid = true;
+  }
+  let x = Math.random() * 100, i = 0; for (; i < WHEEL.length - 1; i++) { if (x < WHEEL[i].w) break; x -= WHEEL[i].w; }
+  const sec = WHEEL[i]; let text = '';
+  if (['food', 'wood', 'stone', 'iron'].includes(sec.k)) { const v = Math.max(800, Math.round(rate(sec.k) * 3)); addCapped(sec.k, v); text = `${sec.t} +${fmt(v)}`; }
+  else if (sec.k === 'silver') { const v = 1500 * (1 + Math.floor(lvl('hall') / 5)); addCapped('silver', v); text = `Серебро +${fmt(v)}`; }
+  else if (sec.k === 'haste') { S.haste += 3; text = 'Ускорения +3'; }
+  else if (sec.k === 'gems') { S.gems = (S.gems || 0) + 5; text = 'Рунные камни +5'; }
+  else { const it = newItem(Math.ceil(lvl('hall') / 5), [80, 18, 2]); const ok = giveItem(it, 'Колесо фортуны'); text = ok ? `Предмет: ${itemName(it)}` : 'Сумка полна, предмет пропал'; }
+  m.seq = (m.seq || 0) + 1; m.last = { k: 'wheel', i, text, paid, n: m.seq };
+  return true;
+}
+function rollDice(bet) {
+  bet = Math.floor(Number(bet)); const m = miniDay();
+  if (!DICE_BETS.includes(bet)) return false;
+  if (m.dc >= DICE_MAX) { toast('На сегодня игр в кости хватит'); return false; }
+  if (!canAfford({ silver: bet })) { toast('Не хватает серебра'); return false; }
+  const d = () => 1 + Math.floor(Math.random() * 6), p = [d(), d()], b = [d(), d()], sp = p[0] + p[1], sb = b[0] + b[1];
+  m.dc++; let delta = 0;
+  if (sp > sb) { delta = Math.round(bet * 0.9); addCapped('silver', delta); }
+  else if (sp < sb) { S.res.silver -= bet; delta = -bet; }
+  m.seq = (m.seq || 0) + 1; m.last = { k: 'dice', p, b, bet, delta, n: m.seq };
   return true;
 }
 function act(a, arg) {
@@ -827,6 +881,8 @@ function act(a, arg) {
     case 'claim': if (typeof arg === 'string') claim(arg); break;
     case 'intro': S.introDone = true; break;
     case 'bag': buyBag(); break;
+    case 'spin': spinWheel(); break;
+    case 'dice': rollDice(arg); break;
     case 'preset': { const i = Math.floor(Number(arg && arg.i)); if (!(i >= 0 && i < 5) || !arg.comp || typeof arg.comp !== 'object') break; const c = {}; for (const k in arg.comp) { if (!validKey(k)) continue; const v = Math.max(0, Math.min(1e6, Math.floor(Number(arg.comp[k])) || 0)); if (v) c[k] = v; } if (!Array.isArray(S.presets)) S.presets = []; while (S.presets.length < 5) S.presets.push(null); S.presets[i] = c; break; }
     case 'look': { const n = Math.floor(Number(arg)); if (n >= 1 && n <= LOOKS.length) S.hero.look = n; break; }
     case 'buy': if (typeof arg === 'string') buy(arg); break;
@@ -869,7 +925,7 @@ const API = {
   lvl, slots, cap, capAt, rate, prodAt, upCost, upSecs, canUp, canAfford, trainRate, maxBatch, trainSecs, techCost, techSecs, gatherSecs, marchSecs,
   posOf, tgtPos, isLand, snapLand, SHOP, scoutCost, isVip, buy, claimDaily, dailyLeft, streakInfo, claimStreak, STREAK, CONTESTS, PRIZES, PRIZE_PART, weekId, weekEnd, contestOf, wkScoreOf, wkSync, dayId,
   jobInfo, helpJob, chargeClan, CLAN_COST, CLAN_HALL, jobObj,
-  tierOf, heroOf, tmul, tiersOf, botTiers, stype, stier, skey, validKey, sname, sortKeys, byType, maxTier, botComp, costOf, upgPlan, UPG_PCT, atkB, defB, lootB, unitName, xpNeed, tierCost, tierSecs,
+  tierOf, heroOf, tmul, tiersOf, botTiers, WHEEL, WHEEL_SILVER, WHEEL_GEMS, WHEEL_PAID_MAX, DICE_BETS, DICE_MAX, miniDay, wheelCost, stype, stier, skey, validKey, sname, sortKeys, byType, maxTier, botComp, costOf, upgPlan, UPG_PCT, atkB, defB, lootB, unitName, xpNeed, tierCost, tierSecs,
   refreshTargets, topUpPlayers, addLogTo, fmt, fmtT, fmtRes, fmtComp, fmtApprox, carryOf,
   setNow(f) { nowMs = f; }, now() { return nowMs(); },
   onToast(f) { toastFn = f; }

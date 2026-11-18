@@ -264,8 +264,8 @@ function clanAward(prev) {
 const FRAME_NEED = [0, 1, 3, 5, 8, 12, 15];   // Палата ярла, с которой открывается рамка
 /* ---------- боссы: мировой и клановый ---------- */
 const BOSS_HITS = 2, BOSS_LOSS = 0.05;
-const WBOSS = ['Йотун Хримтурс', 'Сурт, огненный ярл', 'Гром-Берсерк', 'Змей Йормунганд', 'Хель, владычица мёртвых'];
-const CBOSS = ['Ледяной тролль', 'Лесной великан', 'Болотная ведьма', 'Змей-хранитель'];
+const WBOSS = ['Йотун Хримтурс', 'Сурт, огненный ярл', 'Хель, владычица мёртвых', 'Змей Йормунганд'];
+const CBOSS = ['Лесной великан', 'Тёмный жрец'];
 const bossIl = st => Math.min(5, 1 + Math.floor(st.b.hall / 5));
 function bossPay(u, why, o) {
   const st = u.state; Core.use(st);
@@ -321,7 +321,7 @@ function clanSettle(c) {
     bossPay(u, `Клановый босс «${b.name}» повержен`, { res: { wood: 400, iron: 300, silver: 200 }, gems: 10 + (i === 0 ? 10 : 0), haste: 3, w: i === 0 ? [20, 60, 20] : [55, 38, 7] });
   });
 }
-const DBOSS = ['Ледяной страж', 'Берсерк Хрольв', 'Вещая Вороница', 'Огненный мореход', 'Змей фьорда'];
+const DBOSS = ['Ледяной страж', 'Огненный мореход', 'Вещая Вороница', 'Гром-Берсерк'];
 const DAILY_HITS = 1;
 function dailySettle(b) {
   if (b.settled) return; b.settled = true; b.killed = b.hp <= 0;

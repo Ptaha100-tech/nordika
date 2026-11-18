@@ -137,6 +137,13 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--frost);outline-
 .stat b{display:block;font:700 22px/1.1 var(--display);font-variant-numeric:tabular-nums}
 .stat span{font-size:12px;color:var(--muted)}
 .stepper.st5{display:grid;grid-template-columns:1fr 1fr 1.9fr 1fr 1fr;gap:4px}.stepper.st5 .btn{padding:4px 0}.stepper.st5 .tnin{width:100%}.stepper.st5 [data-act=tnmax]{grid-column:1/-1}
+.tav{max-width:420px}.wheelbox{position:relative;width:260px;height:260px;margin:14px auto 8px}
+.wdisk{position:relative;width:260px;height:260px;border-radius:50%;border:8px solid #b88a2e;box-sizing:border-box;box-shadow:0 0 0 3px #4a3210,0 6px 18px #000a,inset 0 0 22px #000a}
+.wl{position:absolute;left:50%;top:50%;width:0;height:0}.wl img{position:absolute;width:38px;height:38px;left:-19px;top:-19px;object-fit:contain;filter:drop-shadow(0 1px 2px #000)}
+.whub{position:absolute;left:50%;top:50%;width:46px;height:46px;margin:-23px;border-radius:50%;background:radial-gradient(#f0d28a,#8a5f1c);border:3px solid #4a3210}
+.wptr{position:absolute;left:50%;top:-12px;margin-left:-13px;width:0;height:0;border:13px solid transparent;border-top:26px solid #e8453c;z-index:3;filter:drop-shadow(0 2px 2px #000)}
+.wres{min-height:28px;text-align:center;font-weight:700;margin:6px 0 8px;color:#f6dc9a}.wres.pop{animation:wpop .5s}@keyframes wpop{0%{transform:scale(.6);opacity:0}70%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
+.dtable{display:flex;justify-content:space-around;margin:10px 0}.dtable small{display:block;text-align:center;color:var(--muted)}.drow{display:flex;gap:6px;justify-content:center}.dc{font-size:56px;line-height:1;color:#f1e6cc;text-shadow:0 2px 4px #000}.dc.roll{animation:droll .18s linear infinite}@keyframes droll{50%{transform:rotate(14deg) translateY(-4px)}}
 .tnin{width:64px;text-align:center;font:700 18px var(--display);background:var(--surface2);color:var(--fg);border:1px solid var(--line);border-radius:4px;padding:6px 2px;min-width:0}
 .eqck{position:absolute;right:2px;top:0;color:#9bf09b;font-size:16px;text-shadow:0 1px 3px #000;z-index:3}.eqmulti{padding:8px;border:1px dashed #6b4a36;border-radius:6px;margin:6px 0}
 .subtabs.cht{display:flex;gap:5px;margin-bottom:6px}.subtabs.cht .btn{flex:1;min-height:30px;padding:3px 4px;font-size:12px}
@@ -402,7 +409,7 @@ canvas[data-hero]{transform-origin:50% 90%;animation:heroLife 5s ease-in-out inf
 .eqhero{overflow:hidden}
 .eqpt.full{transform-origin:50% 80%;animation:heroLife 6s ease-in-out infinite}
 @media (prefers-reduced-motion:reduce){canvas[data-u],canvas[data-hero],.eqpt.full{animation:none!important}}
-.shortc{display:flex;gap:8px;margin:0 0 8px}.shortc .btn{flex:1;font-size:15px;padding:10px 6px}
+.shortc{display:flex;gap:6px;margin:0 0 8px}.shortc .btn{flex:1;font-size:14px;padding:10px 2px}
 
 /* карта и боссы */
 .bossart{position:relative;display:flex;justify-content:center;margin:2px 0 4px;--gl:#7fd6ff}
@@ -523,6 +530,7 @@ async function act(a,arg){
   finally{busy=false;}
   render();
   if(ui.orOpen&&!$('modal').hidden)oracleSheet();
+  if(ui.tvOpen&&!$('modal').hidden)tavernSheet(true);
   if((ui.eqOpen||ui.fgOpen)&&!$('modal').hidden){if(ui.eqSel&&ui.eqSel.id&&!S.eq.inv.some(x=>x.id===ui.eqSel.id))ui.eqSel=null;if(ui.fgOpen)forgeSheet();else eqSheet();}
 }
 
@@ -593,6 +601,7 @@ function jobHTML(tag,txt,o,kind){
 function jobsHTML(scope){
   const j=[];
   if(scope==='city'&&S.q)j.push(jobHTML('Стройка',`${B[S.q.id].n} → ур. ${S.q.to}`,S.q,'q'));
+  if(scope==='city'&&S.q2)j.push(jobHTML('Помощник',`${B[S.q2.id].n} → ур. ${S.q2.to}`,S.q2,'q2'));
   if(scope==='troops'||scope==='city'){
     if(S.train)j.push(jobHTML('Казарма',`${S.train.n} × ${unitName(S.train.type,S.train.t||1)}`,S.train,'train'));
     if(S.upg)j.push(jobHTML('Казарма',`Улучшение до «${unitName(S.upg.k,S.upg.to)}» (ступень ${S.upg.to})`,S.upg,'upg'));
@@ -610,14 +619,14 @@ function viewCity(){
   if(!S.introDone)h+=`<section class="card"><h3>Добро пожаловать, ярл</h3>
     <p class="sm" style="margin:6px 0 10px">Стройте и улучшайте здания, пока копится добыча. Копите дружину в Казарме и ходите в походы: на разбойников, на ресурсные точки и на города других игроков. Таймеры идут и при закрытой игре. Пока вас нет, на город могут напасть, поэтому держите дома войско и стройте Хранилище.</p>
     <button class="btn" data-act="intro">Понятно</button></section>`;
-  h+=`<div class="shortc"><button class="btn" data-act="fgopen" type="button"><img class="uic s" src="/img/ui-forge.webp?v=1" alt=""> Кузница</button><button class="btn" data-act="oracle" type="button"><img class="uic s" src="/img/ui-oracle.webp?v=1" alt=""> Оракул</button></div>`;
+  h+=`<div class="shortc"><button class="btn" data-act="fgopen" type="button"><img class="uic s" src="/img/ui-forge.webp?v=1" alt=""> Кузница</button><button class="btn" data-act="oracle" type="button"><img class="uic s" src="/img/ui-oracle.webp?v=1" alt=""> Оракул</button><button class="btn" data-act="tavern" type="button">🎲 Таверна</button></div>`;
   h+=jobsHTML('city');
   BORDER.forEach(id=>{
-    const b=B[id],L=lvl(id),block=canUp(id),busyB=S.q&&S.q.id===id;
+    const b=B[id],L=lvl(id),block=canUp(id),busyB=(S.q&&S.q.id===id)||(S.q2&&S.q2.id===id),freeQ=!S.q||(S.helper&&!S.q2);
     let act='';
     if(block)act=`<p class="note">${block}</p>`;
-    else if(S.q&&!busyB)act=`<p class="note">Строители заняты</p>`;
     else if(busyB)act=`<p class="note">Идёт стройка</p>`;
+    else if(!freeQ)act=`<p class="note">Строители заняты${S.helper?'':' · <a href="#" class="lnk" data-act="gohelper">Помощник строителя</a>'}</p>`;
     else act=costHTML(upCost(id,L))+`<button class="btn" data-act="up" data-arg="${id}" data-gate="1">${L?'Улучшить':'Построить'} · ${fmtT(upSecs(id,L))}</button>`;
     h+=`<article class="card bld"><canvas class="pic" width="152" height="152" data-b="${id}" aria-label="${b.n}, уровень ${L}"></canvas><div class="bb">
       <div class="bt"><h3>${b.n}</h3><span class="lv">${L?'Ур. '+L:'Нет'}</span></div>
@@ -868,7 +877,7 @@ function chatHTML(c){
 }
 function myJobsForHelp(c){
   const out=[];
-  ['q','train','study','upg'].forEach(k=>{
+  ['q','q2','train','study','upg'].forEach(k=>{
     if(!Core.jobObj(k))return;
     const i=Core.jobInfo(k);if(!i||i.end-Core.now()<60000)return;
     out.push({kind:k,what:i.what,asked:c.reqs.some(r=>r.mine&&r.what===i.what)});
@@ -956,7 +965,7 @@ async function cact(a,p){
 
 /* ---------- магазин ---------- */
 const TG_CONTACT='AlexAmbrela';   // имя в Телеграме для связи, без @
-const SHOPG={haste:'Ускорения',shield:'Щиты от набегов',res:'Припасы',vip:'VIP'};
+const SHOPG={build:'Стройка',haste:'Ускорения',shield:'Щиты от набегов',res:'Припасы',vip:'VIP'};
 function viewShop(){
   const vip=Core.isVip(),left=Math.max(0,(S.vip||0)-Core.now());
   const dl=Core.dailyLeft();
@@ -968,7 +977,7 @@ function viewShop(){
   h+=`<section class="card"><h2>Пополнить рунные камни</h2>`+(pk&&pk.enabled&&pk.packs.length?pk.packs.map(x=>`<div class="item"><div><b>${IG} ${x.gems}${x.bonus?` <span class="muted sm">+${x.bonus} в подарок</span>`:''}</b></div><button class="btn small" data-act="pay" data-arg="${x.id}">${x.rub} ₽</button></div>`).join(''):`<p class="sm">Донат временно происходит через администратора.${TG_CONTACT?` Напишите нам в Телеграм: <a href="https://t.me/${TG_CONTACT}" target="_blank" rel="noopener" style="color:var(--accent)">@${TG_CONTACT}</a>`:' Контакт для связи скоро появится.'}</p><p class="muted sm">Рунные камни также можно получать каждый день и за задания.</p>`)+`</section>`;
   const groups={};Core.SHOP.forEach(i=>{(groups[i.g]||(groups[i.g]=[])).push(i);});
   for(const g in groups){
-    h+=`<section class="card"><h2>${SHOPG[g]}</h2>${groups[g].map(i=>`<div class="item"><div><b>${esc(i.t)}</b><p class="sm muted">${esc(i.d)}</p></div><button class="btn small price ${S.gems>=i.gems?'':'off'}" data-act="buy" data-arg="${i.id}">${IG} ${i.gems}</button></div>`).join('')}</section>`;
+    h+=`<section class="card"><h2>${SHOPG[g]}</h2>${groups[g].map(i=>`<div class="item"><div><b>${esc(i.t)}</b><p class="sm muted">${esc(i.d)}</p></div>${i.once&&S.bought&&S.bought[i.id]?'<span class="lv" style="color:#7fd67f">Куплено</span>':`<button class="btn small price ${S.gems>=i.gems?'':'off'}" data-act="buy" data-arg="${i.id}">${IG} ${i.gems}</button>`}</div>`).join('')}</section>`;
   }
   return h;
 }
@@ -1077,8 +1086,9 @@ async function bossHit(t){
   catch(e){toast(e.message||'Не получилось');}
   bbusy=false;
 }
-const BOSSIMG={'Ледяной страж':6,'Берсерк Хрольв':8,'Вещая Вороница':11,'Огненный мореход':12,'Змей фьорда':13,'Йотун Хримтурс':1,'Ледяной тролль':7,'Гром-Берсерк':2,'Лесной великан':9,'Волк Фенрир':2,'Каменный исполин':2,'Хель, владычица мёртвых':3,'Болотная ведьма':14,'Сурт, огненный ярл':4,'Дракон Нидхёгг':4,'Змей Йормунганд':5,'Змей-хранитель':15};
-const BOSSBASE={6:1,7:1,8:2,9:2,11:3,12:4,13:5,14:3,15:5};
+const BOSSIMG={'Йотун Хримтурс':16,'Сурт, огненный ярл':17,'Хель, владычица мёртвых':18,'Змей Йормунганд':5,'Ледяной страж':6,'Огненный мореход':4,'Вещая Вороница':3,'Гром-Берсерк':2,'Лесной великан':19,'Тёмный жрец':20,
+ 'Берсерк Хрольв':8,'Змей фьорда':13,'Ледяной тролль':7,'Болотная ведьма':14,'Змей-хранитель':15};
+const BOSSBASE={6:1,7:1,8:2,9:2,11:3,12:4,13:5,14:3,15:5,16:1,17:4,18:3,19:5,20:3};
 function bossArt(name){const n=BOSSIMG[name]||(1+[...String(name)].reduce((a,c)=>a+c.charCodeAt(0),0)%5);return `<div class="bossart ba${BOSSBASE[n]||n}"><img src="img/boss${n}.webp?v=1" alt="${esc(name)}"></div>`;}
 function bossCard(b,type,left,atk){
   if(!b)return '';
@@ -1597,6 +1607,7 @@ function showHero(tab){
 function dueSoon(){
   const tn=Core.now();
   if(S.q&&S.q.end<=tn)return true;
+  if(S.q2&&S.q2.end<=tn)return true;
   if(S.train&&S.train.end<=tn)return true;
   if(S.study&&S.study.end<=tn)return true;
   return S.marches.some(m=>(m.phase==='out'&&m.arrive<=tn)||(m.phase==='gather'&&m.gEnd<=tn)||(m.phase==='back'&&m.back<=tn));
@@ -1669,8 +1680,56 @@ function uSheet(k){
     <div class="tblw"><table class="tbl"><thead><tr><th>Ст.</th><th>Название</th><th>Атака / защита / ноша</th><th>Цена найма одного</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
   $('modal').hidden=false;
 }
-function closeModal(){ui.topOpen=false;ui.eqOpen=false;ui.fgOpen=false;ui.orOpen=false;ui.modal=null;$('modal').hidden=true;$('modal').innerHTML='';}
+function closeModal(){ui.tvOpen=false;ui.topOpen=false;ui.eqOpen=false;ui.fgOpen=false;ui.orOpen=false;ui.modal=null;$('modal').hidden=true;$('modal').innerHTML='';}
 
+/* ---------- таверна: колесо фортуны и кости ---------- */
+const WCOL=['#c9a227','#8a5a2b','#6f7a85','#3e4753','#b9c2cc','#3a7bd5','#7a3fb0','#b34de0'];
+const WICO=['res-food','res-wood','res-stone','res-iron','res-silver','ui-haste','ui-forge','ui-gem'];
+const DF=['⚀','⚁','⚂','⚃','⚄','⚅'];
+const dface=a=>`<span class="dc">${DF[a[0]-1]}</span><span class="dc">${DF[a[1]-1]}</span>`;
+function dres(d){const a=d.p[0]+d.p[1],b=d.b[0]+d.b[1];return d.delta>0?`Вы: ${a}, Ульф: ${b}. Победа! +${fmt(d.delta)} серебра`:d.delta<0?`Вы: ${a}, Ульф: ${b}. Проигрыш: −${fmt(-d.delta)} серебра`:`Вы: ${a}, Ульф: ${b}. Ничья, ставка вернулась`;}
+function tavernSheet(anim){
+  ui.tvOpen=true;ui.eqOpen=false;ui.fgOpen=false;ui.orOpen=false;
+  const m=Core.miniDay(),last=m.last,tab=ui.tvTab||'wheel';
+  const isNew=!!(anim&&last&&last.n>(ui.mseen||0));
+  let body='',wf=null,df=null;
+  if(tab==='wheel'){
+    const cost=Core.wheelCost(),left=Core.WHEEL_SILVER.length-m.sp,pl=Core.WHEEL_PAID_MAX-m.ps;
+    const startRot=ui.wrot||0;let rot=startRot;
+    if(isNew&&last.k==='wheel'){const target=-(last.i*45+22.5);rot=Math.floor(startRot/360)*360+360*6+((target%360)+360)%360;ui.wrot=rot;wf=rot;}
+    const grad=WCOL.map((c,i)=>`${c} ${i*45}deg ${(i+1)*45}deg`).join(',');
+    const labs=Core.WHEEL.map((w,i)=>`<span class="wl" style="transform:rotate(${i*45+22.5}deg) translateY(-92px)"><img src="/img/${WICO[i]}.webp?v=1" alt="${w.t}"></span>`).join('');
+    const can=!ui.tvSpin&&!wf&&(cost?canAfford(cost):((S.gems||0)>=Core.WHEEL_GEMS&&pl>0));
+    const btn=cost?`Крутить · ${fmtRes(cost)}`:(pl>0?`Крутить · ${Core.WHEEL_GEMS} ${IG}`:'На сегодня всё');
+    body=`<div class="wheelbox"><i class="wptr"></i><div class="wdisk" id="wdisk" style="background:conic-gradient(${grad});transform:rotate(${wf!=null?startRot:rot}deg)">${labs}<span class="whub"></span></div></div>
+    <p class="sm muted" style="text-align:center">За серебро осталось: <b>${left}</b> из ${Core.WHEEL_SILVER.length}${cost?` (следующая за ${fmtRes(cost)})`:` · за рунные камни: ${pl} из ${Core.WHEEL_PAID_MAX}`}</p>
+    <div id="wres" class="wres">${last&&last.k==='wheel'&&!wf?`Выпало: ${esc(last.text)}`:'&nbsp;'}</div>
+    <button class="btn" data-act="spin" type="button" ${can?'':'disabled'}>${btn}</button>
+    <p class="note sm">Призы: ресурсы, серебро, ускорения, предметы и рунные камни. Попытки обновляются в полночь по Москве.</p>`;
+  }else{
+    const bet=ui.dbet||Core.DICE_BETS[0],dd=last&&last.k==='dice'?last:null,show=dd&&!isNew;
+    const can=!ui.tvSpin&&!(isNew&&dd)&&m.dc<Core.DICE_MAX&&canAfford({silver:bet});
+    if(isNew&&dd)df=dd;
+    body=`<p class="sm muted">Вы бросаете две кости против торговца Ульфа. У кого сумма больше, тот выигрывает: вы получаете ставку и ещё 90% сверху. Ничья: ставка возвращается. Игр сегодня: ${m.dc} из ${Core.DICE_MAX}.</p>
+    <div class="dtable"><div><small>Ульф</small><div id="db" class="drow">${show?dface(dd.b):dface([1,1])}</div></div><div><small>Вы</small><div id="dp" class="drow">${show?dface(dd.p):dface([1,1])}</div></div></div>
+    <div id="dres" class="wres">${show?dres(dd):'&nbsp;'}</div>
+    <div class="subtabs" style="grid-template-columns:repeat(4,1fr)">${Core.DICE_BETS.map(b=>`<button class="btn small ${b===bet?'on':'ghost'}" data-act="dbet" data-arg="${b}" type="button">${fmt(b)}</button>`).join('')}</div>
+    <button class="btn" data-act="dice" type="button" ${can?'':'disabled'}>Бросить · ${fmt(bet)} серебра</button>`;
+  }
+  $('modal').innerHTML=`<div class="sheet tav"><div class="trow2"><h3>Таверна</h3><button class="btn small ghost" data-act="sheetx" type="button">Закрыть</button></div>
+    <div class="subtabs" style="grid-template-columns:1fr 1fr"><button class="btn small ${tab==='wheel'?'on':'ghost'}" data-act="tvtab" data-arg="wheel" type="button">Колесо фортуны</button><button class="btn small ${tab==='dice'?'on':'ghost'}" data-act="tvtab" data-arg="dice" type="button">Кости викингов</button></div>${body}</div>`;
+  $('modal').hidden=false;
+  if(wf!=null){
+    ui.tvSpin=true;ui.mseen=last.n;const d=$('wdisk'),L=last;
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{d.style.transition='transform 4.6s cubic-bezier(.12,.62,.08,1)';d.style.transform=`rotate(${wf}deg)`;}));
+    setTimeout(()=>{ui.tvSpin=false;if(ui.tvOpen&&ui.tvTab!=='dice'){tavernSheet();const r=$('wres');if(r){r.textContent='Выпало: '+L.text;r.classList.add('pop');}}},4800);
+  }
+  if(df){
+    ui.tvSpin=true;ui.mseen=df.n;const L=df,eb=$('db'),ep=$('dp');let t=0;
+    const iv=setInterval(()=>{t++;const r=()=>DF[Math.floor(Math.random()*6)];if(!$('db')){clearInterval(iv);ui.tvSpin=false;return;}eb.innerHTML=`<span class="dc roll">${r()}</span><span class="dc roll">${r()}</span>`;ep.innerHTML=`<span class="dc roll">${r()}</span><span class="dc roll">${r()}</span>`;
+      if(t>=12){clearInterval(iv);ui.tvSpin=false;if(ui.tvOpen&&ui.tvTab==='dice'){tavernSheet();$('db').innerHTML=dface(L.b);$('dp').innerHTML=dface(L.p);const r2=$('dres');r2.textContent=dres(L);r2.classList.add('pop');}}},90);
+  }
+}
 /* ---------- события ---------- */
 async function loadRank(){
   try{ui.rank=await call('GET','/api/rank');ui.rankAt=Date.now();if(ui.topOpen&&!$('modal').hidden)topSheet(true);}catch(e){}
@@ -1692,6 +1751,12 @@ function onAct(act,arg){
     case 'peek':{const p=ui.soc.prof;if(p)peekSheet(p);return;}
     case 'fgopen':ui.eqSel=null;forgeSheet();return;
     case 'eqsort':ui.eqSort=arg;forgeSheet();return;
+    case 'tavern':ui.tvTab=ui.tvTab||'wheel';ui.mseen=(Core.miniDay().last||{}).n||0;tavernSheet();return;
+    case 'tvtab':if(ui.tvSpin)return;ui.tvTab=arg;tavernSheet();return;
+    case 'dbet':if(ui.tvSpin)return;ui.dbet=+arg;tavernSheet();return;
+    case 'spin':if(ui.tvSpin)return;act2('spin');return;
+    case 'dice':if(ui.tvSpin)return;act2('dice',ui.dbet||Core.DICE_BETS[0]);return;
+    case 'gohelper':ui.tab='shop';render();return;
     case 'eqf':ui.eqF=arg;forgeSheet();return;
     case 'eqmulti':ui.eqMulti=!ui.eqMulti;ui.eqPick={};ui.eqConf=false;forgeSheet();return;
     case 'eqconf':ui.eqConf=arg==='1';forgeSheet();return;
