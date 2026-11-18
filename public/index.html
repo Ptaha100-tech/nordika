@@ -78,12 +78,12 @@ p{margin:0}
 .item:last-child{border:0}
 .item p{margin:2px 0 0}
 .price{white-space:nowrap}
-.res{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin-top:8px}
-.chip{background:var(--surface);border:1px solid var(--line);border-radius:5px;padding:6px 2px 9px;text-align:center;position:relative;min-width:0}
+.res{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin:0 0 8px}
+.chip{background:var(--surface);border:1px solid var(--line);border-radius:5px;padding:4px 1px 7px;text-align:center;position:relative;min-width:0;font:inherit}button.chip{cursor:pointer}.chip.vip small{color:var(--accent)}.chip.on{border-color:var(--accent)}
 .chip .rn{font-size:18px;display:block;line-height:1}
 .chip .lb{display:block;font-size:9px;letter-spacing:.14em;text-transform:uppercase;line-height:1.1;margin-top:2px;color:var(--muted);white-space:nowrap}
-.chip b{display:block;font:700 15px/1.2 var(--body);font-variant-numeric:tabular-nums;margin-top:3px}
-.chip small{display:block;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.chip b{display:block;font:700 12.5px/1.2 var(--body);font-variant-numeric:tabular-nums;margin-top:1px}.chip .rimg{height:18px}.chip .rimg .ri{width:18px;height:18px}
+.chip small{display:block;font-size:9.5px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
 .chip .cb{position:absolute;left:4px;right:4px;bottom:3px;height:2px;background:var(--line)}
 .chip .cb i{display:block;height:100%;background:currentColor}
 .chip.full .cb i{background:var(--blood)}
@@ -137,13 +137,14 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--frost);outline-
 .stat b{display:block;font:700 22px/1.1 var(--display);font-variant-numeric:tabular-nums}
 .stat span{font-size:12px;color:var(--muted)}
 .stepper.st5{display:grid;grid-template-columns:1fr 1fr 1.9fr 1fr 1fr;gap:4px}.stepper.st5 .btn{padding:4px 0}.stepper.st5 .tnin{width:100%}.stepper.st5 [data-act=tnmax]{grid-column:1/-1}
-.tav{max-width:420px}.wheelbox{position:relative;width:min(100%,340px);aspect-ratio:720/938;margin:6px auto 2px;background:url(/img/wheel-base.webp?v=2) center/100% 100% no-repeat;filter:drop-shadow(0 8px 10px #0008)}
-.wd1{position:absolute;left:12.95%;top:18.84%;width:69.13%;height:58.33%}
-.wd2{position:absolute;left:0;top:50%;width:100%;aspect-ratio:1;margin-top:-50%;transform:scaleY(1.0992)}
-.wd3{position:absolute;inset:0;background:url(/img/wheel-disk.webp?v=1) center/100% 100% no-repeat;border-radius:50%}
-.wl{position:absolute;width:13%;aspect-ratio:1;margin:-6.5%}.wl img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 1px 2px #000)}
+.wmenu{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}.vq.good{color:var(--ok)}.vq.warn{color:var(--accent)}.vq.bad{color:var(--blood)}
+.tav{max-width:420px}.wheelbox{position:relative;width:min(100%,340px);aspect-ratio:720/858;margin:6px auto 2px;background:url(/img/wheel-base2.webp?v=2) center/100% 100% no-repeat;filter:drop-shadow(0 8px 10px #0008)}
+.wd1{position:absolute;left:11.59%;top:16.70%;width:76.40%;height:64.11%}
+.wd2{position:absolute;inset:0}
+.wd3{position:absolute;inset:0;background:url(/img/wheel-disk2.webp?v=1) center/100% 100% no-repeat;border-radius:50%}
+.wl{position:absolute;width:10.5%;aspect-ratio:1;margin:-5.25%}.wl img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 1px 2px #000)}
 .wres{min-height:28px;text-align:center;font-weight:700;margin:6px 0 8px;color:#f6dc9a}.wres.pop{animation:wpop .5s}@keyframes wpop{0%{transform:scale(.6);opacity:0}70%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
-.dtable{display:flex;justify-content:space-around;margin:10px 0}.dtable small{display:block;text-align:center;color:var(--muted)}.drow{display:flex;gap:6px;justify-content:center}.dc{font-size:56px;line-height:1;color:#f1e6cc;text-shadow:0 2px 4px #000}.dc.roll{animation:droll .18s linear infinite}@keyframes droll{50%{transform:rotate(14deg) translateY(-4px)}}
+.dtable{display:flex;justify-content:space-around;gap:8px;margin:10px 0}.dtable small{display:block;text-align:center;color:var(--muted)}.drow{display:flex;gap:6px;justify-content:center}.dc{display:inline-block;width:min(19vw,80px);height:min(19vw,80px)}.dc img{width:100%;height:100%;display:block;filter:drop-shadow(0 0 9px #3b6bffaa) drop-shadow(0 4px 6px #000a)}.dc.roll{animation:droll .22s linear infinite}@keyframes droll{0%{transform:rotate(-10deg) translateY(0)}25%{transform:rotate(9deg) translateY(-12px) scale(1.05)}50%{transform:rotate(-6deg) translateY(2px)}75%{transform:rotate(12deg) translateY(-8px) scale(1.04)}100%{transform:rotate(-10deg) translateY(0)}}.drow.pop .dc{animation:dland .45s cubic-bezier(.2,1.4,.4,1)}@keyframes dland{0%{transform:scale(1.35) rotate(-14deg);filter:brightness(1.8)}100%{transform:none;filter:none}}
 .tnin{width:64px;text-align:center;font:700 18px var(--display);background:var(--surface2);color:var(--fg);border:1px solid var(--line);border-radius:4px;padding:6px 2px;min-width:0}
 .eqck{position:absolute;right:2px;top:0;color:#9bf09b;font-size:16px;text-shadow:0 1px 3px #000;z-index:3}.eqmulti{padding:8px;border:1px dashed #6b4a36;border-radius:6px;margin:6px 0}
 .subtabs.cht{display:flex;gap:5px;margin-bottom:6px}.subtabs.cht .btn{flex:1;min-height:30px;padding:3px 4px;font-size:12px}
@@ -409,7 +410,7 @@ canvas[data-hero]{transform-origin:50% 90%;animation:heroLife 5s ease-in-out inf
 .eqhero{overflow:hidden}
 .eqpt.full{transform-origin:50% 80%;animation:heroLife 6s ease-in-out infinite}
 @media (prefers-reduced-motion:reduce){canvas[data-u],canvas[data-hero],.eqpt.full{animation:none!important}}
-.shortc{display:flex;gap:6px;margin:0 0 8px}.shortc .btn{flex:1;font-size:14px;padding:10px 2px}
+.shortc{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:0 0 8px}.shortc .btn{height:46px;min-height:46px;white-space:nowrap;line-height:1}.uic.emo{display:inline-flex;align-items:center;justify-content:center;font-size:19px}.shortc .btn{position:relative}.shortc .dot{position:absolute;top:-3px;right:-3px;width:9px;height:9px;border-radius:50%;background:#e5655f}.shortc .btn{font-size:14px;padding:0 2px}
 
 /* карта и боссы */
 .bossart{position:relative;display:flex;justify-content:center;margin:2px 0 4px;--gl:#7fd6ff}
@@ -447,12 +448,12 @@ canvas.pic[data-b="farm"],canvas.pic[data-b="sawmill"]{animation:bldSway 6s ease
 
 <div id="app" hidden>
   <header id="head">
-    <div class="hgrid">
-      <div class="hs hl"><button class="av fr0" id="av" data-act="me" type="button" aria-label="Профиль"><img id="avi" alt="" hidden><span class="ph">ᛟ</span></button><button class="swbtn" data-act="me" type="button">Профиль</button><button class="swbtn" id="lg" data-act="tab" data-arg="log" type="button">Хроника</button></div>
-      <div class="hm"><div id="logo" class="lg" hidden><img data-l="logo" alt="Nordika: сердце фьорда"></div><h1 id="h1">Nordika</h1></div>
-      <div class="hs hr"><span class="haste" title="Руны времени: каждая сокращает любой таймер на 5 минут"><span><img class="ri hd" src="/img/ui-haste.webp?v=1" alt=""> <b id="hasteN">0</b></span><small>Ускорение</small></span><button class="gembtn" data-act="tab" data-arg="shop" aria-label="Магазин"><span><img class="ri hd" src="/img/ui-gem.webp?v=1" alt=""> <b id="gemN">0</b></span><small id="vipN">Магазин</small></button><button class="gembtn tpbtn" data-act="top" aria-label="Топ"><span><img class="uic" src="/img/ui-top.webp?v=1" alt=""></span><small>Топ</small></button><button class="swbtn" id="snd" data-act="snd" type="button" aria-label="Звук и музыка">♪</button></div>
-    </div>
     <div class="res" id="res"></div>
+    <div class="hgrid">
+      <div class="hs hl"><button class="av fr0" id="av" data-act="me" type="button" aria-label="Профиль"><img id="avi" alt="" hidden><span class="ph">ᛟ</span></button><button class="swbtn" data-act="me" type="button">Профиль</button></div>
+      <div class="hm"><div id="logo" class="lg" hidden><img data-l="logo" alt="Nordika: сердце фьорда"></div><h1 id="h1">Nordika</h1></div>
+      <div class="hs hr"><button class="swbtn" id="snd" data-act="snd" type="button" aria-label="Звук и музыка">♪</button></div>
+    </div>
     <div id="net" hidden>Нет связи с сервером</div>
     <div id="inc" class="incb" hidden></div>
   </header>
@@ -619,7 +620,7 @@ function viewCity(){
   if(!S.introDone)h+=`<section class="card"><h3>Добро пожаловать, ярл</h3>
     <p class="sm" style="margin:6px 0 10px">Стройте и улучшайте здания, пока копится добыча. Копите дружину в Казарме и ходите в походы: на разбойников, на ресурсные точки и на города других игроков. Таймеры идут и при закрытой игре. Пока вас нет, на город могут напасть, поэтому держите дома войско и стройте Хранилище.</p>
     <button class="btn" data-act="intro">Понятно</button></section>`;
-  h+=`<div class="shortc"><button class="btn" data-act="fgopen" type="button"><img class="uic s" src="/img/ui-forge.webp?v=1" alt=""> Кузница</button><button class="btn" data-act="oracle" type="button"><img class="uic s" src="/img/ui-oracle.webp?v=1" alt=""> Оракул</button><button class="btn" data-act="tavern" type="button">🎲 Таверна</button></div>`;
+  h+=`<div class="shortc"><button class="btn" data-act="fgopen" type="button"><img class="uic s" src="/img/ui-forge.webp?v=1" alt=""> Кузница</button><button class="btn" data-act="oracle" type="button"><img class="uic s" src="/img/ui-oracle.webp?v=1" alt=""> Оракул</button><button class="btn" data-act="tavern" type="button"><span class="uic s emo">🎲</span> Таверна</button></div><div class="shortc"><button class="btn" data-act="tab" data-arg="shop" type="button"><img class="uic s" src="/img/ui-gem.webp?v=1" alt=""> Магазин</button><button class="btn" data-act="top" type="button"><img class="uic s" src="/img/ui-top.webp?v=1" alt=""> Топ</button><button class="btn" id="lg" data-act="tab" data-arg="log" type="button"><span class="uic s emo">📜</span> Хроника</button></div>`;
   h+=jobsHTML('city');
   BORDER.forEach(id=>{
     const b=B[id],L=lvl(id),block=canUp(id),busyB=(S.q&&S.q.id===id)||(S.q2&&S.q2.id===id),freeQ=!S.q||(S.helper&&!S.q2);
@@ -669,7 +670,6 @@ function viewTroops(){
     }
     h+=`</div></article>`;
   });
-  h+=`<section class="card"><h2>Знания Оракула</h2><p class="sm muted">Знания открывает ярлык «Оракул» на экране города.</p><button class="btn" data-act="oracle" type="button">Открыть Оракул</button></section>`;
   return h;
 }
 function oracleHTML(){
@@ -1323,7 +1323,7 @@ function wmInfo(){
   let dist=me&&!p.me?Math.max(6,Math.round(Math.hypot(p.x-me.x,p.y-me.y)/2.6)):0;
   el.innerHTML=`<div class="trow2"><h3>${p.clan?'['+esc(p.clan)+'] ':''}${esc(p.name)}</h3><span class="pill ${p.online?'good':'mute'}">${p.online?'в игре':'не в сети'}</span></div>
   <p class="bd">Палата ярла: ${p.hall} ур.${p.me?' (это вы)':` · расстояние ${dist} лиг, в пути ${fmtT(marchSecs(dist))}`}</p>
-  ${p.me?'':`<div class="tr2"><button class="btn ghost" data-act="wprof" data-arg="${p.pid}">Профиль</button><button class="btn" data-act="wpvp">Напасть (ПВП)</button></div>`}`;
+  ${p.me?'':`<div class="wmenu"><button class="btn ghost" data-act="wprof" data-arg="${p.pid}">Профиль</button><button class="btn ghost" data-act="wdm" data-arg="${p.pid}">Написать</button><button class="btn ghost" data-act="wscout" data-arg="${p.pid}">Разведка</button><button class="btn" data-act="wpvp" data-arg="${p.pid}">Нападение</button></div>`}`;
 }
 function wmPopup(){
   let h='';const j=ui.wm&&ui.wm.j;
@@ -1523,7 +1523,8 @@ function sndCycle(){const c=Snd.cfg;if(c.music&&c.sfx){Snd.set('music',false);}e
 const NAV=[['city','ᛟ','Город'],['troops','ᛏ','Войска'],['map','ᚱ','Карта'],['quests','ᚷ','Задания'],['chat','ᛗ','Чат'],['clan','ᛉ','Клан']];
 const NAVI={city:'city',troops:'troops',map:'map',quests:'quests',chat:'chat',clan:'clan'};
 function buildStatic(){
-  $('res').innerHTML=RES.map((r,i)=>`<div class="chip" id="c-${r.id}" style="color:var(--${r.id})"><span class="rimg">${ricon(r.id)}</span><span class="lb">${r.n}</span><b id="v-${r.id}" style="color:var(--fg)">0</b><small id="r-${r.id}">+0/ч</small><div class="cb"><i id="b-${r.id}"></i></div></div>`).join('');
+  $('res').innerHTML=RES.map((r,i)=>`<div class="chip" id="c-${r.id}" style="color:var(--${r.id})"><span class="rimg">${ricon(r.id)}</span><b id="v-${r.id}" style="color:var(--fg)">0</b><small id="r-${r.id}">+0/ч</small><div class="cb"><i id="b-${r.id}"></i></div></div>`).join('');
+  $('res').insertAdjacentHTML('beforeend',`<button class="chip x" id="c-haste" data-act="tab" data-arg="shop" type="button" style="color:var(--frost)" title="Руны времени: каждая сокращает любой таймер на 5 минут"><span class="rimg"><img class="ri" src="/img/ui-haste.webp?v=1" alt=""></span><b id="hasteN" style="color:var(--fg)">0</b><small>ускор.</small></button><button class="chip x" id="c-gem" data-act="tab" data-arg="shop" type="button" style="color:#e6b3ff"><span class="rimg"><img class="ri" src="/img/ui-gem.webp?v=1" alt=""></span><b id="gemN" style="color:var(--fg)">0</b><small id="vipN">руны</small></button>`);
   $('nav').innerHTML=NAV.map((n,i)=>`<button data-act="tab" data-arg="${n[0]}" id="n-${n[0]}" aria-label="${n[2]}"><img class="nic" src="/img/ui-${NAVI[n[0]]}.webp?v=1" alt=""><span class="cap">${n[2]}</span></button>`).join('');
 }
 function render(bg){
@@ -1547,7 +1548,7 @@ function render(bg){
   showHero(ui.tab);showLogo(ui.tab==='city');
   v.scrollTop=top;
   NAV.forEach(n=>$('n-'+n[0]).classList.toggle('on',n[0]===ui.tab));
-  const gb=document.querySelector('.gembtn');if(gb)gb.classList.toggle('on',ui.tab==='shop');const lgb=$('lg');if(lgb)lgb.style.borderColor=ui.tab==='log'?'var(--accent)':'';
+  const gb=$('c-gem');if(gb)gb.classList.toggle('on',ui.tab==='shop');const lgb=$('lg');if(lgb)lgb.style.borderColor=ui.tab==='log'?'var(--accent)':'';
   live();
 }
 function live(){
@@ -1561,7 +1562,7 @@ function live(){
     $('c-'+r.id).classList.toggle('full',S.res[r.id]>=c);
   });
   $('hasteN').textContent=S.haste;$('gemN').textContent=fmt(S.gems||0);
-  {const gb=document.querySelector('.gembtn');if(gb){const v=Core.isVip();gb.classList.toggle('vip',v);$('vipN').textContent=v?'VIP':'Магазин';}}
+  {const gb=$('c-gem');if(gb){const v=Core.isVip();gb.classList.toggle('vip',v);$('vipN').textContent=v?'VIP':'руны';}}
   document.querySelectorAll('.cd[data-end]').forEach(el=>{
     const end=+el.dataset.end,dur=+el.dataset.dur,rem=(end-tn)/1000;
     el.textContent=rem<=0?'готово':fmtT(rem);
@@ -1628,7 +1629,7 @@ function openModal(tid){
     <p class="bd">${t.kind==='node'?`Отряд соберёт, сколько унесёт, и вернётся. Сбор занимает ${fmtT(gatherSecs())}.`:(t.kind==='player'?'Разведка (может устареть): ':'Защитники: ')+(fmtComp(t.comp)||'войск не видно')}</p>${loot}
     ${rows?presetsHTML():''}${rows||'<p class="note">Дома нет войск. Обучите их в Казарме.</p>'}
     <div class="pv" id="pv"></div>
-    <div class="acts"><button class="btn" id="go" data-act="go">Выступить</button><button class="btn ghost" data-act="all">Всё войско</button><button class="btn ghost" data-act="cancel">Отмена</button></div></div>`;
+    <div class="acts"><button class="btn" id="go" data-act="go">Выступить</button><button class="btn ghost" data-act="all">Всё войско</button><button class="btn ghost" data-act="half">Пополам</button><button class="btn ghost" data-act="cancel">Отмена</button></div></div>`;
   $('modal').hidden=false;modalPreview();
 }
 function presetsHTML(){
@@ -1652,11 +1653,14 @@ function modalPreview(){
     const cr=carryOf(s);$('pv').textContent=`Унесёте до ${fmt(Math.min(cr,sum(t.loot)))} ед. Туда и обратно ${fmtT(marchSecs(t.dist)*2+gatherSecs())}.`;return;
   }
   const r=battle(s,t.comp,1+0.06*S.tech.atk,t.defb);
+  const loss=tot?Math.round(sum(r.lostA)/tot*100):0;
+  const q=r.win?(loss<=10?['good','Лёгкая победа']:loss<=40?['good','Победа']:['warn','Тяжёлая победа']):(loss>=90?['bad','Разгром']:['bad','Поражение']);
+  const qh=`<b class="vq ${q[0]}">${q[1]}</b> · потери отряда ~${loss}%<br>`;
   if(t.kind==='player'){
-    $('pv').textContent=r.win?'По разведке вы побеждаете. Данные могли устареть, а щит цели сорвёт поход.':'По разведке вы проигрываете: большинство отряда не вернётся.';return;
+    $('pv').innerHTML=qh+(r.win?'По разведке вы побеждаете. Данные могли устареть, а щит цели сорвёт поход.':'По разведке вы проигрываете.');return;
   }
   const carry=carryOf(r.survA),lt=sum(t.loot);
-  $('pv').innerHTML=r.win?`Ожидается победа. Потери: ${fmtComp(r.lostA)||'нет'}.<br>Унесёте ${Math.round(Math.min(1,carry/lt)*100)}% добычи.`:`Ожидается поражение: большинство отряда не вернётся.`;
+  $('pv').innerHTML=qh+(r.win?`Потери: ${fmtComp(r.lostA)||'нет'}.<br>Унесёте ${Math.round(Math.min(1,carry/lt)*100)}% добычи.`:'Большинство отряда не вернётся.');
 }
 function bSheet(id){
   const b=B[id],cur=lvl(id);let rows='';
@@ -1685,9 +1689,9 @@ function closeModal(){ui.tvOpen=false;ui.topOpen=false;ui.eqOpen=false;ui.fgOpen
 /* ---------- таверна: колесо фортуны и кости ---------- */
 const WICO=['res-food','res-wood','res-stone','res-iron','res-silver','ui-haste','ui-forge','ui-gem'];
 const WSLOT=[0,1,2,7,3,4,5,6,0,1,5,3,2,4];
-const WCEN=[12.5,40,67.5,94,116,138,161.5,189,218,248,274.5,298.5,322,346.5];
-const DF=['⚀','⚁','⚂','⚃','⚄','⚅'];
-const dface=a=>`<span class="dc">${DF[a[0]-1]}</span><span class="dc">${DF[a[1]-1]}</span>`;
+const WCEN=Array.from({length:14},(_,i)=>12.857+i*25.714);
+const dimg=n=>`<img src="/img/die${n}.webp?v=1" alt="${n}">`;
+const dface=a=>`<span class="dc">${dimg(a[0])}</span><span class="dc">${dimg(a[1])}</span>`;
 function dres(d){const a=d.p[0]+d.p[1],b=d.b[0]+d.b[1];return d.delta>0?`Вы: ${a}, Ульф: ${b}. Победа! +${fmt(d.delta)} серебра`:d.delta<0?`Вы: ${a}, Ульф: ${b}. Проигрыш: −${fmt(-d.delta)} серебра`:`Вы: ${a}, Ульф: ${b}. Ничья, ставка вернулась`;}
 function tavernSheet(anim){
   ui.tvOpen=true;ui.eqOpen=false;ui.fgOpen=false;ui.orOpen=false;
@@ -1698,7 +1702,7 @@ function tavernSheet(anim){
     const cost=Core.wheelCost(),left=Core.WHEEL_SILVER.length-m.sp,pl=Core.WHEEL_PAID_MAX-m.ps;
     const startRot=ui.wrot||0;let rot=startRot;
     if(isNew&&last.k==='wheel'){const sl=WSLOT.map((p,j)=>p===last.i?j:-1).filter(j=>j>=0),j=sl[Math.floor(Math.random()*sl.length)];const target=-(WCEN[j]+(Math.random()-.5)*12);rot=Math.floor(startRot/360)*360+360*6+((target%360)+360)%360;ui.wrot=rot;wf=rot;}
-    const labs=WCEN.map((c,j)=>{const r=.70*50,a=c*Math.PI/180;return `<span class="wl" style="left:${(50+r*Math.sin(a)).toFixed(2)}%;top:${(50-r*Math.cos(a)).toFixed(2)}%;transform:rotate(${c}deg)"><img src="/img/${WICO[WSLOT[j]]}.webp?v=1" alt=""></span>`;}).join('');
+    const labs=WCEN.map((c,j)=>{const r=.80*50,a=c*Math.PI/180;return `<span class="wl" style="left:${(50+r*Math.sin(a)).toFixed(2)}%;top:${(50-r*Math.cos(a)).toFixed(2)}%;transform:rotate(${c}deg)"><img src="/img/${WICO[WSLOT[j]]}.webp?v=1" alt=""></span>`;}).join('');
     const can=!ui.tvSpin&&!wf&&(cost?canAfford(cost):((S.gems||0)>=Core.WHEEL_GEMS&&pl>0));
     const btn=cost?`Крутить · ${fmtRes(cost)}`:(pl>0?`Крутить · ${Core.WHEEL_GEMS} ${IG}`:'На сегодня всё');
     body=`<div class="wheelbox"><div class="wd1"><div class="wd2"><div class="wd3" id="wdisk" style="transform:rotate(${wf!=null?startRot:rot}deg)">${labs}</div></div></div></div>
@@ -1726,8 +1730,8 @@ function tavernSheet(anim){
   }
   if(df){
     ui.tvSpin=true;ui.mseen=df.n;const L=df,eb=$('db'),ep=$('dp');let t=0;
-    const iv=setInterval(()=>{t++;const r=()=>DF[Math.floor(Math.random()*6)];if(!$('db')){clearInterval(iv);ui.tvSpin=false;return;}eb.innerHTML=`<span class="dc roll">${r()}</span><span class="dc roll">${r()}</span>`;ep.innerHTML=`<span class="dc roll">${r()}</span><span class="dc roll">${r()}</span>`;
-      if(t>=12){clearInterval(iv);ui.tvSpin=false;if(ui.tvOpen&&ui.tvTab==='dice'){tavernSheet();$('db').innerHTML=dface(L.b);$('dp').innerHTML=dface(L.p);const r2=$('dres');r2.textContent=dres(L);r2.classList.add('pop');}}},90);
+    const iv=setInterval(()=>{t++;const r=()=>dimg(1+Math.floor(Math.random()*6));if(!$('db')){clearInterval(iv);ui.tvSpin=false;return;}eb.innerHTML=`<span class="dc roll">${r()}</span><span class="dc roll">${r()}</span>`;ep.innerHTML=`<span class="dc roll">${r()}</span><span class="dc roll">${r()}</span>`;
+      if(t>=12){clearInterval(iv);ui.tvSpin=false;if(ui.tvOpen&&ui.tvTab==='dice'){tavernSheet();$('db').innerHTML=dface(L.b);$('dp').innerHTML=dface(L.p);$('db').classList.add('pop');$('dp').classList.add('pop');const r2=$('dres');r2.textContent=dres(L);r2.classList.add('pop');}}},90);
   }
 }
 /* ---------- события ---------- */
@@ -1775,7 +1779,10 @@ function onAct(act,arg){
     case 'bsheet':bSheet(arg);return;
     case 'usheet':uSheet(arg);return;
     case 'sheetx':closeModal();return;
-    case 'wpvp':ui.msub='pvp';render();return;
+    case 'wpvp':act2('ptarget',arg).then(()=>{const t=S.targets.find(x=>x.kind==='player'&&x.pid===arg);closeModal();if(t)openModal(t.id);});return;
+    case 'wscout':act2('ptarget',arg).then(()=>{const t=S.targets.find(x=>x.kind==='player'&&x.pid===arg);if(!t)return;return act2('scout',t.id).then(()=>openModal(t.id));});return;
+    case 'wdm':closeModal();ui.tab='chat';ui.sub='dm';ui.soc.peer=arg;ui.soc.prof=null;ui.soc.d&&(ui.soc.d.thread=null);render();loadSoc().then(()=>stick($('dbox')));return;
+    case 'revenge':act2('revenge',arg).then(()=>{const t=S.targets.find(x=>x.kind==='player'&&x.pid===arg);if(t)openModal(t.id);});return;
     case 'sub':ui.sub=arg;ui.soc.peer=null;ui.soc.prof=null;render();loadSoc();if(arg==='clan')loadClan();return;
     case 'prof':openProf({id:arg});return;
     case 'profn':closeModal();ui.tab='chat';ui.sub='world';ui.soc.peer=null;openProf({name:arg}).then(()=>{loadSoc();});return;
@@ -1803,6 +1810,7 @@ function onAct(act,arg){
     case 'step':{const[k,d]=arg.split(':');const el=$('sn-'+k);if(el){el.value=Math.max(0,Math.min(S.troops[k],(parseInt(el.value,10)||0)+parseInt(d,10)));modalPreview();}return;}
     case 'papply':{const c=(S.presets||[])[Number(arg)];if(c){for(const k in S.troops){const el=$('sn-'+k);if(el)el.value=Math.min(S.troops[k],c[k]||0);}modalPreview();}return;}
     case 'pset':{const i=Number(arg),c=readSend();if(!sum(c)){toast('Сначала выберите войско');return;}act2('preset',{i,comp:c}).then(()=>{toast('Сохранено: Армия '+(i+1));const tid=ui.modal,sv={};for(const k in S.troops){const el=$('sn-'+k);sv[k]=el?el.value:0;}openModal(tid);for(const k in S.troops){const el=$('sn-'+k);if(el)el.value=sv[k];}modalPreview();});return;}
+    case 'half':for(const k in S.troops){const el=$('sn-'+k);if(el)el.value=Math.floor(S.troops[k]/2);}modalPreview();return;
     case 'all':for(const k in S.troops){const el=$('sn-'+k);if(el)el.value=S.troops[k];}modalPreview();return;
     case 'cancel':closeModal();return;
     case 'go':{const id=ui.modal,s=readSend(),n=S.marches.length;closeModal();ui.tab='map';act2('march',{id,send:s}).then(()=>{if(S.marches.length>n&&window.Snd)Snd.sfx('march');});return;}

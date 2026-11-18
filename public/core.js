@@ -665,6 +665,7 @@ function sendMarch(tid, send) {
   if (!tot) return false;
   for (const k in s) S.troops[k] -= s[k];
   const t = nowMs(), dur = marchSecs(tg.dist) * 1000;
+  if (tg.kind === 'player' && S.shield > t) { S.shield = 0; addLog('Вы напали на ярла. Ваш щит снят.', 'info'); toast('Щит снят: вы напали на игрока'); }
   S.marches.push({ id: 'm' + (S.mid++), tgt: JSON.parse(JSON.stringify(tg)), send: s, phase: 'out', arrive: t + dur, back: 0, loot: {}, dur });
   return true;
 }
@@ -747,21 +748,24 @@ function scout(tid) {
   toast('Разведка: данные обновлены');
   return true;
 }
+/* Добавляет живого игрока в список целей ПВП и возвращает цель. */
+function addPlayerTarget(pid) {
+  const D = HOOK.getState(pid);
+  if (!D || pid === S.pid) { toast('Ярл не найден'); return null; }
+  if (HOOK.sameClan(S.pid, pid)) { toast('Нельзя нападать на соклановца'); return null; }
+  const ex = S.targets.find(x => x.kind === 'player' && x.pid === pid);
+  if (ex) return ex;
+  settle(D, Math.max(nowMs(), D.t));
+  const t = playerTarget({ pid, name: D.name, level: D.b.hall, comp: Object.assign({}, D.troops), shield: D.shield, dist: HOOK.dist(S.pid, pid) });
+  if (S.targets.filter(x => x.kind === 'player').length >= 6) { const i = S.targets.findIndex(x => x.kind === 'player'); if (i >= 0) S.targets.splice(i, 1); }
+  S.targets.push(t);
+  return t;
+}
 /* Месть: добавляет напавшего игрока в список целей. */
 function revenge(pid) {
   const r = (S.raids || []).find(x => x.pid === pid && nowMs() - x.t < 48 * 3600000);
   if (!r) { toast('Этот набег уже забыт'); return false; }
-  const D = HOOK.getState(pid);
-  if (!D) { toast('Ярл исчез'); return false; }
-  if (HOOK.sameClan(S.pid, pid)) { toast('Нельзя мстить соклановцу'); return false; }
-  const ex = S.targets.find(x => x.kind === 'player' && x.pid === pid);
-  if (ex) { toast('Этот ярл уже в списке ПВП'); return true; }
-  settle(D, Math.max(nowMs(), D.t));
-  const t = playerTarget({ pid, name: D.name, level: D.b.hall, comp: Object.assign({}, D.troops), shield: D.shield, dist: HOOK.dist(S.pid, pid) });
-  const i = S.targets.findIndex(x => x.kind === 'jarl' || x.kind === 'player');
-  if (i >= 0 && S.targets.filter(x => x.kind === 'player').length >= 6) S.targets.splice(i, 1);
-  S.targets.push(t); toast('Цель для мести добавлена в раздел ПВП');
-  return true;
+  return !!addPlayerTarget(pid);
 }
 
 /* ============ События: серия входов и недельное состязание ============ */
@@ -889,6 +893,7 @@ function act(a, arg) {
     case 'daily': claimDaily(); break;
     case 'streak': claimStreak(); break;
     case 'scout': if (typeof arg === 'string') scout(arg); break;
+    case 'ptarget': if (typeof arg === 'string') addPlayerTarget(arg); break;
     case 'revenge': if (typeof arg === 'string') revenge(arg); break;
     case 'forge': forge(); break;
     case 'equip': if (typeof arg === 'string') equip(arg); break;
