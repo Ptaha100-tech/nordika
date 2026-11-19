@@ -127,6 +127,7 @@ module.exports = function makeAdmin(env) {
           if (n(g.haste, 1e5)) { st.haste += n(g.haste, 1e5); parts.push(n(g.haste, 1e5) + ' ускорений'); }
           for (const r of ['food', 'wood', 'stone', 'iron', 'silver']) if (n(g[r], 1e8)) { st.res[r] += n(g[r], 1e8); parts.push(n(g[r], 1e8) + ' ' + Core.RI[r].n.toLowerCase()); }
           if (n(g.vipDays, 3650)) { st.vip = Math.max(st.vip || 0, Date.now()) + n(g.vipDays, 3650) * 86400000; parts.push('VIP на ' + n(g.vipDays, 3650) + ' дн.'); }
+          for (const k of ['a', 'b']) { const d = n(g['hero' + k.toUpperCase()], 3650); if (d) { st.hst = { s: k, until: Math.max((st.hst && st.hst.until) || 0, Date.now()) + d * 86400000 }; parts.push('Hero (' + (k === 'a' ? 'Золото и руны' : 'Огонь') + ') на ' + d + ' дн.'); } }
           if (n(g.shieldH, 720)) { st.shield = Math.max(st.shield, Date.now()) + n(g.shieldH, 720) * 3600000; parts.push('щит на ' + n(g.shieldH, 720) + ' ч'); }
           if (!parts.length) return json(res, 400, { error: 'Ничего не выбрано.' });
           Core.addLogTo(st, 'Дар от администрации: ' + parts.join(', ') + '.', 'good'); markDirty(u);
