@@ -584,13 +584,13 @@ function giveMat(id, n) {
   S.mats[id] = cur + n; return true;
 }
 const MOBS = [
-  { n: 'Лесные волки',      lv: 1, silver: [30, 60],   rs: 20, drops: [['pelt', 0.55], ['fang', 0.2]] },
-  { n: 'Дикие вепри',       lv: 2, silver: [50, 100],  rs: 20, drops: [['fang', 0.5], ['bone', 0.2]] },
-  { n: 'Горные тролли',     lv: 3, silver: [80, 150],  rs: 30, drops: [['bone', 0.5], ['pelt', 0.25], ['amber', 0.15]] },
-  { n: 'Ледяные ётуны',     lv: 5, silver: [150, 260], rs: 30, drops: [['frost', 0.5], ['bone', 0.25], ['amber', 0.2]] },
-  { n: 'Огненные великаны', lv: 7, silver: [250, 400], rs: 45, drops: [['ash', 0.45], ['amber', 0.25], ['frost', 0.15]] },
-  { n: 'Морские змеи',      lv: 9, silver: [400, 650], rs: 60, drops: [['scale', 0.45], ['rune', 0.25], ['ash', 0.2]] },
-  { n: 'Дракон Нидхёгг',    lv: 12, silver: [900, 1400], rs: 60, boss: 1, drops: [['heart', 0.25], ['rune', 0.4], ['scale', 0.3]] }
+  { n: 'Лесные волки',      lv: 1, silver: [30, 60],   rs: 20, drops: [['pelt', 0.3], ['fang', 0.12]] },
+  { n: 'Дикие вепри',       lv: 2, silver: [50, 100],  rs: 20, drops: [['fang', 0.28], ['bone', 0.1]] },
+  { n: 'Горные тролли',     lv: 3, silver: [80, 150],  rs: 30, drops: [['bone', 0.25], ['pelt', 0.12], ['amber', 0.08]] },
+  { n: 'Ледяные ётуны',     lv: 5, silver: [150, 260], rs: 30, drops: [['frost', 0.22], ['bone', 0.12], ['amber', 0.1]] },
+  { n: 'Огненные великаны', lv: 7, silver: [250, 400], rs: 45, drops: [['ash', 0.2], ['amber', 0.12], ['frost', 0.08]] },
+  { n: 'Морские змеи',      lv: 9, silver: [400, 650], rs: 60, drops: [['scale', 0.2], ['rune', 0.12], ['ash', 0.1]] },
+  { n: 'Дракон Нидхёгг',    lv: 12, silver: [900, 1400], rs: 60, boss: 1, drops: [['heart', 0.12], ['rune', 0.25], ['scale', 0.2]] }
 ];
 function mobTarget(i) {
   const d = MOBS[i], n = Math.round(d.boss ? 18 * Math.pow(d.lv, 1.9) : 8 * Math.pow(d.lv, 1.8) + 3);
@@ -745,7 +745,7 @@ function resolveMarch(m) {
     m.loot = {}; for (const k in tg.loot) m.loot[k] = Math.floor(tg.loot[k] * f);
     if (tg.kind === 'mob') {
       const md = MOBS[tg.mi]; m.loot = { silver: ri(md.silver[0], md.silver[1]) }; m.mats = {};
-      md.drops.forEach(([id, p]) => { if (Math.random() < p) m.mats[id] = md.boss ? 1 : ri(1, 2); });
+      md.drops.forEach(([id, p]) => { if (Math.random() < p) m.mats[id] = 1; });
       const real = S.targets.find(x => x.id === tg.id); if (real) real.until = t + md.rs * 60000 * CFG.t;
     }
     m.send = r.survA; m.phase = 'back'; m.back = t + m.dur;

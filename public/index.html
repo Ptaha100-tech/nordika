@@ -481,7 +481,7 @@ canvas.pic[data-b="farm"],canvas.pic[data-b="sawmill"]{animation:bldSway 6s ease
 
 <script src="/core.js"></script>
 <script src="/audio.js"></script>
-<script>/*PICS*/window.PIC={};[['herop',5],['hall',6],['farm',6],['sawmill',6],['quarry',6],['ironmine',6],['storehouse',6],['vault',6],['barracks',6],['oracle',6],['silvermine',6],['plot',1],['spear',7],['archer',7],['cav',7],['hero',7]].forEach(function(a){PIC[a[0]]=[];for(var i=1;i<=a[1];i++)PIC[a[0]].push('/img/'+a[0]+i+'.webp'+(/^(spear|archer|cav)$/.test(a[0])?'?v=2':''));});</script>
+<script>/*PICS*/window.PIC={};[['herop',5],['hall',6],['farm',6],['sawmill',6],['quarry',6],['ironmine',6],['storehouse',6],['vault',6],['barracks',6],['oracle',6],['silvermine',5],['plot',1],['spear',7],['archer',7],['cav',7],['hero',7]].forEach(function(a){PIC[a[0]]=[];for(var i=1;i<=a[1];i++)PIC[a[0]].push('/img/'+a[0]+i+'.webp'+(/^(spear|archer|cav)$/.test(a[0])?'?v=2':''));});</script>
 <script src="/art.js"></script>
 <script>
 'use strict';
@@ -879,7 +879,7 @@ function huntHTML(){
     h+=`<article class="card tg mob"><div class="trow2"><span class="kind">Охота · ур. ${t.level}</span><span class="pill ${ready?v.c:'mute'}">${ready?v.t:'Вернутся через <span class="cd" data-end="'+t.until+'"></span>'}</span></div>
     <h3 style="margin-top:2px">${esc(t.name)}</h3>
     <p class="bd">Враги: ${fmtComp(t.comp)}</p>
-    <p class="bd">Награда: ${md.silver[0]}–${md.silver[1]} ${ricon('silver')} серебра. Шанс материалов: ${md.drops.map(d=>`${MATN[d[0]]} ${Math.round(d[1]*100)}%`).join(', ')}. Возврат врагов: ${md.rs} мин.</p>
+    <p class="bd">Награда: ${md.silver[0]}–${md.silver[1]} ${ricon('silver')} серебра. Каждый материал выпадает отдельно и может не выпасть вовсе. Шансы: ${md.drops.map(d=>`${MATN[d[0]]} ${Math.round(d[1]*100)}%`).join(', ')}. Возврат врагов: ${md.rs} мин.</p>
     <div class="tgb"><span class="muted sm">Путь ${fmtT(marchSecs(t.dist))} в одну сторону</span><span class="tgbtn"><button class="btn ${ready&&free>0&&sum(S.troops)?'':'off'}" data-act="atk" data-arg="${t.id}">Напасть</button></span></div></article>`;
   });
   return h;
