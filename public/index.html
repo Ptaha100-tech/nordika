@@ -347,6 +347,26 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--frost);outline-
 .eqc{display:flex;flex-direction:column;align-items:center;font-size:10px;color:#c9b48c}
 .eqs{position:relative;width:58px;height:58px;border-radius:4px;border:2px solid #7a5c36;background:radial-gradient(#2a211b,#0f0b09);box-shadow:inset 0 0 8px #000;display:flex;align-items:center;justify-content:center;padding:0;overflow:hidden;font-size:26px}
 .eqs.empty{opacity:.35;background:#e9cdbd22}
+.abt{position:fixed;inset:0;z-index:200;background:#080b14;display:flex;align-items:center;justify-content:center}
+.astage{position:relative;height:min(100dvh,calc(100vw / .5614));aspect-ratio:900/1603;max-width:100vw;background-size:100% 100%}
+.afr{position:absolute;top:2.2%;width:34%;background:#0b0f1acc;border:2px solid #c8a24a;border-radius:8px;padding:4px;text-align:center;color:#f1e2c0}
+.afr.l{left:9.5%}.afr.r{right:9.5%}.afr img{width:100%;height:clamp(80px,13dvh,130px);object-fit:cover;object-position:50% 72%;border-radius:5px;display:block}
+.afr b{display:block;font-size:11px;margin:2px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.abar{height:7px;background:#3a1a1a;border-radius:4px;overflow:hidden}.abar i{display:block;height:100%;background:linear-gradient(#6fd36a,#3a9a3a);transition:width .4s}
+.afr small{font-size:10px}
+.ahit{position:absolute;top:44%;font-weight:800;font-size:26px;color:#fff;text-shadow:0 2px 4px #000;opacity:0;pointer-events:none}
+#ahl{left:22%}#ahr{right:22%}
+.ahit.show{animation:ahit .7s ease-out}.ahit.crit{color:#ffd24a;font-size:34px}
+@keyframes ahit{0%{opacity:1;transform:translateY(10px) scale(.8)}100%{opacity:0;transform:translateY(-40px) scale(1.1)}}
+.alog{position:absolute;left:14.5%;top:84.6%;width:71%;height:9.6%;overflow:auto;color:#f1e2c0;font-size:12px;line-height:1.35}
+.askip{position:absolute;right:11%;top:.6%;font-size:11px;background:#0008;color:#f1e2c0;border:1px solid #c8a24a;border-radius:6px;padding:3px 8px}
+.ares{position:absolute;inset:0;background:#000a;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:12px;z-index:5}
+.arbox{width:min(94vw,460px);aspect-ratio:700/607;background-size:100% 100%;position:relative}
+.arbox.l{aspect-ratio:700/511}
+.artx{position:absolute;left:13%;right:13%;top:22%;bottom:13%;overflow:auto;color:#f3e6c8;font-size:12.5px;line-height:1.4;text-align:center}
+.arbox.l .artx{top:18%}
+.artx p{margin:0 0 6px}.artx .ast{font-size:11px;opacity:.85}.artx .apl{font-size:14px;color:#ffd24a}
+.arbtn{width:min(70vw,300px);aspect-ratio:480/125;background-size:100% 100%;border:0;color:#ffe9b0;font-weight:700;font-size:16px;letter-spacing:.5px;text-shadow:0 2px 3px #000}
 .mobrow{display:flex;gap:10px;align-items:center}.mobimg{width:84px;height:84px;object-fit:contain;flex:none}
 .eqs.mat .matn{font-size:8px;line-height:1.05;text-align:center;padding:2px;color:#d8c7a8;word-break:break-word}
 .eqs.r1{border-color:#b9c9da}.eqs.r2{border-color:#e8c15a;box-shadow:0 0 8px #e8c15a88}.eqs.r3{border-color:#c78bff;box-shadow:0 0 10px #c78bffaa}.eqs.sel{outline:2px solid #f2b233}
@@ -868,7 +888,7 @@ function huntHTML(){
       else if(!v.o)btn=`<button class="btn ${free>0&&sum(S.troops)?'':'off'}" data-act="atk" data-arg="mine:${id}">Занять</button>`;
       else btn=`<button class="btn ghost ${(S.res.food>=scc.food&&S.res.wood>=scc.wood)?'':'off'}" data-act="mscout" data-arg="${id}">Разведать · ${fmt(scc.food)}${ricon('food')} ${fmt(scc.wood)}${ricon('wood')}</button><button class="btn ${free>0&&sum(S.troops)?'':'off'}" data-act="atk" data-arg="mine:${id}">Отбить</button>`;
       h+=`<article class="card tg"><div class="trow2"><span class="kind">${d.n} №${+id.split('_')[1]+1}</span>${st}</div>
-      <p class="bd">Держать ${d.min>=60?d.min/60+' ч':d.min+' мин'} · награда <b>${fmt(d.silver)}</b> ${ricon('silver')} серебра · путь ${fmtT(marchSecs(d.dist))} в одну сторону</p>
+      <p class="bd">Держать ${d.min>=60?d.min/60+' ч':d.min+' мин'} · нужно не меньше <b>${Core.MINE_MIN[tg.ti]}</b> воинов · награда <b>${fmt(d.silver)}</b> ${ricon('silver')} серебра · путь ${fmtT(marchSecs(d.dist))} в одну сторону</p>
       ${sc&&v.o&&sc.name===v.o?`<p class="sm muted">Разведка (${ago(sc.t)}): ${esc(sc.name)}${sc.comp?', '+esc(sc.comp):''}</p>`:''}
       <div class="tgb"><span></span><span class="tgbtn">${btn}</span></div></article>`;
     });
@@ -1213,15 +1233,15 @@ async function loadArena(){
 let abusy=false;
 async function arenaCall(b){
   if(abusy)return;abusy=true;
-  try{const j=await call('POST','/api/arena',b);apply(j);ui.arena=j.view;if(j.fight)arenaSheet(j.fight);else render(true);}
+  try{const j=await call('POST','/api/arena',b);apply(j);ui.arena=j.view;render(true);if(j.fight)arenaSheet(j.fight);}
   catch(e){toast(e.message||'Не получилось');}
   abusy=false;
 }
 function arenaFight(id){arenaCall({a:'fight',id});}
 function arenaHTML(){
   const a=ui.arena;if(!a)return '<p class="muted sm">Загрузка…</p>';
-  const row=(r,btn)=>`<div class="item"><div><b>${r.pos}.</b> ${esc(r.name)} <span class="muted sm">· мощь ${fmt(r.power)}</span></div>${btn||''}</div>`;
-  let h=`<p class="note" style="margin:0 0 8px">Арена ярлов: бой один на один идёт сам. Удар зависит от силы, брони и крита ярла, то есть от вещей, заточки и знаний Оракула. Победа поднимает в рейтинге, поражение опускает. Соперник может быть не в игре.</p>`;
+  const row=(r,btn)=>`<div class="item"><div><b>${r.pos}.</b> ${esc(r.name)} <span class="muted sm">· мощь ${fmt(r.power)} · сила ${r.str} · здор. ${r.hp}</span></div>${btn||''}</div>`;
+  let h=`<p class="note" style="margin:0 0 8px">Арена ярлов: бой один на один идёт сам. Мощь здесь боевая: считается по силе, здоровью, броне и криту. Удар зависит от силы, брони и крита ярла, то есть от вещей, заточки и знаний Оракула. Победа поднимает в рейтинге, поражение опускает. Соперник может быть не в игре.</p>`;
   h+=`<section class="card"><h3>Лучшие ярлы</h3>${a.top.map(r=>`<div class="item" style="${r.me?'color:var(--accent,#e8c15a)':''}"><div><b>${r.pos}.</b> ${esc(r.name)}${r.me?' (вы)':''}</div><span class="muted sm">мощь ${fmt(r.power)}</span></div>`).join('')}
   ${a.pos>10?`<div class="item" style="color:var(--accent,#e8c15a)"><div><b>${a.pos}.</b> Вы</div><span class="muted sm">мощь ${fmt(a.power)}</span></div>`:''}</section>`;
   h+=`<section class="card"><div class="trow2"><h3>Ваше место: ${a.pos} из ${a.total}</h3><span class="pill ${a.left?'good':'mute'}">Боёв: ${a.left}</span></div>
@@ -1230,20 +1250,47 @@ function arenaHTML(){
   h+=`<section class="card"><h3>Соперники</h3>${a.opp.map(r=>row(r,`<button class="btn small ${a.left?'':'off'}" data-act="afight" data-arg="${r.id}" type="button">Сразиться</button>`)).join('')}</section>`;
   return h;
 }
+const arPick=a=>a[Math.floor(Math.random()*a.length)];
+function arenaStory(f){
+  const me=S.name||'Ярл',op=f.opp,L=f.log,mine=L.filter(e=>e.s==='p'),his=L.filter(e=>e.s==='o');
+  const dm=mine.reduce((a,e)=>a+e.d,0),dh=his.reduce((a,e)=>a+e.d,0),cm=mine.filter(e=>e.c).length,ch=his.filter(e=>e.c).length;
+  const last=L[L.length-1]||{hp:[0,0]},left=f.win?last.hp[0]:last.hp[1];
+  const open=arPick([`Под холодными вершинами, на каменной арене, ${me} и ${op} встали друг против друга.`,`Ветер гнал пыль по плитам арены, когда ${me} вышел на поединок с ${op}.`,`Толпа затихла: на арене ярлы ${me} и ${op} подняли оружие.`]);
+  const mid=cm?`Особенно грозно прозвучал меткий удар ${me}: он ударил так, что щит врага треснул.`:ch?`Самый страшный удар нанёс ${op}: он сбил дыхание, но не сломил волю.`:`Железо звенело о железо, искры сыпались на камни.`;
+  const end=f.win?`На ${Math.ceil(L.length/2)}-м обмене ${op} пошатнулся и рухнул в пыль. ${me} устоял, сохранив ${left} здоровья, и арена славит победителя.`:`На ${Math.ceil(L.length/2)}-м обмене ${me} не удержался на ногах. ${op} остался стоять с ${left} здоровья, но ярл ещё вернётся и отомстит.`;
+  return `${open} ${mid} ${end}`;
+}
+function arenaStats(f){const L=f.log;return `Нанесено: ${L.filter(e=>e.s==='p').reduce((a,e)=>a+e.d,0)} · получено: ${L.filter(e=>e.s==='o').reduce((a,e)=>a+e.d,0)} · критов: ${L.filter(e=>e.s==='p'&&e.c).length}`;}
 function arenaSheet(f){
-  $('modal').innerHTML=`<div class="sheet"><div class="trow2"><h3>Бой на арене</h3><button class="btn small ghost" data-act="sheetx" type="button">Закрыть</button></div>
-  <div class="dtable"><div><small>Вы</small><div class="bar"><i id="ahp" style="width:100%;transition:width .4s"></i></div><b id="ahn" class="sm">${f.hpA}</b></div><div><small>${esc(f.opp)}</small><div class="bar"><i id="aho" style="width:100%;transition:width .4s"></i></div><b id="aon" class="sm">${f.hpB}</b></div></div>
-  <div id="alog" class="sm" style="min-height:120px;max-height:200px;overflow:auto;margin:8px 0"></div>
-  <div id="ares" class="wres">&nbsp;</div></div>`;
+  const myLook=Math.min(5,Math.max(1,(ui.arena&&ui.arena.look)||S.hero.look||1)),opLook=Math.min(5,Math.max(1,f.oppLook||1));
+  const frame=(side,name,look,id)=>`<div class="afr ${side}"><img src="img/herop${look}.webp" alt=""><b>${esc(name)}</b><div class="abar"><i id="${id}" style="width:100%"></i></div><small id="${id==='ahp'?'ahpn':'aon'}"></small></div>`;
+  $('modal').innerHTML=`<div class="abt"><div class="astage" style="background-image:url(img/arena-bg.webp)">
+    ${frame('l',S.name||'Ярл',myLook,'ahp')}${frame('r',f.opp,opLook,'aho')}
+    <div class="ahit" id="ahl"></div><div class="ahit" id="ahr"></div>
+    <div class="alog" id="alog"></div>
+    <button class="askip" id="askip" type="button">Пропустить</button></div></div>`;
   $('modal').hidden=false;
-  let i=0;const lg=$('alog');
+  $('ahpn').textContent=f.hpA;$('aon').textContent=f.hpB;
+  let i=0,done=false;const lg=$('alog');
+  const finish=()=>{
+    if(done)return;done=true;clearInterval(iv);
+    const e=f.log[f.log.length-1];if(e){$('ahp').style.width=Math.max(0,e.hp[0]/f.hpA*100)+'%';$('aho').style.width=Math.max(0,e.hp[1]/f.hpB*100)+'%';$('ahpn').textContent=e.hp[0];$('aon').textContent=e.hp[1];}
+    const w=f.win,place=w?(f.to<f.from?`Вы поднялись с ${f.from} на ${f.to} место`:`Вы остались на ${f.to} месте`):`Вы опустились с ${f.from} на ${f.to} место`;
+    const r=document.createElement('div');r.className='ares';
+    r.innerHTML=`<div class="arbox ${w?'w':'l'}" style="background-image:url(img/res-${w?'win':'lose'}.webp)"><div class="artx"><p>${esc(arenaStory(f))}</p><p class="ast">${esc(arenaStats(f))}</p><p class="apl"><b>${place}</b></p><p class="ast">Награда: ${f.reward} серебра</p></div></div>
+    <button class="arbtn" id="acont" type="button" style="background-image:url(img/res-btn.webp)">Продолжить</button>`;
+    $('modal').querySelector('.abt').appendChild(r);
+    $('acont').onclick=()=>{closeModal();render(true);};
+  };
+  $('askip').onclick=finish;
   const iv=setInterval(()=>{
     if(!$('alog')){clearInterval(iv);return;}
-    if(i>=f.log.length){clearInterval(iv);const r=$('ares');r.textContent=f.win?`Победа! Место ${f.from} → ${f.to}. Награда: ${f.reward} серебра.`:`Поражение. Место ${f.from} → ${f.to}. Утешение: ${f.reward} серебра.`;r.classList.add('pop');return;}
+    if(i>=f.log.length){setTimeout(finish,500);clearInterval(iv);return;}
     const e=f.log[i++];
-    $('ahp').style.width=Math.max(0,e.hp[0]/f.hpA*100)+'%';$('aho').style.width=Math.max(0,e.hp[1]/f.hpB*100)+'%';$('ahn').textContent=e.hp[0];$('aon').textContent=e.hp[1];
-    const d=document.createElement('div');d.textContent=(e.s==='p'?'Вы бьёте: ':f.opp+' бьёт: ')+e.d+(e.c?' (крит!)':'');if(e.c)d.style.fontWeight='700';lg.appendChild(d);lg.scrollTop=lg.scrollHeight;
-  },550);
+    $('ahp').style.width=Math.max(0,e.hp[0]/f.hpA*100)+'%';$('aho').style.width=Math.max(0,e.hp[1]/f.hpB*100)+'%';$('ahpn').textContent=e.hp[0];$('aon').textContent=e.hp[1];
+    const d=document.createElement('div');d.textContent=(e.s==='p'?'Вы бьёте: ':f.opp+' бьёт: ')+e.d+(e.c?' — крит!':'');if(e.c)d.style.fontWeight='700';lg.appendChild(d);lg.scrollTop=lg.scrollHeight;
+    const h=$(e.s==='p'?'ahr':'ahl');h.textContent='-'+e.d;h.className='ahit show'+(e.c?' crit':'');h.style.animation='none';void h.offsetWidth;h.style.animation='';
+  },650);
 }
 let bbusy=false;
 async function bossHit(t){
@@ -1803,7 +1850,7 @@ function openModal(tid){
   const loot=(t.kind==='player'||t.kind==='mob')?'':`<div class="costs">${Object.keys(t.loot).map(k=>cpHTML(k,t.loot[k])).join('')}</div>`;
   $('modal').innerHTML=`<div class="sheet"><div class="trow2"><span class="kind">${KIND[t.kind]} · ур. ${t.level}</span><span class="pill ${v.c}">${v.t}</span></div>
     <h3>${esc(t.name)}</h3>
-    <p class="bd">${t.kind==='mine'?`Отряд займёт рудник на ${Core.MINEC[t.ti].min} мин и принесёт ${fmt(Core.MINEC[t.ti].silver)} серебра. Если рудник занят, придётся сражаться, силы врага лучше разведать.`:t.kind==='mob'?`Враги: ${fmtComp(t.comp)}. Награда ${Core.MOBS[t.mi].silver[0]}–${Core.MOBS[t.mi].silver[1]} серебра и шанс материалов.`:t.kind==='node'?`Отряд соберёт, сколько унесёт, и вернётся. Сбор занимает ${fmtT(gatherSecs())}.`:(t.kind==='player'?'Разведка (может устареть): ':'Защитники: ')+(fmtComp(t.comp)||'войск не видно')}</p>${loot}
+    <p class="bd">${t.kind==='mine'?`Отряд займёт рудник на ${Core.MINEC[t.ti].min} мин (нужно не меньше ${Core.MINE_MIN[t.ti]} воинов) и принесёт ${fmt(Core.MINEC[t.ti].silver)} серебра. Если рудник занят, придётся сражаться, силы врага лучше разведать.`:t.kind==='mob'?`Враги: ${fmtComp(t.comp)}. Награда ${Core.MOBS[t.mi].silver[0]}–${Core.MOBS[t.mi].silver[1]} серебра и шанс материалов.`:t.kind==='node'?`Отряд соберёт, сколько унесёт, и вернётся. Сбор занимает ${fmtT(gatherSecs())}.`:(t.kind==='player'?'Разведка (может устареть): ':'Защитники: ')+(fmtComp(t.comp)||'войск не видно')}</p>${loot}
     ${rows?presetsHTML():''}${rows||'<p class="note">Дома нет войск. Обучите их в Казарме.</p>'}
     <div class="pv" id="pv"></div>
     <div class="acts"><button class="btn" id="go" data-act="go">Выступить</button><button class="btn ghost" data-act="all">Всё войско</button><button class="btn ghost" data-act="half">Пополам</button><button class="btn ghost" data-act="cancel">Отмена</button></div></div>`;

@@ -391,12 +391,20 @@ const ARENA_FREE = 5, ARENA_BUY = 10, ARENA_MAXX = 20;
 const arenaDay = () => Math.floor((Date.now() + 3 * 3600000) / 86400000);
 const arenaAlive = id => !!ARENA.bots[id] || (users.has(id) && !users.get(id).banned);
 const arenaName = id => ARENA.bots[id] ? ARENA.bots[id].name : (users.get(id) || {}).name || '?';
-function arenaPower(id) { if (ARENA.bots[id]) return ARENA.bots[id].power; const u = users.get(id); if (!u) return 0; Core.use(u.state); return Core.jarlPower(u.state); }
-function arenaStats(id) {
-  if (!ARENA.bots[id]) { const u = users.get(id); Core.use(u.state); const j = Core.jarlStats(u.state); return { str: j.str, hp: j.hp, arm: j.arm, crt: j.crt }; }
-  const k = ARENA.bots[id].power / 411;
-  return { str: Math.round(62 * k), hp: Math.round(340 * k), arm: Math.round(6 * Math.sqrt(k) * 1.5), crt: Math.min(45, Math.round(10 + 6 * Math.sqrt(k))) };
+/* Боевая мощь считается по тем же характеристикам, что идут в бой, поэтому она честно показывает силу ярла. */
+const arenaRate = st => Math.round(2.5 * Math.sqrt(Math.max(1, st.str * st.hp * (1 + st.arm / 60) * (1 + st.crt / 200))));
+const botStatsK = k => ({ str: Math.round(62 * k), hp: Math.round(340 * k), arm: Math.round(9 * Math.sqrt(k)), crt: Math.min(45, Math.round(10 + 6 * Math.sqrt(k))) });
+function botStatsOf(R) {
+  let lo = 0.05, hi = 60;
+  for (let i = 0; i < 40; i++) { const m = (lo + hi) / 2; if (arenaRate(botStatsK(m)) < R) lo = m; else hi = m; }
+  return botStatsK((lo + hi) / 2);
 }
+function arenaStats(id) {
+  if (ARENA.bots[id]) return botStatsOf(ARENA.bots[id].power);
+  const u = users.get(id); Core.use(u.state); const j = Core.jarlStats(u.state); return { str: j.str, hp: j.hp, arm: j.arm, crt: j.crt };
+}
+function arenaPower(id) { if (ARENA.bots[id]) return ARENA.bots[id].power; if (!users.get(id)) return 0; return arenaRate(arenaStats(id)); }
+const arenaLook = id => { if (ARENA.bots[id]) return 1 + (parseInt(id.slice(2), 10) % 5); const u = users.get(id); return (u && u.state.hero && u.state.hero.look) || 1; };
 function arenaJoin(uid) {
   ARENA.order = ARENA.order.filter(arenaAlive);
   if (ARENA.order.includes(uid)) return;
@@ -419,8 +427,8 @@ function arenaPickOpp(u) {
 function arenaView(u) {
   arenaJoin(u.id); const a = arenaState(u);
   if (!a.opp || a.opp.length < Math.min(5, ARENA.order.length - 1) || a.opp.some(x => !arenaAlive(x))) a.opp = arenaPickOpp(u);
-  const row = id => ({ id, pos: ARENA.order.indexOf(id) + 1, name: arenaName(id), power: arenaPower(id) });
-  return { pos: ARENA.order.indexOf(u.id) + 1, total: ARENA.order.length, power: arenaPower(u.id), me: arenaStats(u.id), left: arenaLeft(a), free: ARENA_FREE, extra: a.extra, buy: ARENA_BUY, top: ARENA.order.slice(0, 10).map(id => Object.assign(row(id), { me: id === u.id })), opp: a.opp.map(row) };
+  const row = id => { const st = arenaStats(id); return { id, pos: ARENA.order.indexOf(id) + 1, name: arenaName(id), power: arenaPower(id), str: st.str, hp: st.hp, look: arenaLook(id) }; };
+  return { pos: ARENA.order.indexOf(u.id) + 1, total: ARENA.order.length, power: arenaPower(u.id), look: arenaLook(u.id), me: arenaStats(u.id), left: arenaLeft(a), free: ARENA_FREE, extra: a.extra, buy: ARENA_BUY, top: ARENA.order.slice(0, 10).map(id => Object.assign(row(id), { me: id === u.id })), opp: a.opp.map(row) };
 }
 function arenaSim(A, B) {
   let ha = A.hp, hb = B.hp; const log = [];
@@ -440,7 +448,8 @@ function arenaFight(u, oid) {
   arenaJoin(u.id); const a = arenaState(u);
   if (!a.opp.includes(oid) || !arenaAlive(oid)) return { error: 'Этот соперник недоступен. Обновите список.' };
   if (arenaLeft(a) <= 0) return { error: 'Бои на сегодня закончились.' };
-  const sim = arenaSim(arenaStats(u.id), arenaStats(oid));
+  const form = st => { const f = 0.92 + Math.random() * 0.16, g = 0.92 + Math.random() * 0.16; return { str: Math.max(1, Math.round(st.str * f)), hp: Math.max(1, Math.round(st.hp * g)), arm: st.arm, crt: st.crt }; };
+  const sim = arenaSim(form(arenaStats(u.id)), form(arenaStats(oid)));
   const before = ARENA.order.indexOf(u.id), op = ARENA.order.indexOf(oid), oppPower = arenaPower(oid);
   a.used++;
   let to = before;
@@ -449,7 +458,7 @@ function arenaFight(u, oid) {
   const reward = sim.win ? 60 + Math.round(oppPower * 0.15) : 10;
   Core.use(u.state); u.state.res.silver = (u.state.res.silver || 0) + reward;
   a.opp = arenaPickOpp(u); arenaDirty = true; markDirty(u);
-  return { fight: { win: sim.win, log: sim.log, hpA: sim.hpA, hpB: sim.hpB, opp: arenaName(oid), oppPower, from: before + 1, to: to + 1, reward } };
+  return { fight: { win: sim.win, log: sim.log, hpA: sim.hpA, hpB: sim.hpB, opp: arenaName(oid), oppLook: arenaLook(oid), oppStats: arenaStats(oid), oppPower, from: before + 1, to: to + 1, reward } };
 }
 function bossView(u) {
   const now = Date.now(), st = u.state, day = Core.dayId(now), bt = (st.boss && st.boss.d === day) ? st.boss : { d: day, w: 0, c: 0 };

@@ -617,7 +617,8 @@ function mineTarget(id) {
   const ti = +m[1], d = MINEC[ti];
   return { id: 'mine:' + id, kind: 'mine', mine: id, ti, name: d.n + ' №' + (+m[2] + 1), level: ti + 1, dist: d.dist, comp: {}, loot: { silver: d.silver }, defb: 1 };
 }
-const mineDur = ti => MINEC[ti].min * 60000 * CFG.t;
+const mineDur = ti => MINEC[ti].min * 60000;
+const MINE_MIN = [10, 40, 100, 250, 600];
 const mineBusy = (id, t) => { const o = HOOK.mines()[id]; return o && o.end > (t || nowMs()) ? o : null; };
 function endHold(m) {
   const ti = m.tgt.ti, d = MINEC[ti];
@@ -746,7 +747,7 @@ function resolveMarch(m) {
     if (tg.kind === 'mob') {
       const md = MOBS[tg.mi]; m.loot = { silver: ri(md.silver[0], md.silver[1]) }; m.mats = {};
       md.drops.forEach(([id, p]) => { if (Math.random() < p) m.mats[id] = 1; });
-      const real = S.targets.find(x => x.id === tg.id); if (real) real.until = t + md.rs * 60000 * CFG.t;
+      const real = S.targets.find(x => x.id === tg.id); if (real) real.until = t + md.rs * 60000;
     }
     m.send = r.survA; m.phase = 'back'; m.back = t + m.dur;
     S.stat.wins++; if (tg.kind === 'camp' || tg.kind === 'mob') S.stat.campWins++;
@@ -910,7 +911,7 @@ function sendMarch(tid, send) {
   const tg = String(tid).startsWith('mine:') ? mineTarget(String(tid).slice(5)) : S.targets.find(x => x.id === tid);
   if (!tg || S.marches.length >= slots(lvl('hall')) || !send || typeof send !== 'object') return false;
   if (tg.kind === 'mob') { const real = S.targets.find(x => x.id === tg.id); if (real && real.until > nowMs()) { toast('Враги ещё не вернулись'); return false; } if (S.marches.some(x => x.tgt && x.tgt.id === tg.id)) { toast('Отряд уже идёт на этих врагов'); return false; } }
-  if (tg.kind === 'mine') { const o = mineBusy(tg.mine); if (o && o.pid === S.pid) { toast('Этот рудник уже ваш'); return false; } if (S.marches.some(x => x.tgt && x.tgt.mine === tg.mine)) { toast('Отряд уже идёт к руднику'); return false; } }
+  if (tg.kind === 'mine') { if (sum(send) < MINE_MIN[tg.ti]) { toast(`Для этого рудника нужно не меньше ${MINE_MIN[tg.ti]} воинов`); return false; } const o = mineBusy(tg.mine); if (o && o.pid === S.pid) { toast('Этот рудник уже ваш'); return false; } if (S.marches.some(x => x.tgt && x.tgt.mine === tg.mine)) { toast('Отряд уже идёт к руднику'); return false; } }
   if (tg.kind === 'player' && HOOK.sameClan(S.pid, tg.pid)) { toast('Нельзя нападать на соклановца'); return false; }
   const s = {}; let tot = 0;
   for (const k in send) { if (!validKey(k)) continue; const v = Math.floor(Number(send[k])) || 0, x = Math.max(0, Math.min(S.troops[k] || 0, v)); if (x > 0) { s[k] = x; tot += x; } }
@@ -1180,7 +1181,7 @@ function fmtT(sec) {
 
 const API = {
   armyAtk, newItem, giveItem, SLOTS, SLOTK, LOOKS, EQS, slotType, EQ_IL, RARN, EQMAX, BAG_COST, BAG_STEP, eqCap, itemPct, itemName, forgeCost, forgeLvl, scrapOf, eqB, jarlStats, jarlPower, setBonus, jMain, affVal, plusOf, itemPower, AFN, MAXPLUS, TM, SETB,
-  REC_PRICE, SCROLLS, ENH_P, epicReq, hutCap, wnote, healCost, healSecs, MATS, MATK, STACK, bagUsed, giveMat, MOBS, MINEC, MINE_IDS, mineTarget, mineBusy, mineDur,
+  REC_PRICE, SCROLLS, ENH_P, epicReq, hutCap, wnote, healCost, healSecs, MATS, MATK, STACK, bagUsed, giveMat, MOBS, MINEC, MINE_MIN, MINE_IDS, mineTarget, mineBusy, mineDur,
   RES, RI, B, BORDER, U, WEAK, TECH, QUESTS, MAXL, TMAX, CFG, HOOK, NODE, TIERN, TIER_NEED, MAXT, HSK, MAXHL, MAXSK,
   get S() { return S; },
   use, ensure, newState, update, produce, settle, battle, act, score, verdict,
