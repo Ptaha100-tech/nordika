@@ -156,7 +156,8 @@ const EQS = ['helm', 'cloak', 'armor', 'gloves', 'pants', 'belt', 'weapon', 'amu
 const slotType = k => (k === 'ring1' || k === 'ring2') ? 'ring' : k;
 const LOOKS = ['Берсерк', 'Щитоносец', 'Копейщик', 'Секирщик', 'Элитный воин'];
 const SLOTK = Object.keys(SLOTS), RARN = ['Обычное', 'Серебряное', 'Золотое', 'Эпическое'], EQMAX = 30, EQ_IL = 0, BAG_STEP = 5, BAG_COST = [20, 30, 45, 65, 90], MAXPLUS = 10;
-const eqCap = st => EQMAX + BAG_STEP * ((st && st.eq && st.eq.bag) || 0);
+const heroOn = st => !!(st && st.hst && st.hst.until > nowMs());
+const eqCap = st => EQMAX + BAG_STEP * ((st && st.eq && st.eq.bag) || 0) + (heroOn(st) ? 5 : 0);
 /* Сила предмета: тир и заточка. Для армии и города рост мягче, для ярла (арена) круче. */
 const TM = [1, 2.2, 4.2, 8], AM = [1, 1.5, 2, 2.6];
 const plusOf = it => Math.max(0, Math.min(MAXPLUS, it.plus || 0));
@@ -303,6 +304,7 @@ function ensure(st) {
   }
   if (!st.wounded) st.wounded = {};
   if (!st.rec) st.rec = {};
+  if (st.hst && !(st.hst.s === 'a' || st.hst.s === 'b')) st.hst.s = 'a';
   if (!st.scr) st.scr = {};
   if (!st.mats) st.mats = {};
   ensureMobs(st);
@@ -353,7 +355,7 @@ function gainXp(n) {
 const lvl = id => S.b[id] || 0;
 const slots = h => 1 + (h >= 4 ? 1 : 0) + (h >= 8 ? 1 : 0) + (h >= 14 ? 1 : 0) + (h >= 20 ? 1 : 0);
 const capAt = (st, h) => Math.round(3000 + 1800 * (st - 1) * (1 + 0.1 * (st - 1)) + 300 * (h - 1));
-const isVip = () => (S.vip || 0) > nowMs();
+const isVip = () => (S.vip || 0) > nowMs() || heroOn(S);
 const cap = () => Math.round(capAt(lvl('storehouse'), lvl('hall')) * (isVip() ? 1.2 : 1));
 const ecoMul = () => (1 + 0.05 * S.tech.eco + eqB(S, 'eco')) * (isVip() ? 1.15 : 1);
 const prot = () => 300 * lvl('vault');
@@ -943,7 +945,9 @@ const SHOP = [
   { id: 'res4',     g: 'res',    t: 'Мешок припасов',  d: 'Четыре часа добычи всех ресурсов сразу.',                    gems: 25,  resH: 4 },
   { id: 'res24',    g: 'res',    t: 'Сундук припасов', d: 'Сутки добычи всех ресурсов сразу (не больше места на складе).', gems: 120, resH: 24 },
   { id: 'vip7',     g: 'vip',    t: 'VIP на 7 дней',   d: 'Добыча +15%, склад +20%, помощник строителя (вторая очередь стройки), ежедневный дар больше, метка VIP в чате.',   gems: 80,  vipD: 7 },
-  { id: 'vip30',    g: 'vip',    t: 'VIP на 30 дней',  d: 'То же самое на месяц. Выгоднее на 25%.',                     gems: 250, vipD: 30 }
+  { id: 'vip30',    g: 'vip',    t: 'VIP на 30 дней',  d: 'То же самое на месяц. Выгоднее на 25%.',                     gems: 250, vipD: 30 },
+  { id: 'hero_a',   g: 'hero',   t: 'Hero · Золото и руны', d: '30 дней. Золотой переливающийся ник и особый цвет сообщений в чате, значок HERO, рамка на арене, анонс входа в игру, все бонусы VIP, +1 бой на арене в день, +5 ячеек сумки.', gems: 400, heroS: 'a', heroD: 30 },
+  { id: 'hero_b',   g: 'hero',   t: 'Hero · Огонь',         d: '30 дней. Пылающий ник и тёплый цвет сообщений в чате, значок HERO, рамка на арене, анонс входа в игру, все бонусы VIP, +1 бой на арене в день, +5 ячеек сумки.', gems: 400, heroS: 'b', heroD: 30 }
 ];
 const DAILY_MS = 20 * 3600 * 1000;
 function dailyLeft() { return Math.max(0, (S.daily || 0) + DAILY_MS - nowMs()); }
@@ -1076,6 +1080,7 @@ function buy(id) {
   if (it.resH) { const c = cap(); for (const r of RES) { const id2 = r.id; S.res[id2] = Math.min(Math.max(c, S.res[id2]), S.res[id2] + rate(id2) * it.resH); } }
   if (it.helper) S.helper = true;
   if (it.vipD) S.vip = Math.max(S.vip || 0, t) + it.vipD * 86400000;
+  if (it.heroS) S.hst = { s: it.heroS, until: Math.max((S.hst && S.hst.until) || 0, t) + it.heroD * 86400000 };
   S.bought[id] = (S.bought[id] || 0) + 1;
   addLog(`Покупка: ${it.t}.`, 'good'); toast('Куплено: ' + it.t);
   return true;
@@ -1139,6 +1144,7 @@ function act(a, arg) {
     case 'intro': S.introDone = true; break;
     case 'bag': buyBag(); break;
     case 'heal': startHeal(); break;
+    case 'hstyle': if ((arg === 'a' || arg === 'b') && heroOn(S)) { S.hst.s = arg; toast('Стиль Hero изменён'); } break;
     case 'mbuy': buyMerchant(arg); break;
     case 'ecraft': epicCraft(arg); break;
     case 'enh': enhance(arg); break;
@@ -1181,7 +1187,7 @@ function fmtT(sec) {
 
 const API = {
   armyAtk, newItem, giveItem, SLOTS, SLOTK, LOOKS, EQS, slotType, EQ_IL, RARN, EQMAX, BAG_COST, BAG_STEP, eqCap, itemPct, itemName, forgeCost, forgeLvl, scrapOf, eqB, jarlStats, jarlPower, setBonus, jMain, affVal, plusOf, itemPower, AFN, MAXPLUS, TM, SETB,
-  REC_PRICE, SCROLLS, ENH_P, epicReq, hutCap, wnote, healCost, healSecs, MATS, MATK, STACK, bagUsed, giveMat, MOBS, MINEC, MINE_MIN, MINE_IDS, mineTarget, mineBusy, mineDur,
+  heroOn, REC_PRICE, SCROLLS, ENH_P, epicReq, hutCap, wnote, healCost, healSecs, MATS, MATK, STACK, bagUsed, giveMat, MOBS, MINEC, MINE_MIN, MINE_IDS, mineTarget, mineBusy, mineDur,
   RES, RI, B, BORDER, U, WEAK, TECH, QUESTS, MAXL, TMAX, CFG, HOOK, NODE, TIERN, TIER_NEED, MAXT, HSK, MAXHL, MAXSK,
   get S() { return S; },
   use, ensure, newState, update, produce, settle, battle, act, score, verdict,

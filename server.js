@@ -91,7 +91,8 @@ const sctx = {
   scoreOf: pid => { const u = users.get(pid); return u ? Core.score(u.state) : 0; },
   online: pid => { const u = users.get(pid); return !!(u && u.seen && Date.now() - u.seen < ONLINE_MS); },
   tagOf: pid => { const c = Clan.clanOf(cstore, pid); return c ? c.tag : ''; },
-  isVip: pid => { const u = users.get(pid); return !!(u && (u.state.vip || 0) > Date.now()); }
+  isVip: pid => { const u = users.get(pid); return !!(u && ((u.state.vip || 0) > Date.now() || heroStyle(pid))); },
+  heroOf: pid => heroStyle(pid)
 };
 const cctx = {
   imgOk, imgDrop,
@@ -387,6 +388,11 @@ setInterval(flushArena, 2000).unref();
   }
   arenaDirty = true;
 })();
+const heroStyle = pid => { const u = users.get(pid); return u && u.state.hst && u.state.hst.until > Date.now() ? u.state.hst.s : ''; };
+function heroAnnounce(u) {
+  const s = heroStyle(u.id); if (!s || (u.hann || 0) > Date.now() - 6 * 3600000) return;
+  u.hann = Date.now(); try { Social.admin.say(sstore, sctx, `Hero ${u.name} вошёл в игру`); } catch (e) {}
+}
 const ARENA_FREE = 5, ARENA_BUY = 10, ARENA_MAXX = 20;
 const arenaDay = () => Math.floor((Date.now() + 3 * 3600000) / 86400000);
 const arenaAlive = id => !!ARENA.bots[id] || (users.has(id) && !users.get(id).banned);
@@ -417,7 +423,7 @@ function arenaState(u) {
   if (a.day !== arenaDay()) { a.day = arenaDay(); a.used = 0; a.extra = 0; }
   return a;
 }
-const arenaLeft = a => Math.max(0, ARENA_FREE + a.extra - a.used);
+const arenaLeft = (a, uid) => Math.max(0, ARENA_FREE + (uid && heroStyle(uid) ? 1 : 0) + a.extra - a.used);
 function arenaPickOpp(u) {
   const me = arenaPower(u.id);
   const c = ARENA.order.filter(x => x !== u.id && arenaAlive(x)).map(x => ({ id: x, d: Math.abs(arenaPower(x) - me) })).sort((a, b) => a.d - b.d).slice(0, 8);
@@ -427,8 +433,8 @@ function arenaPickOpp(u) {
 function arenaView(u) {
   arenaJoin(u.id); const a = arenaState(u);
   if (!a.opp || a.opp.length < Math.min(5, ARENA.order.length - 1) || a.opp.some(x => !arenaAlive(x))) a.opp = arenaPickOpp(u);
-  const row = id => { const st = arenaStats(id); return { id, pos: ARENA.order.indexOf(id) + 1, name: arenaName(id), power: arenaPower(id), str: st.str, hp: st.hp, look: arenaLook(id) }; };
-  return { pos: ARENA.order.indexOf(u.id) + 1, total: ARENA.order.length, power: arenaPower(u.id), look: arenaLook(u.id), me: arenaStats(u.id), left: arenaLeft(a), free: ARENA_FREE, extra: a.extra, buy: ARENA_BUY, top: ARENA.order.slice(0, 10).map(id => Object.assign(row(id), { me: id === u.id })), opp: a.opp.map(row) };
+  const row = id => { const st = arenaStats(id); return { id, pos: ARENA.order.indexOf(id) + 1, name: arenaName(id), hs: heroStyle(id), power: arenaPower(id), str: st.str, hp: st.hp, look: arenaLook(id) }; };
+  return { pos: ARENA.order.indexOf(u.id) + 1, total: ARENA.order.length, power: arenaPower(u.id), look: arenaLook(u.id), me: arenaStats(u.id), left: arenaLeft(a, u.id), hs: heroStyle(u.id), free: ARENA_FREE + (heroStyle(u.id) ? 1 : 0), extra: a.extra, buy: ARENA_BUY, top: ARENA.order.slice(0, 10).map(id => Object.assign(row(id), { me: id === u.id })), opp: a.opp.map(row) };
 }
 function arenaSim(A, B) {
   let ha = A.hp, hb = B.hp; const log = [];
@@ -447,7 +453,7 @@ function arenaSim(A, B) {
 function arenaFight(u, oid) {
   arenaJoin(u.id); const a = arenaState(u);
   if (!a.opp.includes(oid) || !arenaAlive(oid)) return { error: 'Этот соперник недоступен. Обновите список.' };
-  if (arenaLeft(a) <= 0) return { error: 'Бои на сегодня закончились.' };
+  if (arenaLeft(a, u.id) <= 0) return { error: 'Бои на сегодня закончились.' };
   const form = st => { const f = 0.92 + Math.random() * 0.16, g = 0.92 + Math.random() * 0.16; return { str: Math.max(1, Math.round(st.str * f)), hp: Math.max(1, Math.round(st.hp * g)), arm: st.arm, crt: st.crt }; };
   const sim = arenaSim(form(arenaStats(u.id)), form(arenaStats(oid)));
   const before = ARENA.order.indexOf(u.id), op = ARENA.order.indexOf(oid), oppPower = arenaPower(oid);
@@ -457,8 +463,10 @@ function arenaFight(u, oid) {
   if (to !== before) { ARENA.order.splice(before, 1); ARENA.order.splice(to, 0, u.id); }
   const reward = sim.win ? 60 + Math.round(oppPower * 0.15) : 10;
   Core.use(u.state); u.state.res.silver = (u.state.res.silver || 0) + reward;
+  let granted = false;
+  if (sim.win && to + 1 <= 3) { const cur = u.state.hst || { s: 'a', until: 0 }; u.state.hst = { s: cur.s === 'b' ? 'b' : 'a', until: Math.max(cur.until || 0, Date.now()) + 7 * 86400000 }; granted = true; }
   a.opp = arenaPickOpp(u); arenaDirty = true; markDirty(u);
-  return { fight: { win: sim.win, log: sim.log, hpA: sim.hpA, hpB: sim.hpB, opp: arenaName(oid), oppLook: arenaLook(oid), oppStats: arenaStats(oid), oppPower, from: before + 1, to: to + 1, reward } };
+  return { fight: { granted, win: sim.win, log: sim.log, hpA: sim.hpA, hpB: sim.hpB, opp: arenaName(oid), oppLook: arenaLook(oid), oppHs: heroStyle(oid), oppStats: arenaStats(oid), oppPower, from: before + 1, to: to + 1, reward } };
 }
 function bossView(u) {
   const now = Date.now(), st = u.state, day = Core.dayId(now), bt = (st.boss && st.boss.d === day) ? st.boss : { d: day, w: 0, c: 0 };
@@ -721,7 +729,7 @@ let rankCache = { at: 0, list: [] };
 function ranking() {
   if (Date.now() - rankCache.at < 3000) return rankCache.list;
   const list = [];
-  for (const u of users.values()) list.push({ id: u.id, name: u.name, hall: u.state.b.hall, score: Core.score(u.state), tag: sctx.tagOf(u.id) });
+  for (const u of users.values()) list.push({ id: u.id, name: u.name, hall: u.state.b.hall, score: Core.score(u.state), tag: sctx.tagOf(u.id), hs: heroStyle(u.id) });
   list.sort((a, b) => b.score - a.score);
   rankCache = { at: Date.now(), list };
   return list;
@@ -784,6 +792,7 @@ async function api(req, res, url) {
   };
   if (req.method === 'GET' && url === '/api/state') {
     touchState(u);
+    heroAnnounce(u);
     return json(res, 200, { state: u.state, cfg: { t: Core.CFG.t }, now: Date.now(), inc: incomingOf(u.id), mines: mineView(u.id) });
   }
   if (req.method === 'POST' && url === '/api/act') {
@@ -799,7 +808,7 @@ async function api(req, res, url) {
   if (req.method === 'GET' && url === '/api/rank') {
     const list = ranking();
     const idx = list.findIndex(x => x.id === u.id);
-    return json(res, 200, { clans: Clan.view(cstore, cctx, u.id).list.slice(0, 10), top: list.slice(0, 30).map(x => ({ name: x.name, hall: x.hall, score: x.score, tag: x.tag, me: x.id === u.id })), me: idx + 1, total: list.length, my: idx >= 0 ? list[idx].score : 0 });
+    return json(res, 200, { clans: Clan.view(cstore, cctx, u.id).list.slice(0, 10), top: list.slice(0, 30).map(x => ({ name: x.name, hall: x.hall, score: x.score, tag: x.tag, hs: x.hs, me: x.id === u.id })), me: idx + 1, total: list.length, my: idx >= 0 ? list[idx].score : 0 });
   }
   if (req.method === 'GET' && url === '/api/clan') {
     const v = Clan.view(cstore, cctx, u.id);
@@ -938,7 +947,7 @@ async function api(req, res, url) {
     return json(res, 200, { pid: id, name: t.name, hall: t.state.b.hall, score: Core.score(t.state), rank: idx + 1, total: list.length,
       clan: c ? { tag: c.tag, name: c.name } : null, online: sctx.online(id), seen: (t.seen || 0), av: t.avatar || '', fr: t.frame || 0, me: id === u.id,
       hero: ((t.state.hero && t.state.hero.lv) || 1), look: ((t.state.hero && t.state.hero.look) || 1), eq: Object.fromEntries(Object.entries((t.state.eq && t.state.eq.s) || {}).filter(([, it]) => it).map(([k, it]) => [k, { slot: it.slot, r: it.r, plus: it.plus || 0, af: it.af || null }])), power: Core.jarlPower(t.state), stat: { wins: t.state.stat.wins || 0, pvpWins: t.state.stat.pvpWins || 0, campWins: t.state.stat.campWins || 0, defWins: t.state.stat.defWins || 0, trained: t.state.stat.trained || 0 },
-      friend: (sstore.friends[u.id] || []).includes(id), blocked: (sstore.blocks[u.id] || []).includes(id) });
+      hs: heroStyle(id), friend: (sstore.friends[u.id] || []).includes(id), blocked: (sstore.blocks[u.id] || []).includes(id) });
   }
   if (req.method === 'POST' && url === '/api/logout') {
     const h = (req.headers['authorization'] || '').slice(7);

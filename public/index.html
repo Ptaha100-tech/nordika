@@ -368,6 +368,22 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--frost);outline-
 .artx p{margin:0 0 6px}.artx .ast{font-size:11px;opacity:.85}.artx .apl{font-size:14px;color:#ffd24a}
 .arbtn{width:min(70vw,300px);aspect-ratio:480/125;background-size:100% 100%;border:0;color:#ffe9b0;font-weight:700;font-size:16px;letter-spacing:.5px;text-shadow:0 2px 3px #000}
 .vipt{display:inline-block;font-size:9px;font-weight:800;letter-spacing:.5px;color:#2a1a00;background:linear-gradient(#ffe08a,#d9a63a);border-radius:4px;padding:0 4px;line-height:14px;vertical-align:1px}
+/* Hero */
+.herot{display:inline-block;font-size:9px;font-weight:900;letter-spacing:1px;color:#2a1000;background:linear-gradient(90deg,#ffd24a,#ff9a3c);border-radius:4px;padding:0 5px;line-height:14px;box-shadow:0 0 8px #ffb84a;vertical-align:1px}
+.hnm.hs-a{font-weight:800;background:linear-gradient(90deg,#ffe58a,#fff,#c78bff,#ffe58a);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:hshine 3s linear infinite;filter:drop-shadow(0 0 4px #ffd24a)}
+.hnm.hs-b{font-weight:800;color:#ffb347;text-shadow:0 0 6px #ff5a1f,0 0 14px #ff3a00;animation:hflick 1.8s ease-in-out infinite}
+.cbox .m.hs-a .mh b,.cbox .m.hs-b .mh b{color:inherit}
+.cbox .m.hs-a .cav{border-color:#ffd24a;box-shadow:0 0 10px #ffd24a,0 0 22px #9b5cff88;animation:hpulse 2.2s ease-in-out infinite}
+.cbox .m.hs-a .mb{background:linear-gradient(135deg,#3a2a12,#2c1f3a);border-color:#ffd24a99;box-shadow:0 0 12px #ffd24a33,inset 0 0 12px #9b5cff22}
+.cbox .m.hs-a .mt{color:#fff2c2}
+.cbox .m.hs-b .cav{border-color:#ff7a3c;box-shadow:0 0 12px #ff5a1f,0 0 24px #ff5a1f55;animation:hpulse 1.6s ease-in-out infinite}
+.cbox .m.hs-b .mb{background:#2a1510;border-color:#ff7a3c88;box-shadow:0 0 10px #ff5a1f33}
+.cbox .m.hs-b .mt{color:#ffd9b0}
+.cbox .m.hs-b .herot{background:linear-gradient(90deg,#ff7a3c,#ff3a00);color:#fff}
+.afr.hs-a{border-color:#ffd24a;box-shadow:0 0 14px #ffd24a,0 0 26px #9b5cff88}
+.afr.hs-b{border-color:#ff7a3c;box-shadow:0 0 14px #ff5a1f,0 0 26px #ff5a1f66}
+.hprev{margin:6px 0 4px}.hprev .m{display:flex;gap:8px;margin:7px 0}
+@keyframes hshine{to{background-position:-200% 0}}@keyframes hpulse{50%{filter:brightness(1.35)}}@keyframes hflick{50%{text-shadow:0 0 3px #ff5a1f,0 0 8px #ff3a00;opacity:.9}}
 .mobrow{display:flex;gap:10px;align-items:center}.mobimg{width:84px;height:84px;object-fit:contain;flex:none}
 .eqs.mat .matn{font-size:8px;line-height:1.05;text-align:center;padding:2px;color:#d8c7a8;word-break:break-word}
 .eqs.r1{border-color:#b9c9da}.eqs.r2{border-color:#e8c15a;box-shadow:0 0 8px #e8c15a88}.eqs.r3{border-color:#c78bff;box-shadow:0 0 10px #c78bffaa}.eqs.sel{outline:2px solid #f2b233}
@@ -1108,7 +1124,7 @@ async function cact(a,p){
 
 /* ---------- магазин ---------- */
 const TG_CONTACT='AlexAmbrela';   // имя в Телеграме для связи, без @
-const SHOPG={build:'Стройка',haste:'Ускорения',shield:'Щиты от набегов',res:'Припасы',vip:'VIP'};
+const SHOPG={build:'Стройка',haste:'Ускорения',shield:'Щиты от набегов',res:'Припасы',vip:'VIP',hero:'Hero'};
 function viewShop(){
   const vip=Core.isVip(),left=Math.max(0,(S.vip||0)-Core.now());
   const dl=Core.dailyLeft();
@@ -1120,7 +1136,8 @@ function viewShop(){
   h+=`<section class="card"><h2>Пополнить рунные камни</h2>`+(pk&&pk.enabled&&pk.packs.length?pk.packs.map(x=>`<div class="item"><div><b>${IG} ${x.gems}${x.bonus?` <span class="muted sm">+${x.bonus} в подарок</span>`:''}</b></div><button class="btn small" data-act="pay" data-arg="${x.id}">${x.rub} ₽</button></div>`).join(''):`<p class="sm">Донат временно происходит через администратора.${TG_CONTACT?` Напишите нам в Телеграм: <a href="https://t.me/${TG_CONTACT}" target="_blank" rel="noopener" style="color:var(--accent)">@${TG_CONTACT}</a>`:' Контакт для связи скоро появится.'}</p><p class="muted sm">Рунные камни также можно получать каждый день и за задания.</p>`)+`</section>`;
   const groups={};Core.SHOP.forEach(i=>{(groups[i.g]||(groups[i.g]=[])).push(i);});
   for(const g in groups){
-    h+=`<section class="card"><h2>${SHOPG[g]}</h2>${groups[g].map(i=>`<div class="item"><div><b>${esc(i.t)}</b><p class="sm muted">${esc(i.d)}</p></div>${i.once&&S.bought&&S.bought[i.id]?'<span class="lv" style="color:#7fd67f">Куплено</span>':`<button class="btn small price ${S.gems>=i.gems?'':'off'}" data-act="buy" data-arg="${i.id}">${IG} ${i.gems}</button>`}</div>`).join('')}</section>`;
+    const hh=g==='hero'?`<p class="sm muted">${Core.heroOn(S)?`Hero активен ещё ${Math.ceil((S.hst.until-Core.now())/86400000)} дн. Стиль: <button class="btn small ${S.hst.s==='a'?'on':'ghost'}" data-act="hstyle" data-arg="a">Золото</button> <button class="btn small ${S.hst.s==='b'?'on':'ghost'}" data-act="hstyle" data-arg="b">Огонь</button>`:'Hero не активен. Также Hero на 7 дней дают за выход в тройку лучших на арене.'}</p><div class="hprev"><div class="m hs-a"><span class="cav"><i>Р</i></span><div class="mb"><div class="mh"><b class="nmb"><span class="herot">HERO</span> <span class="hnm hs-a">Рагнар</span></b></div><div class="mt">Золото и руны</div></div></div><div class="m hs-b"><span class="cav"><i>Р</i></span><div class="mb"><div class="mh"><b class="nmb"><span class="herot">HERO</span> <span class="hnm hs-b">Рагнар</span></b></div><div class="mt">Огонь</div></div></div></div>`:'';
+    h+=`<section class="card cbox"><h2>${SHOPG[g]}</h2>${hh}${groups[g].map(i=>`<div class="item"><div><b>${esc(i.t)}</b><p class="sm muted">${esc(i.d)}</p></div>${i.once&&S.bought&&S.bought[i.id]?'<span class="lv" style="color:#7fd67f">Куплено</span>':`<button class="btn small price ${S.gems>=i.gems?'':'off'}" data-act="buy" data-arg="${i.id}">${IG} ${i.gems}</button>`}</div>`).join('')}</section>`;
   }
   return h;
 }
@@ -1131,15 +1148,17 @@ ui.sub='world';ui.soc={d:null,peer:null,prof:null,at:0};
 let sbusy=false;
 const stick=b=>{if(b)b.scrollTop=b.scrollHeight;};
 const avH=(pid,name)=>{const h=parseInt(String(pid).slice(0,3),16)%360;return `<span class="cav" style="--h:${h}" data-act="prof" data-arg="${pid}"><i>${esc(String(name||'?').trim().charAt(0).toUpperCase())}</i><img src="/api/av/${pid}" alt="" decoding="async" onerror="this.remove()"></span>`;};
+const hnH=(name,hs)=>hs?`<span class="hnm hs-${hs}">${esc(name)}</span>`:esc(name);
+const heroB=hs=>hs?'<span class="herot">HERO</span> ':'';
 const msgH=(pid,name,tag,t,text,o)=>{o=o||{};const key=o.ch?o.ch+':'+o.id:'';
   const ctl=o.id?`${o.me?`<button class="rpl" data-act="medit" data-arg="${key}" aria-label="Изменить">✎</button><button class="rpl ${ui.delc===key?'dq':''}" data-act="mdel" data-arg="${key}" aria-label="Удалить">${ui.delc===key?'Удалить?':'🗑'}</button>`:''}<button class="rpl" data-act="reply" data-arg="${key}" aria-label="Ответить">↩</button>`:'';
-  return `<div class="m ${o.me?'me':''} ${o.ment?'ment':''}">${avH(pid,name)}<div class="mb"><div class="mh">${tag?`<span class="tag4">${esc(tag)}</span>`:''}<b class="nmb" data-act="prof" data-arg="${pid}">${o.vip?'<span class="vipt">VIP</span> ':''}${esc(name)}</b><time>${hhmm(t)}${o.ed?' · изм.':''}</time>${ctl}</div>${o.rp?`<div class="mq"><b>${esc(o.rp.n)}</b> ${esc(o.rp.x)}</div>`:''}${text?`<div class="mt">${esc(text)}</div>`:''}${o.img?`<img class="mimg" src="/ci/${o.img}" data-act="zoom" data-arg="${o.img}" loading="lazy" alt="Фото">`:''}</div></div>`;};
+  return `<div class="m ${o.me?'me':''} ${o.ment?'ment':''} ${o.hs?'hs-'+o.hs:''}">${avH(pid,name)}<div class="mb"><div class="mh">${tag?`<span class="tag4">${esc(tag)}</span>`:''}<b class="nmb" data-act="prof" data-arg="${pid}">${o.hs?heroB(o.hs):o.vip?'<span class="vipt">VIP</span> ':''}${hnH(name,o.hs)}</b><time>${hhmm(t)}${o.ed?' · изм.':''}</time>${ctl}</div>${o.rp?`<div class="mq"><b>${esc(o.rp.n)}</b> ${esc(o.rp.x)}</div>`:''}${text?`<div class="mt">${esc(text)}</div>`:''}${o.img?`<img class="mimg" src="/ci/${o.img}" data-act="zoom" data-arg="${o.img}" loading="lazy" alt="Фото">`:''}</div></div>`;};
 const MX=m=>({id:m.id,rp:m.rp,img:m.img,ed:m.ed});
 const barHTML=ch=>{const r=ui.rp&&ui.rp.ch===ch?ui.rp:null,e=ui.ed&&ui.ed.ch===ch?ui.ed:null;return r?`<div class="cbar"><span>↩ <b>${esc(r.name)}</b>: ${esc(r.x)}</span><button class="rpl" data-act="rpx" type="button" aria-label="Отмена">✕</button></div>`:e?`<div class="cbar"><span>✎ Изменение сообщения</span><button class="rpl" data-act="rpx" type="button" aria-label="Отмена">✕</button></div>`:'';};
 const rowHTML=(ch,id,ph,act)=>`${barHTML(ch)}<div class="crow"><button class="btn small ghost" data-act="photo" data-arg="${ch}" type="button" aria-label="Фото">📷</button><input id="${id}" data-keep maxlength="200" placeholder="${ph}" autocomplete="off" enterkeyhint="send"><button class="btn small" data-act="${act}">${ui.ed&&ui.ed.ch===ch?'Сохранить':'Отправить'}</button></div>`;
 function worldHTML(d){
   if(!d.world.length)return '<p class="cs">В общем чате пока тихо. Напишите первым.</p>';
-  return d.world.map(m=>m.sys?`<p class="cs">📜 ${esc(m.text)}</p>`:msgH(m.pid,m.name,m.tag,m.t,m.text,{...MX(m),ch:'w',me:m.pid===d.me,vip:m.vip,ment:!!(S&&m.text&&m.text.toLowerCase().includes(S.name.toLowerCase())&&m.pid!==d.me)})).join('');
+  return d.world.map(m=>m.sys?`<p class="cs">📜 ${esc(m.text)}</p>`:msgH(m.pid,m.name,m.tag,m.t,m.text,{...MX(m),ch:'w',me:m.pid===d.me,vip:m.vip,hs:m.hs,ment:!!(S&&m.text&&m.text.toLowerCase().includes(S.name.toLowerCase())&&m.pid!==d.me)})).join('');
 }
 function dmHTML(t,me){
   if(!t.msgs.length)return '<p class="cs">Переписка пуста. Напишите первым.</p>';
@@ -1241,9 +1260,9 @@ async function arenaCall(b){
 function arenaFight(id){arenaCall({a:'fight',id});}
 function arenaHTML(){
   const a=ui.arena;if(!a)return '<p class="muted sm">Загрузка…</p>';
-  const row=(r,btn)=>`<div class="item"><div><b>${r.pos}.</b> ${esc(r.name)} <span class="muted sm">· мощь ${fmt(r.power)} · сила ${r.str} · здор. ${r.hp}</span></div>${btn||''}</div>`;
+  const row=(r,btn)=>`<div class="item"><div><b>${r.pos}.</b> ${heroB(r.hs)}${hnH(r.name,r.hs)} <span class="muted sm">· мощь ${fmt(r.power)} · сила ${r.str} · здор. ${r.hp}</span></div>${btn||''}</div>`;
   let h=`<p class="note" style="margin:0 0 8px">Арена ярлов: бой один на один идёт сам. Мощь здесь боевая: считается по силе, здоровью, броне и криту. Удар зависит от силы, брони и крита ярла, то есть от вещей, заточки и знаний Оракула. Победа поднимает в рейтинге, поражение опускает. Соперник может быть не в игре.</p>`;
-  h+=`<section class="card"><h3>Лучшие ярлы</h3>${a.top.map(r=>`<div class="item" style="${r.me?'color:var(--accent,#e8c15a)':''}"><div><b>${r.pos}.</b> ${esc(r.name)}${r.me?' (вы)':''}</div><span class="muted sm">мощь ${fmt(r.power)}</span></div>`).join('')}
+  h+=`<section class="card"><h3>Лучшие ярлы</h3>${a.top.map(r=>`<div class="item" style="${r.me?'color:var(--accent,#e8c15a)':''}"><div><b>${r.pos}.</b> ${heroB(r.hs)}${hnH(r.name,r.hs)}${r.me?' (вы)':''}</div><span class="muted sm">мощь ${fmt(r.power)}</span></div>`).join('')}
   ${a.pos>10?`<div class="item" style="color:var(--accent,#e8c15a)"><div><b>${a.pos}.</b> Вы</div><span class="muted sm">мощь ${fmt(a.power)}</span></div>`:''}</section>`;
   h+=`<section class="card"><div class="trow2"><h3>Ваше место: ${a.pos} из ${a.total}</h3><span class="pill ${a.left?'good':'mute'}">Боёв: ${a.left}</span></div>
   <p class="sm muted">Ваша мощь ${fmt(a.power)} · сила ${a.me.str} · здоровье ${a.me.hp} · броня ${a.me.arm} · крит ${a.me.crt}%. Бесплатно ${a.free} боёв в день.</p>
@@ -1264,9 +1283,9 @@ function arenaStory(f){
 function arenaStats(f){const L=f.log;return `Нанесено: ${L.filter(e=>e.s==='p').reduce((a,e)=>a+e.d,0)} · получено: ${L.filter(e=>e.s==='o').reduce((a,e)=>a+e.d,0)} · критов: ${L.filter(e=>e.s==='p'&&e.c).length}`;}
 function arenaSheet(f){
   const myLook=Math.min(5,Math.max(1,(ui.arena&&ui.arena.look)||S.hero.look||1)),opLook=Math.min(5,Math.max(1,f.oppLook||1));
-  const frame=(side,name,look,id)=>`<div class="afr ${side}"><img src="img/herop${look}.webp" alt=""><b>${esc(name)}</b><div class="abar"><i id="${id}" style="width:100%"></i></div><small id="${id==='ahp'?'ahpn':'aon'}"></small></div>`;
+  const frame=(side,name,look,id,hs)=>`<div class="afr ${side} ${hs?'hs-'+hs:''}"><img src="img/herop${look}.webp" alt=""><b>${esc(name)}</b><div class="abar"><i id="${id}" style="width:100%"></i></div><small id="${id==='ahp'?'ahpn':'aon'}"></small></div>`;
   $('modal').innerHTML=`<div class="abt"><div class="astage" style="background-image:url(img/arena-bg.webp)">
-    ${frame('l',S.name||'Ярл',myLook,'ahp')}${frame('r',f.opp,opLook,'aho')}
+    ${frame('l',S.name||'Ярл',myLook,'ahp',S.hst&&Core.heroOn(S)?S.hst.s:'')}${frame('r',f.opp,opLook,'aho',f.oppHs||'')}
     <div class="ahit" id="ahl"></div><div class="ahit" id="ahr"></div>
     <div class="alog" id="alog"></div>
     <button class="askip" id="askip" type="button">Пропустить</button></div></div>`;
@@ -1495,7 +1514,7 @@ function topSheet(keep){
   let body;
   if(!ui.rank&&sub!=='season')body='<p class="muted sm">Загрузка…</p>';
   else if(sub==='jarls'){
-    body=ui.rank.top.map((x,i)=>`<div class="rk ${x.me?'me':''}"><span class="n">${i+1}</span><span class="nm" data-act="profn" data-arg="${esc(x.name)}" style="cursor:pointer">${x.tag?`<span class="tag4">${esc(x.tag)}</span>`:''}${esc(x.name)}</span><span>Палата ${x.hall}</span><span>${fmt(x.score)}</span></div>`).join('');
+    body=ui.rank.top.map((x,i)=>`<div class="rk ${x.me?'me':''}"><span class="n">${i+1}</span><span class="nm" data-act="profn" data-arg="${esc(x.name)}" style="cursor:pointer">${x.tag?`<span class="tag4">${esc(x.tag)}</span>`:''}${heroB(x.hs)}${hnH(x.name,x.hs)}</span><span>Палата ${x.hall}</span><span>${fmt(x.score)}</span></div>`).join('');
     if(ui.rank.me>30)body+=`<div class="rk me"><span class="n">${ui.rank.me}</span><span class="nm">${esc(S.name)}</span><span></span><span>${fmt(ui.rank.my)}</span></div>`;
   }else if(sub==='clans'){
     body=(ui.rank.clans&&ui.rank.clans.length)?ui.rank.clans.map((c,i)=>`<div class="rk"><span class="n">${i+1}</span><span class="nm"><span class="tag4">${esc(c.tag)}</span>${esc(c.name)}</span><span>${c.count} игр.</span><span>${fmt(c.power)}</span></div>`).join(''):'<p class="muted sm">Кланов пока нет.</p>';
@@ -1546,7 +1565,7 @@ function wmInfo(){
   if(!j){el.innerHTML='<p class="muted sm">Загружаю карту…</p>';return;}
   if(!p){el.innerHTML=`<p class="muted sm">Ярлов на карте: ${j.total}. Нажмите на город, лагерь или точку добычи, чтобы узнать подробности.</p>`;return;}
   let dist=me&&!p.me?Math.max(6,Math.round(Math.hypot(p.x-me.x,p.y-me.y)/2.6)):0;
-  el.innerHTML=`<div class="trow2"><h3>${p.clan?'['+esc(p.clan)+'] ':''}${esc(p.name)}</h3><span class="pill ${p.online?'good':'mute'}">${p.online?'в игре':'не в сети'}</span></div>
+  el.innerHTML=`<div class="trow2"><h3>${p.clan?'['+esc(p.clan)+'] ':''}${heroB(p.hs)}${hnH(p.name,p.hs)}</h3><span class="pill ${p.online?'good':'mute'}">${p.online?'в игре':'не в сети'}</span></div>
   <p class="bd">Палата ярла: ${p.hall} ур.${p.me?' (это вы)':` · расстояние ${dist} лиг, в пути ${fmtT(marchSecs(dist))}`}</p>
   ${p.me?'':`<div class="wmenu"><button class="btn ghost" data-act="wprof" data-arg="${p.pid}">Профиль</button><button class="btn ghost" data-act="wdm" data-arg="${p.pid}">Написать</button><button class="btn ghost" data-act="wscout" data-arg="${p.pid}">Разведка</button><button class="btn" data-act="wpvp" data-arg="${p.pid}">Нападение</button></div>`}`;
 }
@@ -1979,6 +1998,7 @@ function onAct(act,arg){
     case 'tutskip':try{localStorage.setItem(tutKey(),'1');}catch(e){}render();return;
     case 'tab':ui.tab=arg;if(arg==='shop')loadShop();if(arg==='top'){loadSeason();if(Date.now()-ui.rankAt>20000)loadRank();}if(arg==='clan')loadClan();if(arg==='quests'){loadEvents();loadInvite();}if(arg==='chat')loadSoc();render();return;
     case 'pay':toast('Оплата пока не подключена');return;
+    case 'hstyle':act2('hstyle',arg);return;
     case 'hsub':ui.hsub=arg;render();return;
     case 'heal':act2('heal');return;
     case 'mscout':act2('mscout',arg);return;

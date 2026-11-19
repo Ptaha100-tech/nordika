@@ -102,7 +102,7 @@ function act(st, ctx, pid, a, p) {
     case 'wsay': {
       const img = okImg(ctx, p.img);
       const r = prep(st, ctx, pid, p.text, 2000, img); if (r.error != null) return r;
-      const m = { id: newId(n), t: n, pid, name: ctx.nameOf(pid), tag: ctx.tagOf(pid) || '', vip: !!(ctx.isVip && ctx.isVip(pid)), text: r.text };
+      const m = { id: newId(n), t: n, pid, name: ctx.nameOf(pid), tag: ctx.tagOf(pid) || '', vip: !!(ctx.isVip && ctx.isVip(pid)), hs: (ctx.heroOf && ctx.heroOf(pid)) || '', text: r.text };
       if (img) m.img = img;
       const q = p.rp && st.world.find(x => x.id === String(p.rp)); if (q) m.rp = snip(q);
       st.world.push(m);
