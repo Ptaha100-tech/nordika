@@ -909,7 +909,7 @@ function freeFinish(kind) { const o = jobObj(kind); if (!o) return; if (o.end - 
 function sendMarch(tid, send) {
   const tg = String(tid).startsWith('mine:') ? mineTarget(String(tid).slice(5)) : S.targets.find(x => x.id === tid);
   if (!tg || S.marches.length >= slots(lvl('hall')) || !send || typeof send !== 'object') return false;
-  if (tg.kind === 'mob') { const real = S.targets.find(x => x.id === tg.id); if (real && real.until > nowMs()) { toast('Враги ещё не вернулись'); return false; } }
+  if (tg.kind === 'mob') { const real = S.targets.find(x => x.id === tg.id); if (real && real.until > nowMs()) { toast('Враги ещё не вернулись'); return false; } if (S.marches.some(x => x.tgt && x.tgt.id === tg.id)) { toast('Отряд уже идёт на этих врагов'); return false; } }
   if (tg.kind === 'mine') { const o = mineBusy(tg.mine); if (o && o.pid === S.pid) { toast('Этот рудник уже ваш'); return false; } if (S.marches.some(x => x.tgt && x.tgt.mine === tg.mine)) { toast('Отряд уже идёт к руднику'); return false; } }
   if (tg.kind === 'player' && HOOK.sameClan(S.pid, tg.pid)) { toast('Нельзя нападать на соклановца'); return false; }
   const s = {}; let tot = 0;
