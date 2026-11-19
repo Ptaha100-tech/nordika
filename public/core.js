@@ -593,7 +593,7 @@ const MOBS = [
   { n: 'Дракон Нидхёгг',    lv: 12, silver: [900, 1400], rs: 60, boss: 1, drops: [['heart', 0.25], ['rune', 0.4], ['scale', 0.3]] }
 ];
 function mobTarget(i) {
-  const d = MOBS[i], n = Math.round((d.boss ? 3.2 : 5) * Math.pow(d.lv, 1.5) + 3);
+  const d = MOBS[i], n = Math.round(d.boss ? 18 * Math.pow(d.lv, 1.9) : 8 * Math.pow(d.lv, 1.8) + 3);
   const keys = shuffle(Object.keys(U)).slice(0, 2);
   return { id: 'mob' + i, kind: 'mob', mi: i, name: d.n, level: d.lv, comp: botComp(randComp(n, keys), d.lv), loot: {}, defb: 1, dist: 6 + 2 * i, until: 0 };
 }
@@ -604,11 +604,11 @@ function ensureMobs(st) {
   try { MOBS.forEach((d, i) => { if (!st.targets.some(t => t.id === 'mob' + i)) st.targets.push(mobTarget(i)); }); } finally { S = keepS; }
 }
 const MINEC = [
-  { n: 'Малая жила',        min: 15,  silver: 600,   dist: 9 },
-  { n: 'Медная копь',       min: 30,  silver: 1400,  dist: 13 },
-  { n: 'Серебряная копь',   min: 60,  silver: 3200,  dist: 17 },
-  { n: 'Глубокий рудник',   min: 120, silver: 7000,  dist: 22 },
-  { n: 'Королевская шахта', min: 240, silver: 16000, dist: 28 }
+  { n: 'Малая жила',        min: 15,  silver: 300,   dist: 9 },
+  { n: 'Медная копь',       min: 30,  silver: 700,   dist: 13 },
+  { n: 'Серебряная копь',   min: 60,  silver: 1600,  dist: 17 },
+  { n: 'Глубокий рудник',   min: 120, silver: 3500,  dist: 22 },
+  { n: 'Королевская шахта', min: 240, silver: 8000,  dist: 28 }
 ];
 const MINE_PER = 4;
 const MINE_IDS = []; MINEC.forEach((d, t) => { for (let i = 0; i < MINE_PER; i++) MINE_IDS.push('m' + t + '_' + i); });
