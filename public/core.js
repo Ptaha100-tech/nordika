@@ -226,7 +226,7 @@ function buyBag() {
 }
 function forge(slot) {
   if (lvl('hall') < 3) { toast('Ковка открывается с Палаты ярла 3'); return; }
-  if (S.eq.inv.length >= eqCap(S)) { toast('Сумка полна'); return; }
+  if (bagUsed(S) >= eqCap(S)) { toast('Сумка полна'); return; }
   if (!SLOTS[slot]) { toast('Выберите, что ковать'); return; }
   const c = forgeCost(); if (!canAfford(c)) { toast('Не хватает ресурсов'); return; }
   pay(c); giveItem(newItem(1, null, slot), 'Кузнец выковал');
@@ -302,6 +302,8 @@ function ensure(st) {
     if (st.upg && st.upg.key) { const c = tierCost(st.upg.key, st.upg.to); for (const r in c) st.res[r] = (st.res[r] || 0) + c[r]; st.upg = null; }
   }
   if (!st.wounded) st.wounded = {};
+  if (!st.rec) st.rec = {};
+  if (!st.scr) st.scr = {};
   if (!st.mats) st.mats = {};
   ensureMobs(st);
   if (st.gems === undefined) { st.gems = 0; st.vip = 0; st.daily = 0; st.bought = {}; }
@@ -571,7 +573,7 @@ function finishHeal() {
   S.heal = null; addLog(`Шаман исцелил воинов: ${tot}.`, 'good', h.end); toast(`Исцелено воинов: ${tot}`);
 }
 /* Материалы для крафта живут в той же сумке, что и вещи (стопка до 99). */
-const MATS = { pelt: 'Волчья шкура', fang: 'Клык вепря', bone: 'Кость тролля', amber: 'Янтарь', frost: 'Ледяной осколок', ash: 'Вулканический пепел', rune: 'Рунная пыль', scale: 'Чешуя змея' };
+const MATS = { pelt: 'Волчья шкура', fang: 'Клык вепря', bone: 'Кость тролля', amber: 'Янтарь', frost: 'Ледяной осколок', ash: 'Вулканический пепел', rune: 'Рунная пыль', scale: 'Чешуя змея', heart: 'Сердце дракона' };
 const MATK = Object.keys(MATS), STACK = 99;
 const bagUsed = st => (st.eq.inv || []).length + Object.values(st.mats || {}).reduce((a, n) => a + Math.ceil((n || 0) / STACK), 0);
 function giveMat(id, n) {
@@ -587,10 +589,11 @@ const MOBS = [
   { n: 'Горные тролли',     lv: 3, silver: [80, 150],  rs: 30, drops: [['bone', 0.5], ['pelt', 0.25], ['amber', 0.15]] },
   { n: 'Ледяные ётуны',     lv: 5, silver: [150, 260], rs: 30, drops: [['frost', 0.5], ['bone', 0.25], ['amber', 0.2]] },
   { n: 'Огненные великаны', lv: 7, silver: [250, 400], rs: 45, drops: [['ash', 0.45], ['amber', 0.25], ['frost', 0.15]] },
-  { n: 'Морские змеи',      lv: 9, silver: [400, 650], rs: 60, drops: [['scale', 0.45], ['rune', 0.25], ['ash', 0.2]] }
+  { n: 'Морские змеи',      lv: 9, silver: [400, 650], rs: 60, drops: [['scale', 0.45], ['rune', 0.25], ['ash', 0.2]] },
+  { n: 'Дракон Нидхёгг',    lv: 12, silver: [900, 1400], rs: 60, boss: 1, drops: [['heart', 0.25], ['rune', 0.4], ['scale', 0.3]] }
 ];
 function mobTarget(i) {
-  const d = MOBS[i], n = Math.round(5 * Math.pow(d.lv, 1.5) + 3);
+  const d = MOBS[i], n = Math.round((d.boss ? 3.2 : 5) * Math.pow(d.lv, 1.5) + 3);
   const keys = shuffle(Object.keys(U)).slice(0, 2);
   return { id: 'mob' + i, kind: 'mob', mi: i, name: d.n, level: d.lv, comp: botComp(randComp(n, keys), d.lv), loot: {}, defb: 1, dist: 6 + 2 * i, until: 0 };
 }
@@ -666,6 +669,64 @@ function mscout(id) {
   toast('Разведка рудника выполнена');
 }
 
+/* ============ Купец, эпический крафт, заточка ============ */
+const REC_PRICE = [500, 2500, 12000], EC_SILVER = [300, 1500, 6000], EC_QTY = [2, 3, 4];
+const SCROLLS = { n: { n: 'Обычный свиток', silver: 200 }, s: { n: 'Надёжный свиток', silver: 2000 }, g: { n: 'Свиток 100%', gems: 30 } };
+const MATBASE = ['pelt', 'fang', 'bone', 'amber', 'frost', 'ash', 'rune', 'scale'];
+function epicReq(slot, t) {
+  const i = SLOTK.indexOf(slot); if (i < 0 || !(t >= 1 && t <= 3)) return null;
+  const cnt = t + 2, mats = {}, base = t === 3 ? cnt - 1 : cnt;
+  for (let j = 0; j < base; j++) mats[MATBASE[(i + j * 3 + t) % 8]] = EC_QTY[t - 1];
+  if (t === 3) mats.heart = 1;
+  return { mats, silver: EC_SILVER[t - 1] };
+}
+function buyMerchant(arg) {
+  if (!arg || typeof arg !== 'object') return;
+  if (arg.k === 'rec') {
+    const t = Math.floor(Number(arg.t)); if (!SLOTS[arg.slot] || !(t >= 1 && t <= 3)) return;
+    const pr = REC_PRICE[t - 1]; if (S.res.silver < pr) { toast('Не хватает серебра'); return; }
+    S.res.silver -= pr; if (!S.rec) S.rec = {}; const k = arg.slot + ':' + t; S.rec[k] = (S.rec[k] || 0) + 1; toast('Рецепт куплен');
+  } else if (arg.k === 'scr') {
+    const d = SCROLLS[arg.s]; if (!d) return;
+    if (d.gems) { if ((S.gems || 0) < d.gems) { toast('Не хватает рунных камней'); return; } S.gems -= d.gems; }
+    else { if (S.res.silver < d.silver) { toast('Не хватает серебра'); return; } S.res.silver -= d.silver; }
+    if (!S.scr) S.scr = {}; S.scr[arg.s] = (S.scr[arg.s] || 0) + 1; toast(d.n + ' куплен');
+  }
+}
+function epicCraft(arg) {
+  if (!arg || typeof arg !== 'object') return;
+  const slot = arg.slot, t = Math.floor(Number(arg.t)), rq = epicReq(slot, t); if (!rq) return;
+  const rk = slot + ':' + t;
+  if (!((S.rec || {})[rk] > 0)) { toast('Нужен рецепт от купца'); return; }
+  const cand = S.eq.inv.filter(x => x.slot === slot && x.r === t - 1).sort((a, b) => plusOf(a) - plusOf(b));
+  const base = (arg.id && cand.find(x => x.id === arg.id)) || cand[0];
+  if (!base) { toast('Нужна вещь прошлого тира'); return; }
+  for (const m in rq.mats) if (((S.mats || {})[m] || 0) < rq.mats[m]) { toast('Не хватает материалов'); return; }
+  if (S.res.silver < rq.silver) { toast('Не хватает серебра'); return; }
+  S.res.silver -= rq.silver; S.rec[rk]--;
+  for (const m in rq.mats) { S.mats[m] -= rq.mats[m]; if (S.mats[m] <= 0) delete S.mats[m]; }
+  S.eq.inv.splice(S.eq.inv.indexOf(base), 1);
+  const it = { id: 'i' + (S.mid++), slot, r: t, plus: 0, af: rollAf() };
+  S.eq.inv.push(it); addLog(`Кузнец выковал: ${RARN[t].toLowerCase()} «${itemName(it)}».`, 'good'); toast(`Выковано: ${itemName(it)}`);
+}
+/* Заточка: до +3 всегда успех; дальше обычный свиток 65% (провал: вещь пропала), надёжный 85% (провал: сброс до +3), свиток 100%. */
+const ENH_P = { n: 0.65, s: 0.85, g: 1 };
+function enhance(arg) {
+  if (!arg || typeof arg !== 'object' || !SCROLLS[arg.s]) return;
+  let it = S.eq.inv.find(x => x.id === arg.id), where = 'inv';
+  if (!it) { for (const k of Object.keys(S.eq.s)) if (S.eq.s[k] && S.eq.s[k].id === arg.id) { it = S.eq.s[k]; where = k; } }
+  if (!it) return;
+  const p = plusOf(it); if (p >= MAXPLUS) { toast('Заточка уже максимальна'); return; }
+  if (!((S.scr || {})[arg.s] > 0)) { toast('Нет такого свитка'); return; }
+  S.scr[arg.s]--;
+  const ok = p < 3 || Math.random() < ENH_P[arg.s];
+  if (ok) { it.plus = p + 1; addLog(`Заточка удалась: «${itemName(it)}» +${it.plus}.`, 'good'); toast(`Заточка +${it.plus}`); return; }
+  if (arg.s === 's') { it.plus = 3; addLog(`Заточка не удалась: «${itemName(it)}» сброшена до +3.`, 'bad'); toast('Не вышло: сброс до +3'); return; }
+  const back = 100 * (it.r + 1) * (p - 2);
+  if (where === 'inv') S.eq.inv.splice(S.eq.inv.indexOf(it), 1); else S.eq.s[where] = null;
+  S.res.silver += back; addLog(`Заточка не удалась: «${itemName(it)}» пропала. Осколки дали ${back} серебра.`, 'bad'); toast('Вещь пропала');
+}
+
 function resolveMarch(m) {
   const tg = m.tgt, t = m.arrive;
   if (tg.kind === 'node') {
@@ -684,7 +745,7 @@ function resolveMarch(m) {
     m.loot = {}; for (const k in tg.loot) m.loot[k] = Math.floor(tg.loot[k] * f);
     if (tg.kind === 'mob') {
       const md = MOBS[tg.mi]; m.loot = { silver: ri(md.silver[0], md.silver[1]) }; m.mats = {};
-      md.drops.forEach(([id, p]) => { if (Math.random() < p) m.mats[id] = ri(1, 2); });
+      md.drops.forEach(([id, p]) => { if (Math.random() < p) m.mats[id] = md.boss ? 1 : ri(1, 2); });
       const real = S.targets.find(x => x.id === tg.id); if (real) real.until = t + md.rs * 60000 * CFG.t;
     }
     m.send = r.survA; m.phase = 'back'; m.back = t + m.dur;
@@ -1077,6 +1138,9 @@ function act(a, arg) {
     case 'intro': S.introDone = true; break;
     case 'bag': buyBag(); break;
     case 'heal': startHeal(); break;
+    case 'mbuy': buyMerchant(arg); break;
+    case 'ecraft': epicCraft(arg); break;
+    case 'enh': enhance(arg); break;
     case 'mscout': if (typeof arg === 'string') mscout(arg); break;
     case 'spin': spinWheel(); break;
     case 'dice': rollDice(arg); break;
@@ -1116,7 +1180,7 @@ function fmtT(sec) {
 
 const API = {
   armyAtk, newItem, giveItem, SLOTS, SLOTK, LOOKS, EQS, slotType, EQ_IL, RARN, EQMAX, BAG_COST, BAG_STEP, eqCap, itemPct, itemName, forgeCost, forgeLvl, scrapOf, eqB, jarlStats, jarlPower, setBonus, jMain, affVal, plusOf, itemPower, AFN, MAXPLUS, TM, SETB,
-  hutCap, wnote, healCost, healSecs, MATS, MATK, STACK, bagUsed, giveMat, MOBS, MINEC, MINE_IDS, mineTarget, mineBusy, mineDur,
+  REC_PRICE, SCROLLS, ENH_P, epicReq, hutCap, wnote, healCost, healSecs, MATS, MATK, STACK, bagUsed, giveMat, MOBS, MINEC, MINE_IDS, mineTarget, mineBusy, mineDur,
   RES, RI, B, BORDER, U, WEAK, TECH, QUESTS, MAXL, TMAX, CFG, HOOK, NODE, TIERN, TIER_NEED, MAXT, HSK, MAXHL, MAXSK,
   get S() { return S; },
   use, ensure, newState, update, produce, settle, battle, act, score, verdict,

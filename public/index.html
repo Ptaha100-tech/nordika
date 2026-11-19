@@ -756,6 +756,12 @@ function eqMenuHTML(){
   }else{const it=E.s[m.slot];
     body=it?itemLine(it):`<p class="muted sm">Слот «${EQSN[m.slot]}» пуст. Выберите предмет в сумке и нажмите «Надеть».</p>`;
     acts=it?`<button class="btn small ghost" data-act="unequip" data-arg="${m.slot}" type="button">Снять</button>`:'';}
+  { const id=m.id||(E.s[m.slot]&&E.s[m.slot].id),it2=m.id?E.inv.find(x=>x.id===m.id):E.s[m.slot],sc=S.scr||{};
+    if(it2){const p=Core.plusOf(it2);
+      if(p>=Core.MAXPLUS)body+=`<p class="sm muted">Заточка максимальна.</p>`;
+      else{const bs=['n','s','g'].filter(k=>sc[k]>0);
+        body+=`<p class="sm muted" style="margin:3px 0">Заточка +${p+1}: ${p<3?'всегда удаётся':'шанс 65% / 85% / 100% по свитку'}</p>`;
+        acts+=bs.length?bs.map(k=>`<button class="btn small" data-act="enh" data-arg="${id}:${k}" type="button">Заточить: ${Core.SCROLLS[k].n.replace(' свиток','')} (${sc[k]})</button>`).join(''):`<span class="sm muted">Нет свитков (Таверна → Купец)</span>`;}}}
   return `<div class="eqmenu">${body}<div class="eqmb">${acts}<button class="btn small ghost" data-act="eqmx" type="button">Закрыть</button></div></div>`;
 }
 function eqSheet(){
@@ -785,6 +791,17 @@ function eqSheet(){
   $('modal').hidden=false;ui.eqOpen=true;
   try{window.Art&&Art.paintIn&&Art.paintIn($('modal'));}catch(e){}
 }
+function epicHTML(){
+  const t=ui.et||1,sl=ui.es||'weapon',rq=Core.epicReq(sl,t),rc=(S.rec||{})[sl+':'+t]||0,have=S.eq.inv.filter(x=>x.slot===sl&&x.r===t-1).length;
+  const mats=Object.keys(rq.mats).map(m=>{const h=(S.mats||{})[m]||0,ok=h>=rq.mats[m];return `<span class="cp" style="${ok?'':'opacity:.6'}">${Core.MATS[m]} ${h}/${rq.mats[m]}</span>`;}).join('');
+  const ok=rc>0&&have>0&&Object.keys(rq.mats).every(m=>((S.mats||{})[m]||0)>=rq.mats[m])&&S.res.silver>=rq.silver;
+  return `<div class="eqforge" style="display:block"><b>Эпический крафт</b><p class="sm muted" style="margin:0 0 4px">Нужны рецепт купца, вещь прошлого тира того же вида и материалы с охоты. Сердце дракона падает с эпического босса.</p>
+  <div class="subtabs" style="grid-template-columns:repeat(3,1fr);margin:4px 0">${[1,2,3].map(x=>`<button class="btn small ${x===t?'on':'ghost'}" data-act="etier" data-arg="${x}" type="button">${['Серебряное','Золотое','Эпическое'][x-1]}</button>`).join('')}</div>
+  <div class="fgslots">${SLOTS_L.map(k=>`<button class="btn small ${k===sl?'on':'ghost'}" data-act="eslot" data-arg="${k}" type="button">${EQG[k]} ${Core.SLOTS[k].n}</button>`).join('')}</div>
+  <p class="sm" style="margin:6px 0 2px">${Core.SLOTS[sl].n}: рецепт ${rc?'есть':'<b>нет</b>'} · вещь «${Core.RARN[t-1].toLowerCase()}» ${have?'есть':'<b>нет</b>'}</p>
+  <div class="costs" style="margin:2px 0">${mats}${cpHTML('silver',rq.silver)}</div>
+  <button class="btn ${ok?'':'off'}" data-act="ecraft" data-arg="${sl}:${t}" type="button">Ковать</button></div>`;
+}
 function forgeSheet(){
   const _sc=!$('modal').hidden&&document.querySelector('.fgin'),_st=_sc?_sc.scrollTop:0;
   ui.eqOpen=false;ui.fgOpen=true;
@@ -804,7 +821,7 @@ function forgeSheet(){
   const tabs=[['all','Все'],['w','Оружие'],['a','Броня']];
   $('modal').innerHTML=`<div class="sheet fgw"><div class="fgin">
     <div class="subtabs" style="margin:0 0 8px"><button class="btn small ${ui.fgTab==='e'?'ghost':'on'}" data-act="fgtab" data-arg="c" type="button">Обычный крафт</button><button class="btn small ${ui.fgTab==='e'?'on':'ghost'}" data-act="fgtab" data-arg="e" type="button">Эпический крафт</button></div>
-    ${ui.fgTab==='e'?`<div class="eqforge"><div style="min-width:0"><b>Эпический крафт</b><p class="sm muted" style="margin:0">Серебряные, золотые и эпические вещи куются из вещи прошлого тира, рецепта от купца в Таверне и ресурсов охоты. Откроется в одном из ближайших обновлений.</p></div></div>`:`<div class="eqforge" style="display:block"><b>Обычный крафт</b><p class="sm muted" style="margin:0 0 4px">Выберите, что ковать. Предмет получится обычным, со случайной добавкой. Нужна Палата ярла 3.</p><div class="costs" style="margin:4px 0">${Object.keys(fc).map(k=>cpHTML(k,fc[k])).join('')}</div><div class="fgslots">${['weapon','armor','helm','amulet','gloves','pants','cloak','belt','ring'].map(k=>`<button class="btn small ${can?'':'off'}" data-act="forge" data-arg="${k}" type="button">${EQG[k]} ${Core.SLOTS[k].n}</button>`).join('')}</div></div>`}
+    ${ui.fgTab==='e'?epicHTML():`<div class="eqforge" style="display:block"><b>Обычный крафт</b><p class="sm muted" style="margin:0 0 4px">Выберите, что ковать. Предмет получится обычным, со случайной добавкой. Нужна Палата ярла 3.</p><div class="costs" style="margin:4px 0">${Object.keys(fc).map(k=>cpHTML(k,fc[k])).join('')}</div><div class="fgslots">${['weapon','armor','helm','amulet','gloves','pants','cloak','belt','ring'].map(k=>`<button class="btn small ${can?'':'off'}" data-act="forge" data-arg="${k}" type="button">${EQG[k]} ${Core.SLOTS[k].n}</button>`).join('')}</div></div>`}
     <div class="eqdet">${det}</div>
     <div class="eqhd"><span>Сумка</span><span class="lv">${Core.bagUsed(S)}/${Core.eqCap(S)}</span></div>
     ${(E.bag||0)<Core.BAG_COST.length?`<button class="btn small ghost" style="display:block;margin:6px auto 0" data-act="bag" type="button">Расширить сумку на ${Core.BAG_STEP} мест · ${Core.BAG_COST[E.bag||0]} рунных камней</button>`:''}
@@ -833,7 +850,7 @@ const MATN=Core.MATS;
 function matsLine(){const m=S.mats||{},k=Object.keys(m).filter(x=>m[x]>0);return k.length?k.map(x=>`${MATN[x]} ×${m[x]}`).join(' · '):'пока пусто';}
 function huntHTML(){
   const free=slots(lvl('hall'))-S.marches.length,wn=sum(S.wounded||{});
-  let h=`<div class="msub"><button class="btn ${ui.hsub==='mob'?'on':'ghost'}" data-act="hsub" data-arg="mob">Фарм ресурсов</button><button class="btn ${ui.hsub==='mine'?'on':'ghost'}" data-act="hsub" data-arg="mine">Серебряные рудники</button></div>`;
+  let h=`<div class="msub"><button class="btn ${ui.hsub==='mob'?'on':'ghost'}" data-act="hsub" data-arg="mob">Фарм ресурсов</button><button class="btn ${ui.hsub==='mine'?'on':'ghost'}" data-act="hsub" data-arg="mine">Серебряные рудники</button><button class="btn ${ui.hsub==='boss'?'on':'ghost'}" data-act="hsub" data-arg="boss">Эпический босс</button></div>`;
   h+=`<p class="note" style="margin:0 0 8px">В сумке: ${matsLine()} · занято ${Core.bagUsed(S)}/${Core.eqCap(S)}${wn?` · раненых ${wn} (лечит Хижина шамана)`:''}</p>`;
   if(ui.hsub==='mine'){
     h+=`<p class="note" style="margin:0 0 8px">Рудники общие для всех ярлов. Отряд держит рудник заданное время и приносит серебро. Занятый рудник можно разведать или отбить.</p>`;
@@ -853,7 +870,7 @@ function huntHTML(){
     return h;
   }
   h+=`<p class="note" style="margin:0 0 8px">Свои враги у каждого ярла. За победу — серебро и шанс получить материалы для крафта. Побеждённые возвращаются позже.</p>`;
-  S.targets.filter(t=>t.kind==='mob').sort((a,b)=>a.level-b.level).forEach(t=>{
+  S.targets.filter(t=>t.kind==='mob'&&(ui.hsub==='boss')===!!Core.MOBS[t.mi].boss).sort((a,b)=>a.level-b.level).forEach(t=>{
     const md=Core.MOBS[t.mi],v=verdict(t),left=t.until-Core.now(),ready=left<=0;
     h+=`<article class="card tg mob"><div class="trow2"><span class="kind">Охота · ур. ${t.level}</span><span class="pill ${ready?v.c:'mute'}">${ready?v.t:'Вернутся через <span class="cd" data-end="'+t.until+'"></span>'}</span></div>
     <h3 style="margin-top:2px">${esc(t.name)}</h3>
@@ -867,7 +884,7 @@ function viewMap(){
   const free=slots(lvl('hall'))-S.marches.length;
   const cdl=Math.max(0,Math.ceil((S.tgtAt+30000-Core.now())/1000));
   const grp=t=>t.kind==='node'?'node':'x';
-  const cnt={node:0,hunt:S.targets.filter(t=>t.kind==='mob'&&!(t.until>Core.now())).length};S.targets.forEach(t=>{if(t.kind==='node')cnt.node++;});
+  const cnt={node:0,hunt:S.targets.filter(t=>t.kind==='mob'&&!Core.MOBS[t.mi].boss&&!(t.until>Core.now())).length};S.targets.forEach(t=>{if(t.kind==='node')cnt.node++;});
   let h=jobsHTML('map');
   h+=`<section class="card trow2"><span>Свободных отрядов: <b>${free}</b> из ${slots(lvl('hall'))}</span><button class="btn ghost small" data-act="refresh" ${cdl?'disabled':''}>Новые цели</button></section>`;
   h+=`<div class="msub">${MSUB.map(m=>`<button class="btn ${ui.msub===m[0]?'on':'ghost'}" data-act="msub" data-arg="${m[0]}">${m[1]} <span class="muted sm">${cnt[m[0]]===undefined?'':cnt[m[0]]}</span></button>`).join('')}</div>`;
@@ -1809,6 +1826,7 @@ const WCEN=Array.from({length:14},(_,i)=>12.857+i*25.714);
 const dimg=n=>`<img src="/img/die${n}.webp?v=1" alt="${n}">`;
 const dface=a=>`<span class="dc">${dimg(a[0])}</span><span class="dc">${dimg(a[1])}</span>`;
 function dres(d){const a=d.p[0]+d.p[1],b=d.b[0]+d.b[1];return d.delta>0?`Вы: ${a}, Ульф: ${b}. Победа! +${fmt(d.delta)} серебра`:d.delta<0?`Вы: ${a}, Ульф: ${b}. Проигрыш: −${fmt(-d.delta)} серебра`:`Вы: ${a}, Ульф: ${b}. Ничья, ставка вернулась`;}
+const SLOTS_L=['weapon','armor','helm','amulet','gloves','pants','cloak','belt','ring'];
 function tavernSheet(anim){
   ui.tvOpen=true;ui.eqOpen=false;ui.fgOpen=false;ui.orOpen=false;
   const m=Core.miniDay(),last=m.last,tab=ui.tvTab||'wheel';
@@ -1826,6 +1844,15 @@ function tavernSheet(anim){
     <div id="wres" class="wres">${last&&last.k==='wheel'&&!wf?`Выпало: ${esc(last.text)}`:'&nbsp;'}</div>
     <button class="btn" data-act="spin" type="button" ${can?'':'disabled'}>${btn}</button>
     <p class="note sm">Призы: ресурсы, серебро, ускорения, предметы и рунные камни. Попытки обновляются в полночь по Москве.</p>`;
+  }else if(tab==='shop'){
+    const st=ui.mt||1,sc=S.scr||{},rc=S.rec||{};
+    body=`<p class="sm muted">Купец Ульф продаёт рецепты для эпической ковки и свитки заточки. Рецепт нужен один на каждую вещь.</p>
+    <div class="subtabs" style="grid-template-columns:repeat(3,1fr)">${[1,2,3].map(t=>`<button class="btn small ${t===st?'on':'ghost'}" data-act="mtier" data-arg="${t}" type="button">${['Серебряные','Золотые','Эпические'][t-1]}</button>`).join('')}</div>
+    <p class="sm" style="margin:6px 0">Рецепт за ${fmt(Core.REC_PRICE[st-1])} ${ricon('silver')}</p>
+    <div class="fgslots">${SLOTS_L.map(k=>`<button class="btn small ${S.res.silver>=Core.REC_PRICE[st-1]?'':'off'}" data-act="mbuy" data-arg="rec:${k}:${st}" type="button">${EQG[k]} ${Core.SLOTS[k].n}${rc[k+':'+st]?' ×'+rc[k+':'+st]:''}</button>`).join('')}</div>
+    <h3 style="margin:10px 0 4px">Свитки заточки</h3>
+    <p class="sm muted">До +3 заточка всегда удаётся. Выше +3: обычный свиток 65% (при неудаче вещь пропадает, вернётся немного серебра), надёжный 85% (при неудаче заточка падает до +3), свиток 100% не подводит. Максимум +10.</p>
+    ${['n','s','g'].map(k=>{const d=Core.SCROLLS[k],ok=d.gems?(S.gems||0)>=d.gems:S.res.silver>=d.silver;return `<div class="item"><div><b>${d.n}</b> <span class="muted sm">· ${Math.round(Core.ENH_P[k]*100)}% · есть ${sc[k]||0}</span></div><button class="btn small ${ok?'':'off'}" data-act="mbuy" data-arg="scr:${k}" type="button">${d.gems?d.gems+' '+IG:fmt(d.silver)+' '+ricon('silver')}</button></div>`;}).join('')}`;
   }else{
     const bet=ui.dbet||Core.DICE_BETS[0],dd=last&&last.k==='dice'?last:null,show=dd&&!isNew;
     const can=!ui.tvSpin&&!(isNew&&dd)&&m.dc<Core.DICE_MAX&&canAfford({silver:bet});
@@ -1837,7 +1864,7 @@ function tavernSheet(anim){
     <button class="btn" data-act="dice" type="button" ${can?'':'disabled'}>Бросить · ${fmt(bet)} серебра</button>`;
   }
   $('modal').innerHTML=`<div class="sheet tav"><div class="trow2"><h3>Таверна</h3><button class="btn small ghost" data-act="sheetx" type="button">Закрыть</button></div>
-    <div class="subtabs" style="grid-template-columns:1fr 1fr"><button class="btn small ${tab==='wheel'?'on':'ghost'}" data-act="tvtab" data-arg="wheel" type="button">Колесо фортуны</button><button class="btn small ${tab==='dice'?'on':'ghost'}" data-act="tvtab" data-arg="dice" type="button">Кости викингов</button></div>${body}</div>`;
+    <div class="subtabs" style="grid-template-columns:1fr 1fr 1fr"><button class="btn small ${tab==='wheel'?'on':'ghost'}" data-act="tvtab" data-arg="wheel" type="button">Колесо</button><button class="btn small ${tab==='dice'?'on':'ghost'}" data-act="tvtab" data-arg="dice" type="button">Кости</button><button class="btn small ${tab==='shop'?'on':'ghost'}" data-act="tvtab" data-arg="shop" type="button">Купец</button></div>${body}</div>`;
   $('modal').hidden=false;
   if(wf!=null){
     ui.tvSpin=true;ui.mseen=last.n;const d=$('wdisk'),L=last;
@@ -1890,6 +1917,12 @@ function onAct(act,arg){
     case 'eqconf':ui.eqConf=arg==='1';forgeSheet();return;
     case 'eqpickall':{const pk=ui.eqPick=ui.eqPick||{};ui.eqConf=false;if(arg==='0')ui.eqPick={};else{const f=ui.eqF||'all';S.eq.inv.filter(it=>arg==='v'?(f==='all'||(f==='w'&&['weapon','gloves','ring','amulet'].includes(it.slot))||(f==='a'&&['armor','helm','pants','cloak','belt'].includes(it.slot))):it.r<1).forEach(it=>{pk[it.id]=true;});}forgeSheet();return;}
     case 'scrapmany':{const ids=Object.keys(ui.eqPick||{}).filter(k=>ui.eqPick[k]);ui.eqPick={};ui.eqConf=false;if(ids.length)act2('scrapmany',ids);return;}
+    case 'etier':ui.et=+arg;forgeSheet();return;
+    case 'eslot':ui.es=arg;forgeSheet();return;
+    case 'ecraft':{const [a,b]=arg.split(':');act2('ecraft',{slot:a,t:+b}).then(()=>forgeSheet());return;}
+    case 'mtier':ui.mt=+arg;tavernSheet();return;
+    case 'mbuy':{const q=arg.split(':');act2('mbuy',q[0]==='rec'?{k:'rec',slot:q[1],t:+q[2]}:{k:'scr',s:q[1]}).then(()=>tavernSheet());return;}
+    case 'enh':{const q=arg.split(':');act2('enh',{id:q[0],s:q[1]}).then(()=>{ui.eqMenu=null;eqSheet();});return;}
     case 'fgtab':ui.fgTab=arg;forgeSheet();return;
     case 'ortab':ui.orTab=arg;oracleSheet();return;
     case 'eqmx':ui.eqMenu=null;eqSheet();return;
