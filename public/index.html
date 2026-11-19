@@ -415,19 +415,20 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--frost);outline-
 @media (prefers-reduced-motion:reduce){.eqs,.eqs::after,.eqs::before,.eqs .eqi{animation:none!important}}
 
 /* чат: аватарки и компактные сообщения */
-.cbox{gap:6px;padding:6px 8px}
+.cbox{gap:8px;padding:8px 10px;background:#17120f;border-color:#3a2c20}
 .cbox .m{display:flex;gap:8px;align-items:flex-start}
-.cbox .m.me{flex-direction:row-reverse}
-.cav{flex:none;position:relative;width:32px;height:32px;border-radius:8px;overflow:hidden;border:1px solid var(--line);background:hsl(var(--h,200) 28% 30%);display:grid;place-items:center;cursor:pointer}
+.cbox .m.me{flex-direction:row}
+.cav{flex:none;position:relative;width:38px;height:38px;border-radius:50%;overflow:hidden;border:2px solid #6b5438;background:hsl(var(--h,25) 22% 24%);display:grid;place-items:center;cursor:pointer}
 .cav i{font-style:normal;font-size:14px;color:#fff;font-weight:700}
 .cav img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:var(--surface)}
-.cbox .mb{min-width:0;max-width:calc(100% - 44px);background:var(--surface);border:1px solid var(--line);border-radius:4px 10px 10px 10px;padding:4px 9px 5px}
-.cbox .m.me .mb{border-radius:10px 4px 10px 10px;border-color:#f2cd7566;background:#f2cd750f}
+.cbox .mb{min-width:0;max-width:calc(100% - 48px);background:#2a2019;border:1px solid #4a3a2a;border-radius:4px 12px 12px 12px;padding:5px 10px 6px}
+.cbox .m.me .mb{border-color:#c8a24a88;background:#33261a}
 .cbox .m.ment{background:none;border:0;padding:0}
 .cbox .m.ment .mb{border-color:var(--accent);background:#f2cd7522}
 .cbox .mh{display:flex;align-items:baseline;gap:6px;font-size:12px;line-height:1.3}
-.cbox .mh b{color:var(--frost);font-weight:600}.cbox .m.me .mh b{color:var(--accent)}
-.cbox .mh time{margin-left:auto;font-size:10px}
+.cbox .mh b{color:#f1e6cc;font-weight:700}.cbox .m.me .mh b{color:#ffd98a}
+.cbox .mh time{margin-left:2px;font-size:10px;opacity:.6}
+.cbox .cs.sys{text-align:center;font-style:normal;margin:6px 0;padding:6px 8px;border-radius:8px;background:linear-gradient(90deg,#0000,#ffd24a33,#0000);color:#ffe58a;font-size:12.5px;text-shadow:0 0 8px #ffd24a88}
 .cbox .mt{font-size:13.5px;line-height:1.35;overflow-wrap:anywhere}
 .cbox .rpl{font-size:12px;margin:0;padding:0 2px}
 .subtabs .btn{padding:6px 4px;font-size:13px}
@@ -1014,7 +1015,7 @@ function eventsHTML(){
 let cbusy=false;
 const hhmm=t=>new Date(t).toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
 function chatHTML(c){
-  return c.chat.length?c.chat.map(m=>m.sys?`<p class="cs">${esc(m.text)}</p>`:msgH(m.pid,m.name,'',m.t,m.text,{...MX(m),ch:'c',me:m.pid===ui.clan.me})).join(''):'<p class="cs">Пока тихо. Напишите первым.</p>';
+  return c.chat.length?c.chat.map(m=>m.sys?`<p class="cs sys">${esc(m.text)}</p>`:msgH(m.pid,m.name,'',m.t,m.text,{...MX(m),ch:'c',me:m.pid===ui.clan.me})).join(''):'<p class="cs">Пока тихо. Напишите первым.</p>';
 }
 function myJobsForHelp(c){
   const out=[];
@@ -1159,7 +1160,7 @@ const barHTML=ch=>{const r=ui.rp&&ui.rp.ch===ch?ui.rp:null,e=ui.ed&&ui.ed.ch===c
 const rowHTML=(ch,id,ph,act)=>`${barHTML(ch)}<div class="crow"><button class="btn small ghost" data-act="photo" data-arg="${ch}" type="button" aria-label="Фото">📷</button><input id="${id}" data-keep maxlength="200" placeholder="${ph}" autocomplete="off" enterkeyhint="send"><button class="btn small" data-act="${act}">${ui.ed&&ui.ed.ch===ch?'Сохранить':'Отправить'}</button></div>`;
 function worldHTML(d){
   if(!d.world.length)return '<p class="cs">В общем чате пока тихо. Напишите первым.</p>';
-  return d.world.map(m=>m.sys?`<p class="cs">📜 ${esc(m.text)}</p>`:msgH(m.pid,m.name,m.tag,m.t,m.text,{...MX(m),ch:'w',me:m.pid===d.me,vip:m.vip,hs:m.hs,ment:!!(S&&m.text&&m.text.toLowerCase().includes(S.name.toLowerCase())&&m.pid!==d.me)})).join('');
+  return d.world.map(m=>m.sys?`<p class="cs sys">⚔ ${esc(m.text)}</p>`:msgH(m.pid,m.name,m.tag,m.t,m.text,{...MX(m),ch:'w',me:m.pid===d.me,vip:m.vip,hs:m.hs,ment:!!(S&&m.text&&m.text.toLowerCase().includes(S.name.toLowerCase())&&m.pid!==d.me)})).join('');
 }
 function dmHTML(t,me){
   if(!t.msgs.length)return '<p class="cs">Переписка пуста. Напишите первым.</p>';
