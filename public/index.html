@@ -168,7 +168,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--frost);outline-
 .rk{display:flex;gap:10px;padding:6px 0;border-top:1px solid var(--line);font-variant-numeric:tabular-nums}
 .rk:first-of-type{border-top:0}.rk .n{width:2em;color:var(--muted)}.rk .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.rk.me{color:var(--accent)}
 
-#nav{flex:none;display:grid;grid-template-columns:repeat(6,1fr);border-top:1px solid var(--line);margin:0 -16px}
+#nav{flex:none;display:grid;grid-template-columns:repeat(7,1fr);border-top:1px solid var(--line);margin:0 -16px}
 #nav button{background:none;border:0;border-top:2px solid transparent;margin-top:-1px;padding:5px 0 6px;color:var(--muted);cursor:pointer;position:relative;font-size:13px}
 #nav .rn{display:block;font-size:20px;line-height:1.1}
 #nav .nic{display:block;width:36px;height:36px;margin:0 auto;object-fit:contain;filter:saturate(.75) brightness(.8);transition:.15s}#nav button.on .nic{filter:none;transform:translateY(-1px) scale(1.06)}
@@ -769,14 +769,14 @@ function heroHTML(){
   h+=`<p class="note">Опыт приходит за победы, сбор и отбитые набеги. Каждый уровень даёт очко навыка.</p></section>`;
   return h+eqHTML();
 }
-const RC=['var(--fg)','#b9c9da','#e8c15a','#c78bff'],ART=[0,1,2,2];
+const RC=['var(--fg)','#b9c9da','#e8c15a','#c78bff'],ART=[0,1,2,3];
 function itemLine(it){const pl=Core.plusOf(it),sl=Core.SLOTS[it.slot],jm=sl.js,JN={str:'Сила',vit:'Живучесть',arm:'Броня',crt:'Крит, %'};
   return `<b style="color:${RC[it.r]}">${Core.itemName(it)}${pl?' +'+pl:''}</b> <span class="muted sm">${Core.RARN[it.r].toLowerCase()}</span><p class="sm muted" style="margin:0">+${Core.itemPct(it)}% ${sl.w}</p><p class="sm muted" style="margin:0">${JN[jm[0]]} ярла +${Core.jMain(it)}${it.af?` · ${Core.AFN[it.af[0]]} +${Core.affVal(it)}`:''}</p><p class="sm muted" style="margin:0">Мощь предмета ${Core.itemPower(it)}</p>`;}
 const EQG={helm:'⛑',cloak:'🧥',armor:'🛡',gloves:'🧤',pants:'👖',belt:'🎗',weapon:'⚔',amulet:'🧿',ring:'💍'};
 const EQSN={helm:'Шлем',cloak:'Плащ',armor:'Броня',gloves:'Перчатки',pants:'Штаны',belt:'Пояс',weapon:'Оружие',amulet:'Амулет',ring1:'Кольцо',ring2:'Кольцо'};
 function eqIcon(it,k){
   const t=it?it.slot:Core.slotType(k);
-  return `<span class="eqg">${EQG[t]}</span>${it?`<img class="eqi" src="img/eq-${it.slot}${ART[it.r]}.webp" alt="" onerror="this.remove()">`:''}`;
+  return `<span class="eqg">${EQG[t]}</span>${it?`<img class="eqi" src="img/eq-${it.slot}${ART[it.r]}.webp?v=2" alt="" onerror="this.remove()">`:''}`;
 }
 function eqCell(k){
   const it=S.eq.s[k],sel=ui.eqSel&&ui.eqSel.slot===k;
@@ -882,7 +882,7 @@ const KIND={node:'Ресурсная точка',camp:'Разбойники',jar
 ui.msub='world';ui.hsub='mob';var MINES=[];
 function getTg(id){return String(id).startsWith('mine:')?Core.mineTarget(String(id).slice(5)):S.targets.find(x=>x.id===id);}
 const mineV=id=>MINES.find(m=>m.id===id)||{id,o:null};
-const MSUB=[['node','Сбор'],['hunt','Охота'],['arena','Арена'],['boss','Боссы'],['world','Мир']];
+const MSUB=[['node','Сбор'],['hunt','Охота'],['boss','Боссы'],['world','Мир']];
 function raidsHTML(){
   const rs=(S.raids||[]).filter(r=>Core.now()-r.t<48*3600000);
   if(!rs.length)return '';
@@ -932,7 +932,6 @@ function viewMap(){
   h+=`<div class="msub">${MSUB.map(m=>`<button class="btn ${ui.msub===m[0]?'on':'ghost'}" data-act="msub" data-arg="${m[0]}">${m[1]} <span class="muted sm">${cnt[m[0]]===undefined?'':cnt[m[0]]}</span></button>`).join('')}</div>`;
   if(ui.msub==='world')return h+raidsHTML()+worldMapHTML();
   if(ui.msub==='hunt')return h+huntHTML();
-  if(ui.msub==='arena')return h+arenaHTML();
   if(ui.msub==='boss')return h+bossHTML();
   const note='Мирные места, где отряд собирает ресурсы. Чем дальше точка, тем дольше путь.';
   h+=`<p class="note" style="margin:0 0 8px">${note}</p>`;
@@ -1247,8 +1246,8 @@ async function loadBoss(){
   try{ui.boss=await call('GET','/api/boss');ui.bossAt=Date.now();if(ui.tab==='map'&&ui.msub==='boss')render(true);}catch(e){}
 }
 async function loadArena(){
-  if(!S||ui.tab!=='map'||ui.msub!=='arena')return;
-  try{const j=await call('GET','/api/arena');ui.arena=j.view;if(ui.tab==='map'&&ui.msub==='arena'&&!ui.modal)render(true);}catch(e){}
+  if(!S||ui.tab!=='arena')return;
+  try{const j=await call('GET','/api/arena');ui.arena=j.view;if(ui.tab==='arena'&&!ui.modal)render(true);}catch(e){}
 }
 let abusy=false;
 async function arenaCall(b){
@@ -1258,10 +1257,11 @@ async function arenaCall(b){
   abusy=false;
 }
 function arenaFight(id){arenaCall({a:'fight',id});}
+function viewArena(){return jobsHTML('arena')+arenaHTML();}
 function arenaHTML(){
   const a=ui.arena;if(!a)return '<p class="muted sm">Загрузка…</p>';
   const row=(r,btn)=>`<div class="item"><div><b>${r.pos}.</b> ${heroB(r.hs)}${hnH(r.name,r.hs)} <span class="muted sm">· мощь ${fmt(r.power)} · сила ${r.str} · здор. ${r.hp}</span></div>${btn||''}</div>`;
-  let h=`<p class="note" style="margin:0 0 8px">Арена ярлов: бой один на один идёт сам. Мощь здесь боевая: считается по силе, здоровью, броне и криту. Удар зависит от силы, брони и крита ярла, то есть от вещей, заточки и знаний Оракула. Победа поднимает в рейтинге, поражение опускает. Соперник может быть не в игре.</p>`;
+  let h=`<p class="note" style="margin:0 0 8px">Арена ярлов: бой один на один идёт сам. Мощь здесь боевая: считается по силе, здоровью, броне и криту. Удар зависит от силы, брони и крита ярла, то есть от вещей, заточки и знаний Оракула. Это лестница: бросить вызов можно ярлам выше вас по списку. Победа над ним меняет вас с ним местами, поэтому слабых соперников бить ради места бесполезно. С каждым соперником один бой в день. Соперник может быть не в игре.</p>`;
   h+=`<section class="card"><h3>Лучшие ярлы</h3>${a.top.map(r=>`<div class="item" style="${r.me?'color:var(--accent,#e8c15a)':''}"><div><b>${r.pos}.</b> ${heroB(r.hs)}${hnH(r.name,r.hs)}${r.me?' (вы)':''}</div><span class="muted sm">мощь ${fmt(r.power)}</span></div>`).join('')}
   ${a.pos>10?`<div class="item" style="color:var(--accent,#e8c15a)"><div><b>${a.pos}.</b> Вы</div><span class="muted sm">мощь ${fmt(a.power)}</span></div>`:''}</section>`;
   h+=`<section class="card"><div class="trow2"><h3>Ваше место: ${a.pos} из ${a.total}</h3><span class="pill ${a.left?'good':'mute'}">Боёв: ${a.left}</span></div>
@@ -1295,7 +1295,7 @@ function arenaSheet(f){
   const finish=()=>{
     if(done)return;done=true;clearInterval(iv);
     const e=f.log[f.log.length-1];if(e){$('ahp').style.width=Math.max(0,e.hp[0]/f.hpA*100)+'%';$('aho').style.width=Math.max(0,e.hp[1]/f.hpB*100)+'%';$('ahpn').textContent=e.hp[0];$('aon').textContent=e.hp[1];}
-    const w=f.win,place=w?(f.to<f.from?`Вы поднялись с ${f.from} на ${f.to} место`:`Вы остались на ${f.to} месте`):`Вы опустились с ${f.from} на ${f.to} место`;
+    const w=f.win,place=w?(f.to<f.from?`Вы поднялись с ${f.from} на ${f.to} место`:`Вы остались на ${f.to} месте`):(f.to>f.from?`Вы опустились с ${f.from} на ${f.to} место`:`Вы остались на ${f.to} месте`);
     const r=document.createElement('div');r.className='ares';
     r.innerHTML=`<div class="arbox ${w?'w':'l'}" style="background-image:url(img/res-${w?'win':'lose'}.webp)"><div class="artx"><p>${esc(arenaStory(f))}</p><p class="ast">${esc(arenaStats(f))}</p><p class="apl"><b>${place}</b></p><p class="ast">Награда: ${f.reward} серебра</p></div></div>
     <button class="arbtn" id="acont" type="button" style="background-image:url(img/res-btn.webp)">Продолжить</button>`;
@@ -1524,7 +1524,7 @@ function topSheet(keep){
     <div class="tblw" style="max-height:60vh;overflow-y:auto">${body}</div></div>`;
   $('modal').hidden=false;
 }
-const VIEWS={log:viewLog,city:viewCity,troops:viewTroops,map:viewMap,quests:viewQuests,chat:viewSocial,clan:viewClan,shop:viewShop,top:viewTop};
+const VIEWS={log:viewLog,city:viewCity,troops:viewTroops,map:viewMap,quests:viewQuests,arena:viewArena,chat:viewSocial,clan:viewClan,shop:viewShop,top:viewTop};
 /* ---------- обучение: шаги выводятся из состояния игры, поэтому ничего лишнего не хранится на сервере ---------- */
 const TUT=[
  {t:'Улучши Лесопилку до 2 уровня',h:'Здания дают ресурсы и силу. Нажми «Улучшить» у Лесопилки. Пока идёт стройка, можно заняться другим.',tab:'city',ok:()=>lvl('sawmill')>=2},
@@ -1764,8 +1764,8 @@ const SND_ACT={go:'none',march:'horn',claim:'reward',streak:'reward',daily:'rewa
 function sndFor(a){if(!window.Snd||SND_ACT[a]==='none')return;Snd.sfx(SND_ACT[a]||'click');}
 function sndLabel(){const c=window.Snd?Snd.cfg:{};return c.music&&c.sfx?'♪':c.sfx?'♪ эфф.':'♪ ✕';}
 function sndCycle(){const c=Snd.cfg;if(c.music&&c.sfx){Snd.set('music',false);}else if(c.sfx){Snd.set('sfx',false);}else{Snd.set('sfx',true);Snd.set('music',true);}const b=$('snd');if(b)b.textContent=sndLabel();}
-const NAV=[['city','ᛟ','Город'],['troops','ᛏ','Войска'],['map','ᚱ','Карта'],['quests','ᚷ','Задания'],['chat','ᛗ','Чат'],['clan','ᛉ','Клан']];
-const NAVI={city:'city',troops:'troops',map:'map',quests:'quests',chat:'chat',clan:'clan'};
+const NAV=[['city','ᛟ','Город'],['troops','ᛏ','Войска'],['map','ᚱ','Карта'],['quests','ᚷ','Задания'],['arena','ᚨ','Арена'],['chat','ᛗ','Чат'],['clan','ᛉ','Клан']];
+const NAVI={city:'city',troops:'troops',map:'map',quests:'quests',arena:'arena',chat:'chat',clan:'clan'};
 function buildStatic(){
   $('res').innerHTML=RES.map((r,i)=>`<div class="chip" id="c-${r.id}" style="color:var(--${r.id})"><span class="rimg">${ricon(r.id)}</span><b id="v-${r.id}" style="color:var(--fg)">0</b><small id="r-${r.id}">+0/ч</small><div class="cb"><i id="b-${r.id}"></i></div></div>`).join('');
   $('res').insertAdjacentHTML('beforeend',`<button class="chip x" id="c-haste" data-act="tab" data-arg="shop" type="button" style="color:var(--frost)" title="Руны времени: каждая сокращает любой таймер на 5 минут"><span class="rimg"><img class="ri" src="/img/ui-haste.webp?v=1" alt=""></span><b id="hasteN" style="color:var(--fg)">0</b><small>ускор.</small></button><button class="chip x" id="c-gem" data-act="tab" data-arg="shop" type="button" style="color:#e6b3ff"><span class="rimg"><img class="ri" src="/img/ui-gem.webp?v=1" alt=""></span><b id="gemN" style="color:var(--fg)">0</b><small id="vipN">руны</small></button>`);
@@ -1996,13 +1996,13 @@ async function loadRank(){
 function onAct(act,arg){
   switch(act){
     case 'tutskip':try{localStorage.setItem(tutKey(),'1');}catch(e){}render();return;
-    case 'tab':ui.tab=arg;if(arg==='shop')loadShop();if(arg==='top'){loadSeason();if(Date.now()-ui.rankAt>20000)loadRank();}if(arg==='clan')loadClan();if(arg==='quests'){loadEvents();loadInvite();}if(arg==='chat')loadSoc();render();return;
+    case 'tab':ui.tab=arg;if(arg==='shop')loadShop();if(arg==='top'){loadSeason();if(Date.now()-ui.rankAt>20000)loadRank();}if(arg==='clan')loadClan();if(arg==='arena')loadArena();if(arg==='quests'){loadEvents();loadInvite();}if(arg==='chat')loadSoc();render();return;
     case 'pay':toast('Оплата пока не подключена');return;
     case 'hstyle':act2('hstyle',arg);return;
     case 'hsub':ui.hsub=arg;render();return;
     case 'heal':act2('heal');return;
     case 'mscout':act2('mscout',arg);return;
-    case 'msub':ui.msub=arg;render();if(arg==='boss')loadBoss();if(arg==='arena')loadArena();return;
+    case 'msub':ui.msub=arg;render();if(arg==='boss')loadBoss();return;
     case 'afight':arenaFight(arg);return;
     case 'abuy':arenaCall({a:'buy'});return;
     case 'arefresh':arenaCall({a:'refresh'});return;

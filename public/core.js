@@ -586,13 +586,13 @@ function giveMat(id, n) {
   S.mats[id] = cur + n; return true;
 }
 const MOBS = [
-  { n: 'Лесные волки',      lv: 1, silver: [30, 60],   rs: 20, drops: [['pelt', 0.3], ['fang', 0.12]] },
-  { n: 'Дикие вепри',       lv: 2, silver: [50, 100],  rs: 20, drops: [['fang', 0.28], ['bone', 0.1]] },
-  { n: 'Горные тролли',     lv: 3, silver: [80, 150],  rs: 30, drops: [['bone', 0.25], ['pelt', 0.12], ['amber', 0.08]] },
-  { n: 'Ледяные ётуны',     lv: 5, silver: [150, 260], rs: 30, drops: [['frost', 0.22], ['bone', 0.12], ['amber', 0.1]] },
-  { n: 'Огненные великаны', lv: 7, silver: [250, 400], rs: 45, drops: [['ash', 0.2], ['amber', 0.12], ['frost', 0.08]] },
-  { n: 'Морские змеи',      lv: 9, silver: [400, 650], rs: 60, drops: [['scale', 0.2], ['rune', 0.12], ['ash', 0.1]] },
-  { n: 'Дракон Нидхёгг',    lv: 12, silver: [900, 1400], rs: 60, boss: 1, drops: [['heart', 0.12], ['rune', 0.25], ['scale', 0.2]] }
+  { n: 'Лесные волки',      lv: 1, silver: [30, 60],   rs: 20, drops: [['pelt', 0.38], ['fang', 0.15]] },
+  { n: 'Дикие вепри',       lv: 2, silver: [50, 100],  rs: 20, drops: [['fang', 0.35], ['bone', 0.12]] },
+  { n: 'Горные тролли',     lv: 3, silver: [80, 150],  rs: 30, drops: [['bone', 0.31], ['pelt', 0.15], ['amber', 0.1]] },
+  { n: 'Ледяные ётуны',     lv: 5, silver: [150, 260], rs: 30, drops: [['frost', 0.28], ['bone', 0.15], ['amber', 0.12]] },
+  { n: 'Огненные великаны', lv: 7, silver: [250, 400], rs: 45, drops: [['ash', 0.25], ['amber', 0.15], ['frost', 0.1]] },
+  { n: 'Морские змеи',      lv: 9, silver: [400, 650], rs: 60, drops: [['scale', 0.25], ['rune', 0.15], ['ash', 0.12]] },
+  { n: 'Дракон Нидхёгг',    lv: 12, silver: [900, 1400], rs: 60, boss: 1, drops: [['heart', 0.15], ['rune', 0.31], ['scale', 0.25]] }
 ];
 function mobTarget(i) {
   const d = MOBS[i], n = Math.round(d.boss ? 18 * Math.pow(d.lv, 1.9) : 8 * Math.pow(d.lv, 1.8) + 3);

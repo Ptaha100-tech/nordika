@@ -413,26 +413,31 @@ function arenaPower(id) { if (ARENA.bots[id]) return ARENA.bots[id].power; if (!
 const arenaLook = id => { if (ARENA.bots[id]) return 1 + (parseInt(id.slice(2), 10) % 5); const u = users.get(id); return (u && u.state.hero && u.state.hero.look) || 1; };
 function arenaJoin(uid) {
   ARENA.order = ARENA.order.filter(arenaAlive);
+  if (ARENA.v !== 3) { ARENA.v = 3; const pw = {}; ARENA.order.forEach(x => { pw[x] = arenaPower(x); }); ARENA.order.sort((x, y) => pw[y] - pw[x]); arenaDirty = true; }
   if (ARENA.order.includes(uid)) return;
   const p = arenaPower(uid), i = ARENA.order.findIndex(x => arenaPower(x) < p);
   if (i < 0) ARENA.order.push(uid); else ARENA.order.splice(i, 0, uid);
   arenaDirty = true;
 }
 function arenaState(u) {
-  const a = u.state.arena = u.state.arena || { day: 0, used: 0, extra: 0, opp: [] };
-  if (a.day !== arenaDay()) { a.day = arenaDay(); a.used = 0; a.extra = 0; }
+  const a = u.state.arena = u.state.arena || { day: 0, used: 0, extra: 0, opp: [], fought: {} };
+  if (a.day !== arenaDay()) { a.day = arenaDay(); a.used = 0; a.extra = 0; a.fought = {}; }
+  if (!a.fought) a.fought = {};
   return a;
 }
 const arenaLeft = (a, uid) => Math.max(0, ARENA_FREE + (uid && heroStyle(uid) ? 1 : 0) + a.extra - a.used);
+/* Позиционный ладдер: бросить вызов можно тем, кто выше по списку (до 10 мест), и одному слабее. С каждым соперником один бой в день. */
 function arenaPickOpp(u) {
-  const me = arenaPower(u.id);
-  const c = ARENA.order.filter(x => x !== u.id && arenaAlive(x)).map(x => ({ id: x, d: Math.abs(arenaPower(x) - me) })).sort((a, b) => a.d - b.d).slice(0, 8);
-  for (let i = c.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [c[i], c[j]] = [c[j], c[i]]; }
-  return c.slice(0, 5).map(x => x.id).sort((x, y) => ARENA.order.indexOf(x) - ARENA.order.indexOf(y));
+  const ord = ARENA.order, me = ord.indexOf(u.id), a = arenaState(u), ok = id => id !== u.id && arenaAlive(id) && !a.fought[id];
+  const above = ord.slice(Math.max(0, me - 10), Math.max(0, me)).filter(ok).reverse().slice(0, 4);
+  const below = ord.slice(me + 1, me + 4).filter(ok).slice(0, 1);
+  let res = above.concat(below);
+  if (res.length < 5) res = res.concat(ord.slice(me + 1, me + 8).filter(x => ok(x) && !res.includes(x))).slice(0, 5);
+  return res.sort((x, y) => ord.indexOf(x) - ord.indexOf(y));
 }
 function arenaView(u) {
   arenaJoin(u.id); const a = arenaState(u);
-  if (!a.opp || a.opp.length < Math.min(5, ARENA.order.length - 1) || a.opp.some(x => !arenaAlive(x))) a.opp = arenaPickOpp(u);
+  if (!a.opp || !a.opp.length || a.opp.some(x => !arenaAlive(x) || a.fought[x])) a.opp = arenaPickOpp(u);
   const row = id => { const st = arenaStats(id); return { id, pos: ARENA.order.indexOf(id) + 1, name: arenaName(id), hs: heroStyle(id), power: arenaPower(id), str: st.str, hp: st.hp, look: arenaLook(id) }; };
   return { pos: ARENA.order.indexOf(u.id) + 1, total: ARENA.order.length, power: arenaPower(u.id), look: arenaLook(u.id), me: arenaStats(u.id), left: arenaLeft(a, u.id), hs: heroStyle(u.id), free: ARENA_FREE + (heroStyle(u.id) ? 1 : 0), extra: a.extra, buy: ARENA_BUY, top: ARENA.order.slice(0, 10).map(id => Object.assign(row(id), { me: id === u.id })), opp: a.opp.map(row) };
 }
@@ -458,10 +463,12 @@ function arenaFight(u, oid) {
   const sim = arenaSim(form(arenaStats(u.id)), form(arenaStats(oid)));
   const before = ARENA.order.indexOf(u.id), op = ARENA.order.indexOf(oid), oppPower = arenaPower(oid);
   a.used++;
+  a.fought[oid] = 1;
   let to = before;
-  if (sim.win) to = Math.max(0, Math.min(before - 1, op)); else to = Math.min(ARENA.order.length - 1, before + (op > before ? 1 : 2));
+  if (sim.win && op < before) to = op;                       // победа над тем, кто выше: занимаете его место
+  else if (!sim.win && op > before) to = Math.min(ARENA.order.length - 1, before + 1);   // поражение от слабого: падаете на место
   if (to !== before) { ARENA.order.splice(before, 1); ARENA.order.splice(to, 0, u.id); }
-  const reward = sim.win ? 60 + Math.round(oppPower * 0.15) : 10;
+  const reward = sim.win ? (op < before ? 60 + Math.round(oppPower * 0.15) : 15) : 10;
   Core.use(u.state); u.state.res.silver = (u.state.res.silver || 0) + reward;
   let granted = false;
   if (sim.win && to + 1 <= 3) { const cur = u.state.hst || { s: 'a', until: 0 }; u.state.hst = { s: cur.s === 'b' ? 'b' : 'a', until: Math.max(cur.until || 0, Date.now()) + 7 * 86400000 }; granted = true; }
