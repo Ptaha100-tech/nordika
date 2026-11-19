@@ -347,6 +347,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--frost);outline-
 .eqc{display:flex;flex-direction:column;align-items:center;font-size:10px;color:#c9b48c}
 .eqs{position:relative;width:58px;height:58px;border-radius:4px;border:2px solid #7a5c36;background:radial-gradient(#2a211b,#0f0b09);box-shadow:inset 0 0 8px #000;display:flex;align-items:center;justify-content:center;padding:0;overflow:hidden;font-size:26px}
 .eqs.empty{opacity:.35;background:#e9cdbd22}
+.mobrow{display:flex;gap:10px;align-items:center}.mobimg{width:84px;height:84px;object-fit:contain;flex:none}
 .eqs.mat .matn{font-size:8px;line-height:1.05;text-align:center;padding:2px;color:#d8c7a8;word-break:break-word}
 .eqs.r1{border-color:#b9c9da}.eqs.r2{border-color:#e8c15a;box-shadow:0 0 8px #e8c15a88}.eqs.r3{border-color:#c78bff;box-shadow:0 0 10px #c78bffaa}.eqs.sel{outline:2px solid #f2b233}
 .eqs .eqg{opacity:.85}.eqs .eqi{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#1c1411}
@@ -764,7 +765,7 @@ function eqMenuHTML(){
       if(p>=Core.MAXPLUS)body+=`<p class="sm muted">Заточка максимальна.</p>`;
       else{const bs=['n','s','g'].filter(k=>sc[k]>0);
         body+=`<p class="sm muted" style="margin:3px 0">Заточка +${p+1}: ${p<3?'всегда удаётся':'шанс 65% / 85% / 100% по свитку'}</p>`;
-        acts+=bs.length?bs.map(k=>`<button class="btn small" data-act="enh" data-arg="${id}:${k}" type="button">Заточить: ${Core.SCROLLS[k].n.replace(' свиток','')} (${sc[k]})</button>`).join(''):`<span class="sm muted">Нет свитков (Таверна → Купец)</span>`;}}}
+        acts+=bs.length?bs.map(k=>`<button class="btn small" data-act="enh" data-arg="${id}:${k}" type="button"><img src="/img/scr-${k}.webp?v=1" alt="" style="width:20px;height:20px;vertical-align:middle;margin-right:3px">Заточить: ${Core.SCROLLS[k].n.replace(' свиток','')} (${sc[k]})</button>`).join(''):`<span class="sm muted">Нет свитков (Таверна → Купец)</span>`;}}}
   return `<div class="eqmenu">${body}<div class="eqmb">${acts}<button class="btn small ghost" data-act="eqmx" type="button">Закрыть</button></div></div>`;
 }
 function eqSheet(){
@@ -877,8 +878,8 @@ function huntHTML(){
   S.targets.filter(t=>t.kind==='mob'&&(ui.hsub==='boss')===!!Core.MOBS[t.mi].boss).sort((a,b)=>a.level-b.level).forEach(t=>{
     const md=Core.MOBS[t.mi],v=verdict(t),left=t.until-Core.now(),ready=left<=0;
     h+=`<article class="card tg mob"><div class="trow2"><span class="kind">Охота · ур. ${t.level}</span><span class="pill ${ready?v.c:'mute'}">${ready?v.t:'Вернутся через <span class="cd" data-end="'+t.until+'"></span>'}</span></div>
-    <h3 style="margin-top:2px">${esc(t.name)}</h3>
-    <p class="bd">Враги: ${fmtComp(t.comp)}</p>
+    <div class="mobrow"><img class="mobimg" src="/img/mob${t.mi}.webp?v=1" alt=""><div style="min-width:0"><h3 style="margin-top:2px">${esc(t.name)}</h3>
+    <p class="bd">Враги: ${fmtComp(t.comp)}</p></div></div>
     <p class="bd">Награда: ${md.silver[0]}–${md.silver[1]} ${ricon('silver')} серебра. Каждый материал выпадает отдельно и может не выпасть вовсе. Шансы: ${md.drops.map(d=>`${MATN[d[0]]} ${Math.round(d[1]*100)}%`).join(', ')}. Возврат врагов: ${md.rs} мин.</p>
     <div class="tgb"><span class="muted sm">Путь ${fmtT(marchSecs(t.dist))} в одну сторону</span><span class="tgbtn"><button class="btn ${ready&&free>0&&sum(S.troops)?'':'off'}" data-act="atk" data-arg="${t.id}">Напасть</button></span></div></article>`;
   });
@@ -1896,7 +1897,7 @@ function tavernSheet(anim){
     <div class="fgslots">${SLOTS_L.map(k=>`<button class="btn small ${S.res.silver>=Core.REC_PRICE[st-1]?'':'off'}" data-act="mbuy" data-arg="rec:${k}:${st}" type="button">${EQG[k]} ${Core.SLOTS[k].n}${rc[k+':'+st]?' ×'+rc[k+':'+st]:''}</button>`).join('')}</div>
     <h3 style="margin:10px 0 4px">Свитки заточки</h3>
     <p class="sm muted">До +3 заточка всегда удаётся. Выше +3: обычный свиток 65% (при неудаче вещь пропадает, вернётся немного серебра), надёжный 85% (при неудаче заточка падает до +3), свиток 100% не подводит. Максимум +10.</p>
-    ${['n','s','g'].map(k=>{const d=Core.SCROLLS[k],ok=d.gems?(S.gems||0)>=d.gems:S.res.silver>=d.silver;return `<div class="item"><div><b>${d.n}</b> <span class="muted sm">· ${Math.round(Core.ENH_P[k]*100)}% · есть ${sc[k]||0}</span></div><button class="btn small ${ok?'':'off'}" data-act="mbuy" data-arg="scr:${k}" type="button">${d.gems?d.gems+' '+IG:fmt(d.silver)+' '+ricon('silver')}</button></div>`;}).join('')}`;
+    ${['n','s','g'].map(k=>{const d=Core.SCROLLS[k],ok=d.gems?(S.gems||0)>=d.gems:S.res.silver>=d.silver;return `<div class="item"><div style="display:flex;align-items:center;gap:8px"><img src="/img/scr-${k}.webp?v=1" alt="" style="width:44px;height:44px;flex:none"><span><b>${d.n}</b> <span class="muted sm">· ${Math.round(Core.ENH_P[k]*100)}% · есть ${sc[k]||0}</span></span></div><button class="btn small ${ok?'':'off'}" data-act="mbuy" data-arg="scr:${k}" type="button">${d.gems?d.gems+' '+IG:fmt(d.silver)+' '+ricon('silver')}</button></div>`;}).join('')}`;
   }else{
     const bet=ui.dbet||Core.DICE_BETS[0],dd=last&&last.k==='dice'?last:null,show=dd&&!isNew;
     const can=!ui.tvSpin&&!(isNew&&dd)&&m.dc<Core.DICE_MAX&&canAfford({silver:bet});
