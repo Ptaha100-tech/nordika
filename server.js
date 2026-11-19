@@ -106,10 +106,19 @@ const cctx = {
   notify: (pid, text) => { const u = users.get(pid); if (u) { Core.addLogTo(u.state, text, 'good'); markDirty(u); } }
 };
 setInterval(flush, 2000).unref();
-function shutdown() { flush(); flushClans(); flushSocial(); process.exit(0); }
+function shutdown() { flush(); flushMines(); flushClans(); flushSocial(); process.exit(0); }
 process.on('SIGINT', shutdown); process.on('SIGTERM', shutdown);
 
 /* ---------- связь ядра с игроками ---------- */
+/* Общие серебряные рудники: хозяин каждого хранится здесь и переживает перезапуск. */
+const MINES_FILE = path.join(DATA_DIR, 'mines.json');
+let MINES = {}; try { MINES = JSON.parse(fs.readFileSync(MINES_FILE, 'utf8')) || {}; } catch (e) { MINES = {}; }
+let minesDirty = false;
+const flushMines = () => { if (!minesDirty) return; minesDirty = false; try { fs.writeFileSync(MINES_FILE, JSON.stringify(MINES)); } catch (e) {} };
+setInterval(flushMines, 2000).unref();
+Core.HOOK.mines = () => MINES;
+Core.HOOK.setMine = (id, o) => { if (o) MINES[id] = o; else delete MINES[id]; minesDirty = true; };
+const mineView = uid => { const now = Date.now(); return Core.MINE_IDS.map(id => { const o = MINES[id], busy = o && o.end > now; return busy ? { id, o: o.name, me: o.pid === uid ? 1 : 0, end: o.pid === uid ? o.end : 0 } : { id, o: null }; }); };
 Core.HOOK.getState = pid => { const u = users.get(pid); return u ? u.state : null; };
 Core.HOOK.touch = pid => markDirty(users.get(pid));
 Core.HOOK.dist = (a, b) => distTo(a, b);
@@ -683,7 +692,7 @@ async function api(req, res, url) {
   };
   if (req.method === 'GET' && url === '/api/state') {
     touchState(u);
-    return json(res, 200, { state: u.state, cfg: { t: Core.CFG.t }, now: Date.now(), inc: incomingOf(u.id) });
+    return json(res, 200, { state: u.state, cfg: { t: Core.CFG.t }, now: Date.now(), inc: incomingOf(u.id), mines: mineView(u.id) });
   }
   if (req.method === 'POST' && url === '/api/act') {
     if (limited('act:' + u.id, 10, 3000)) return json(res, 429, { error: 'Слишком быстро.' });
@@ -693,7 +702,7 @@ async function api(req, res, url) {
     Core.act(b.a, b.arg);
     Core.update();
     markDirty(u);
-    return json(res, 200, { state: u.state, cfg: { t: Core.CFG.t }, now: Date.now(), inc: incomingOf(u.id) });
+    return json(res, 200, { state: u.state, cfg: { t: Core.CFG.t }, now: Date.now(), inc: incomingOf(u.id), mines: mineView(u.id) });
   }
   if (req.method === 'GET' && url === '/api/rank') {
     const list = ranking();
@@ -783,7 +792,7 @@ async function api(req, res, url) {
     touchState(u);
     const r = bossHit(u, b.t === 'clan' ? 'clan' : b.t === 'daily' ? 'daily' : 'world');
     if (r.error) return json(res, 400, { error: r.error });
-    return json(res, 200, Object.assign({ view: bossView(u), state: u.state, cfg: { t: Core.CFG.t }, now: Date.now(), inc: incomingOf(u.id) }, r));
+    return json(res, 200, Object.assign({ view: bossView(u), state: u.state, cfg: { t: Core.CFG.t }, now: Date.now(), inc: incomingOf(u.id), mines: mineView(u.id) }, r));
   }
   if (req.method === 'GET' && url === '/api/events') {
     Core.use(u.state); Core.wkSync(u.state);

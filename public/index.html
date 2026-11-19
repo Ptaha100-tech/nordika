@@ -526,7 +526,7 @@ function apply(j){
   off=j.now-Date.now();Core.setNow(()=>Date.now()+off);
   Core.CFG.t=j.cfg.t;
   const first=S===null;
-  S=j.state;Core.use(S);setInc(j.inc||[]);
+  S=j.state;Core.use(S);MINES=j.mines||MINES;setInc(j.inc||[]);
   const fresh=S.log.filter(e=>e.t>seenLog);
   if(!first&&window.Snd&&fresh.some(e=>e.k==='bad'&&/разграбил|напал|набег/i.test(e.txt)))Snd.sfx('alarm');
   if(!first){fresh.slice(0,2).reverse().forEach(e=>toast(e.txt.length>70?e.txt.slice(0,67)+'…':e.txt));}
@@ -603,6 +603,7 @@ function costHTML(c){
 function effect(id,L){
   const b=B[id],nx=L<MAXL;
   if(b.res)return `Добыча: ${fmt(prodAt(id,L))}/ч`+(nx?` → ${fmt(prodAt(id,L+1))}/ч`:'');
+  if(id==='silvermine')return L?`Мест для раненых: ${Core.hutCap({b:{silvermine:L}})}`+(nx?` → ${Core.hutCap({b:{silvermine:L+1}})}`:''):'Лечит раненых; без неё павшие не возвращаются';
   if(id==='storehouse'){const vm=Core.isVip()?1.2:1;return `Вместимость: ${fmt(Math.round(Core.capAt(L,lvl('hall'))*vm))}`+(nx?` → ${fmt(Math.round(Core.capAt(L+1,lvl('hall'))*vm))}`:'');}
   if(id==='vault')return `Прячет от грабежа: ${fmt(300*L)} каждого ресурса`+(nx?` → ${fmt(300*(L+1))}`:'');
   if(id==='barracks')return `Обучение +${15*(L-1)}%, партия до ${10*L}`+(nx?` → +${15*L}%, до ${10*(L+1)}`:'');
@@ -621,11 +622,12 @@ function jobsHTML(scope){
   if(scope==='troops'||scope==='city'){
     if(S.train)j.push(jobHTML('Казарма',`${S.train.n} × ${unitName(S.train.type,S.train.t||1)}`,S.train,'train'));
     if(S.upg)j.push(jobHTML('Казарма',`Улучшение до «${unitName(S.upg.k,S.upg.to)}» (ступень ${S.upg.to})`,S.upg,'upg'));
+    if(S.heal)j.push(jobHTML('Шаман',`Исцеление: ${sum(S.heal.n)} воинов`,S.heal,'heal'));
     if(S.study)j.push(jobHTML('Оракул',`${TECH[S.study.key].n} → ур. ${S.study.to}`,S.study,'study'));
   }
   if(scope==='map')S.marches.forEach(m=>{
-    const o=m.phase==='out'?{end:m.arrive,dur:m.dur}:m.phase==='gather'?{end:m.gEnd,dur:gatherSecs()*1000}:{end:m.back,dur:m.dur};
-    const txt=m.phase==='out'?`К «${m.tgt.name}»`:m.phase==='gather'?`Сбор: «${m.tgt.name}»`:`Домой с «${m.tgt.name}»`;
+    const o=m.phase==='out'?{end:m.arrive,dur:m.dur}:m.phase==='gather'?{end:m.gEnd,dur:gatherSecs()*1000}:m.phase==='hold'?{end:m.hEnd,dur:m.hDur}:{end:m.back,dur:m.dur};
+    const txt=m.phase==='out'?`К «${m.tgt.name}»`:m.phase==='gather'?`Сбор: «${m.tgt.name}»`:m.phase==='hold'?`Держим «${m.tgt.name}»`:`Домой с «${m.tgt.name}»`;
     j.push(jobHTML('Поход',txt+` · ${fmtComp(m.send)}`,o,null));
   });
   return j.length?`<section class="card"><h2>В работе</h2>${j.join('')}</section>`:'';
@@ -646,9 +648,17 @@ function viewCity(){
     else act=costHTML(upCost(id,L))+`<button class="btn" data-act="up" data-arg="${id}" data-gate="1">${L?'Улучшить':'Построить'} · ${fmtT(upSecs(id,L))}</button>`;
     h+=`<article class="card bld"><canvas class="pic" width="152" height="152" data-b="${id}" aria-label="${b.n}, уровень ${L}"></canvas><div class="bb">
       <div class="bt"><h3>${b.n}</h3><span class="lv">${L?'Ур. '+L:'Нет'}</span></div>
-      <p class="bd">${effect(id,L)} <a href="#" class="lnk" data-act="bsheet" data-arg="${id}">Все уровни</a></p>${act}</div></article>`;
+      <p class="bd">${effect(id,L)} <a href="#" class="lnk" data-act="bsheet" data-arg="${id}">Все уровни</a></p>${id==='silvermine'?hutHTML():''}${act}</div></article>`;
   });
   return h;
+}
+function hutHTML(){
+  if(!lvl('silvermine'))return '';
+  const n=sum(S.wounded||{});
+  if(S.heal)return `<p class="note">Шаман лечит воинов.</p>`;
+  if(!n)return `<p class="sm muted">Раненых нет.</p>`;
+  const c=Core.healCost(S),can=canAfford(c);
+  return `<p class="sm">Раненых: ${fmtComp(S.wounded)}</p>${costHTML(c)}<button class="btn ${can?'':'off'}" data-act="heal">Лечить всех · ${fmtT(Core.healSecs(S))}</button>`;
 }
 function viewTroops(){
   let h=jobsHTML('troops');
@@ -656,7 +666,7 @@ function viewTroops(){
   S.marches.forEach(m=>{for(const k in m.send)away[k]=(away[k]||0)+m.send[k];});
   const stk=Core.sortKeys(S.troops).filter(k=>S.troops[k]>0);
   h+=`<section class="card"><h2>Дружина дома</h2><div class="stats sm">${stk.length?stk.map(k=>`<div class="stat"><b>${S.troops[k]}</b><span>${Core.sname(k)} <small class="muted">ст.${Core.stier(k)}</small></span></div>`).join(''):'<p class="note">Дома пока нет воинов.</p>'}</div>
-    ${sum(away)?`<p class="note">В походах: ${fmtComp(away)}</p>`:''}</section>`;
+    ${sum(away)?`<p class="note">В походах: ${fmtComp(away)}</p>`:''}${sum(S.wounded||{})?`<p class="note">Раненые в Хижине шамана: ${fmtComp(S.wounded)}</p>`:''}</section>`;
   h+=heroHTML();
   const mt=Core.maxTier();
   Object.keys(U).forEach(k=>{
@@ -778,7 +788,7 @@ function eqSheet(){
 function forgeSheet(){
   const _sc=!$('modal').hidden&&document.querySelector('.fgin'),_st=_sc?_sc.scrollTop:0;
   ui.eqOpen=false;ui.fgOpen=true;
-  const E=S.eq,fc=Core.forgeCost(),can=lvl('hall')>=3&&E.inv.length<Core.eqCap(S)&&S.res.wood>=fc.wood&&S.res.iron>=fc.iron&&S.res.silver>=fc.silver;
+  const E=S.eq,fc=Core.forgeCost(),can=lvl('hall')>=3&&Core.bagUsed(S)<Core.eqCap(S)&&S.res.wood>=fc.wood&&S.res.iron>=fc.iron&&S.res.silver>=fc.silver;
   const H=heroOf(S),f=ui.eqF||'all',sel=ui.eqSel;
   const so=ui.eqSort||'r',EQO=Object.keys(Core.SLOTS),inv=E.inv.slice().sort((a,b)=>so==='s'?EQO.indexOf(a.slot)-EQO.indexOf(b.slot)||b.r-a.r||Core.plusOf(b)-Core.plusOf(a):so==='l'?Core.plusOf(b)-Core.plusOf(a)||b.r-a.r:so==='p'?Core.itemPct(b)-Core.itemPct(a):b.r-a.r||Core.plusOf(b)-Core.plusOf(a)).filter(it=>f==='all'||(f==='w'&&['weapon','gloves','ring','amulet'].includes(it.slot))||(f==='a'&&['armor','helm','pants','cloak','belt'].includes(it.slot)));
   const pk=ui.eqPick||(ui.eqPick={}),mm=!!ui.eqMulti;
@@ -796,7 +806,7 @@ function forgeSheet(){
     <div class="subtabs" style="margin:0 0 8px"><button class="btn small ${ui.fgTab==='e'?'ghost':'on'}" data-act="fgtab" data-arg="c" type="button">Обычный крафт</button><button class="btn small ${ui.fgTab==='e'?'on':'ghost'}" data-act="fgtab" data-arg="e" type="button">Эпический крафт</button></div>
     ${ui.fgTab==='e'?`<div class="eqforge"><div style="min-width:0"><b>Эпический крафт</b><p class="sm muted" style="margin:0">Серебряные, золотые и эпические вещи куются из вещи прошлого тира, рецепта от купца в Таверне и ресурсов охоты. Откроется в одном из ближайших обновлений.</p></div></div>`:`<div class="eqforge" style="display:block"><b>Обычный крафт</b><p class="sm muted" style="margin:0 0 4px">Выберите, что ковать. Предмет получится обычным, со случайной добавкой. Нужна Палата ярла 3.</p><div class="costs" style="margin:4px 0">${Object.keys(fc).map(k=>cpHTML(k,fc[k])).join('')}</div><div class="fgslots">${['weapon','armor','helm','amulet','gloves','pants','cloak','belt','ring'].map(k=>`<button class="btn small ${can?'':'off'}" data-act="forge" data-arg="${k}" type="button">${EQG[k]} ${Core.SLOTS[k].n}</button>`).join('')}</div></div>`}
     <div class="eqdet">${det}</div>
-    <div class="eqhd"><span>Сумка</span><span class="lv">${E.inv.length}/${Core.eqCap(S)}</span></div>
+    <div class="eqhd"><span>Сумка</span><span class="lv">${Core.bagUsed(S)}/${Core.eqCap(S)}</span></div>
     ${(E.bag||0)<Core.BAG_COST.length?`<button class="btn small ghost" style="display:block;margin:6px auto 0" data-act="bag" type="button">Расширить сумку на ${Core.BAG_STEP} мест · ${Core.BAG_COST[E.bag||0]} рунных камней</button>`:''}
     <div class="subtabs" style="margin:6px 0">${tabs.map(t=>`<button class="btn small ${t[0]===f?'on':'ghost'}" data-act="eqf" data-arg="${t[0]}">${t[1]}</button>`).join('')}</div>
     <div class="subtabs sm" style="margin:2px 0 6px;align-items:center"><span class="muted sm">Порядок:</span>${[['r','тир'],['s','слот'],['l','заточка'],['p','бонус']].map(t=>`<button class="btn small ${t[0]===so?'on':'ghost'}" data-act="eqsort" data-arg="${t[0]}">${t[1]}</button>`).join('')}</div>
@@ -809,26 +819,64 @@ function forgeSheet(){
   try{window.Art&&Art.paintIn&&Art.paintIn($('modal'));}catch(e){}
 }
 const TL={atk:'Атака',def:'Защита',eco:'Экономика',bld:'Стройка',fast:'Походы',drill:'Найм',jstr:'Сила',jvit:'Тело',jarm:'Броня',jcrt:'Крит'};
-const KIND={node:'Ресурсная точка',camp:'Разбойники',jarl:'Ярл',player:'Игрок'};
-ui.msub='world';
-const MSUB=[['node','Сбор'],['camp','Охота'],['pvp','ПВП'],['boss','Боссы'],['world','Мир']];
+const KIND={node:'Ресурсная точка',camp:'Разбойники',jarl:'Ярл',player:'Игрок',mob:'Охота',mine:'Серебряный рудник'};
+ui.msub='world';ui.hsub='mob';var MINES=[];
+function getTg(id){return String(id).startsWith('mine:')?Core.mineTarget(String(id).slice(5)):S.targets.find(x=>x.id===id);}
+const mineV=id=>MINES.find(m=>m.id===id)||{id,o:null};
+const MSUB=[['node','Сбор'],['hunt','Охота'],['boss','Боссы'],['world','Мир']];
+function raidsHTML(){
+  const rs=(S.raids||[]).filter(r=>Core.now()-r.t<48*3600000);
+  if(!rs.length)return '';
+  return `<section class="card"><h3>Нападения на вас</h3>${rs.slice(0,6).map(r=>`<div class="item"><div><b>${esc(r.name)}</b> <span class="pill ${r.win?'bad':'good'}">${r.win?'ограбил вас':'отбит'}</span><p class="sm muted">${ago(r.t)}${r.win&&r.loot?' · унёс: '+esc(r.loot):''}${r.lost?' · ваши потери: '+esc(r.lost):''}${r.elost?' · враг потерял: '+esc(r.elost):''}</p></div><button class="btn small" data-act="revenge" data-arg="${r.pid}">Отомстить</button></div>`).join('')}</section>`;
+}
+const MATN=Core.MATS;
+function matsLine(){const m=S.mats||{},k=Object.keys(m).filter(x=>m[x]>0);return k.length?k.map(x=>`${MATN[x]} ×${m[x]}`).join(' · '):'пока пусто';}
+function huntHTML(){
+  const free=slots(lvl('hall'))-S.marches.length,wn=sum(S.wounded||{});
+  let h=`<div class="msub"><button class="btn ${ui.hsub==='mob'?'on':'ghost'}" data-act="hsub" data-arg="mob">Фарм ресурсов</button><button class="btn ${ui.hsub==='mine'?'on':'ghost'}" data-act="hsub" data-arg="mine">Серебряные рудники</button></div>`;
+  h+=`<p class="note" style="margin:0 0 8px">В сумке: ${matsLine()} · занято ${Core.bagUsed(S)}/${Core.eqCap(S)}${wn?` · раненых ${wn} (лечит Хижина шамана)`:''}</p>`;
+  if(ui.hsub==='mine'){
+    h+=`<p class="note" style="margin:0 0 8px">Рудники общие для всех ярлов. Отряд держит рудник заданное время и приносит серебро. Занятый рудник можно разведать или отбить.</p>`;
+    Core.MINE_IDS.forEach(id=>{
+      const tg=Core.mineTarget(id),d=Core.MINEC[tg.ti],v=mineV(id),sc=S.mscout&&S.mscout[id];
+      const st=v.o?(v.me?`<span class="pill good">Ваш · осталось <span class="cd" data-end="${v.end}"></span></span>`:`<span class="pill bad">Занят: ${esc(v.o)}</span>`):`<span class="pill good">Свободен</span>`;
+      const scc={food:60*(tg.ti+1),wood:50*(tg.ti+1)};
+      let btn='';
+      if(v.me)btn='<span class="muted sm">Держите рудник</span>';
+      else if(!v.o)btn=`<button class="btn ${free>0&&sum(S.troops)?'':'off'}" data-act="atk" data-arg="mine:${id}">Занять</button>`;
+      else btn=`<button class="btn ghost ${(S.res.food>=scc.food&&S.res.wood>=scc.wood)?'':'off'}" data-act="mscout" data-arg="${id}">Разведать · ${fmt(scc.food)}${ricon('food')} ${fmt(scc.wood)}${ricon('wood')}</button><button class="btn ${free>0&&sum(S.troops)?'':'off'}" data-act="atk" data-arg="mine:${id}">Отбить</button>`;
+      h+=`<article class="card tg"><div class="trow2"><span class="kind">${d.n} №${+id.split('_')[1]+1}</span>${st}</div>
+      <p class="bd">Держать ${d.min>=60?d.min/60+' ч':d.min+' мин'} · награда <b>${fmt(d.silver)}</b> ${ricon('silver')} серебра · путь ${fmtT(marchSecs(d.dist))} в одну сторону</p>
+      ${sc&&v.o&&sc.name===v.o?`<p class="sm muted">Разведка (${ago(sc.t)}): ${esc(sc.name)}${sc.comp?', '+esc(sc.comp):''}</p>`:''}
+      <div class="tgb"><span></span><span class="tgbtn">${btn}</span></div></article>`;
+    });
+    return h;
+  }
+  h+=`<p class="note" style="margin:0 0 8px">Свои враги у каждого ярла. За победу — серебро и шанс получить материалы для крафта. Побеждённые возвращаются позже.</p>`;
+  S.targets.filter(t=>t.kind==='mob').sort((a,b)=>a.level-b.level).forEach(t=>{
+    const md=Core.MOBS[t.mi],v=verdict(t),left=t.until-Core.now(),ready=left<=0;
+    h+=`<article class="card tg mob"><div class="trow2"><span class="kind">Охота · ур. ${t.level}</span><span class="pill ${ready?v.c:'mute'}">${ready?v.t:'Вернутся через <span class="cd" data-end="'+t.until+'"></span>'}</span></div>
+    <h3 style="margin-top:2px">${esc(t.name)}</h3>
+    <p class="bd">Враги: ${fmtComp(t.comp)}</p>
+    <p class="bd">Награда: ${md.silver[0]}–${md.silver[1]} ${ricon('silver')} серебра. Шанс материалов: ${md.drops.map(d=>`${MATN[d[0]]} ${Math.round(d[1]*100)}%`).join(', ')}. Возврат врагов: ${md.rs} мин.</p>
+    <div class="tgb"><span class="muted sm">Путь ${fmtT(marchSecs(t.dist))} в одну сторону</span><span class="tgbtn"><button class="btn ${ready&&free>0&&sum(S.troops)?'':'off'}" data-act="atk" data-arg="${t.id}">Напасть</button></span></div></article>`;
+  });
+  return h;
+}
 function viewMap(){
   const free=slots(lvl('hall'))-S.marches.length;
   const cdl=Math.max(0,Math.ceil((S.tgtAt+30000-Core.now())/1000));
-  const grp=t=>t.kind==='node'?'node':t.kind==='camp'?'camp':'pvp';
-  const cnt={node:0,camp:0,pvp:0};S.targets.forEach(t=>cnt[grp(t)]++);
+  const grp=t=>t.kind==='node'?'node':'x';
+  const cnt={node:0,hunt:S.targets.filter(t=>t.kind==='mob'&&!(t.until>Core.now())).length};S.targets.forEach(t=>{if(t.kind==='node')cnt.node++;});
   let h=jobsHTML('map');
   h+=`<section class="card trow2"><span>Свободных отрядов: <b>${free}</b> из ${slots(lvl('hall'))}</span><button class="btn ghost small" data-act="refresh" ${cdl?'disabled':''}>Новые цели</button></section>`;
-  h+=`<div class="msub">${MSUB.map(m=>`<button class="btn ${ui.msub===m[0]?'on':'ghost'}" data-act="msub" data-arg="${m[0]}">${m[1]} <span class="muted sm">${(m[0]==='world'||m[0]==='boss')?'':cnt[m[0]]}</span></button>`).join('')}</div>`;
-  if(ui.msub==='world')return h+worldMapHTML();
+  h+=`<div class="msub">${MSUB.map(m=>`<button class="btn ${ui.msub===m[0]?'on':'ghost'}" data-act="msub" data-arg="${m[0]}">${m[1]} <span class="muted sm">${cnt[m[0]]===undefined?'':cnt[m[0]]}</span></button>`).join('')}</div>`;
+  if(ui.msub==='world')return h+raidsHTML()+worldMapHTML();
+  if(ui.msub==='hunt')return h+huntHTML();
   if(ui.msub==='boss')return h+bossHTML();
-  const note={node:'Мирные места, где отряд собирает ресурсы. Чем дальше точка, тем дольше путь.',camp:'Разбойники грабят округу. Победите их и заберите добычу.',pvp:'Здесь можно напасть на других ярлов. Живые игроки идут первыми, при нехватке их заменяют отряды ярлов.'}[ui.msub];
+  const note='Мирные места, где отряд собирает ресурсы. Чем дальше точка, тем дольше путь.';
   h+=`<p class="note" style="margin:0 0 8px">${note}</p>`;
-  if(ui.msub==='pvp'){
-    const rs=(S.raids||[]).filter(r=>Core.now()-r.t<48*3600000);
-    if(rs.length)h+=`<section class="card"><h3>Нападения на вас</h3>${rs.slice(0,6).map(r=>`<div class="item"><div><b>${esc(r.name)}</b> <span class="pill ${r.win?'bad':'good'}">${r.win?'ограбил вас':'отбит'}</span><p class="sm muted">${ago(r.t)}${r.win&&r.loot?' · унёс: '+esc(r.loot):''}${r.lost?' · ваши потери: '+esc(r.lost):''}${r.elost?' · враг потерял: '+esc(r.elost):''}</p></div><button class="btn small" data-act="revenge" data-arg="${r.pid}">Отомстить</button></div>`).join('')}</section>`;
-  }
-  const list=S.targets.filter(t=>grp(t)===ui.msub).sort((a,b)=>(a.kind==='player'?0:1)-(b.kind==='player'?0:1)||a.dist-b.dist);
+  const list=S.targets.filter(t=>t.kind==='node').sort((a,b)=>(a.kind==='player'?0:1)-(b.kind==='player'?0:1)||a.dist-b.dist);
   if(!list.length)h+=`<p class="muted sm">Целей нет. Нажмите «Новые цели».</p>`;
   list.forEach(t=>{
     const v=verdict(t);
@@ -1683,17 +1731,17 @@ function dueSoon(){
 
 /* ---------- окно похода ---------- */
 function openModal(tid){
-  const t=S.targets.find(x=>x.id===tid);if(!t)return;
+  const t=getTg(tid);if(!t)return;
   ui.modal=tid;
-  const v=verdict(t);
+  const v=t.kind==='mine'?(mineV(t.mine).o?{c:'bad',t:'Занят'}:{c:'good',t:'Свободен'}):verdict(t);
   const rows=Core.sortKeys(S.troops).filter(k=>S.troops[k]>0).map(k=>`<div class="srow"><label>${Core.sname(k)} <small class="muted">ст.${Core.stier(k)}</small> <span class="muted sm">(дома ${S.troops[k]})</span></label>
     <button class="btn ghost small" data-act="step" data-arg="${k}:-5">−5</button>
     <input class="sn" id="sn-${k}" type="number" inputmode="numeric" min="0" max="${S.troops[k]}" value="${S.troops[k]}">
     <button class="btn ghost small" data-act="step" data-arg="${k}:5">+5</button></div>`).join('');
-  const loot=t.kind==='player'?'':`<div class="costs">${Object.keys(t.loot).map(k=>cpHTML(k,t.loot[k])).join('')}</div>`;
+  const loot=(t.kind==='player'||t.kind==='mob')?'':`<div class="costs">${Object.keys(t.loot).map(k=>cpHTML(k,t.loot[k])).join('')}</div>`;
   $('modal').innerHTML=`<div class="sheet"><div class="trow2"><span class="kind">${KIND[t.kind]} · ур. ${t.level}</span><span class="pill ${v.c}">${v.t}</span></div>
     <h3>${esc(t.name)}</h3>
-    <p class="bd">${t.kind==='node'?`Отряд соберёт, сколько унесёт, и вернётся. Сбор занимает ${fmtT(gatherSecs())}.`:(t.kind==='player'?'Разведка (может устареть): ':'Защитники: ')+(fmtComp(t.comp)||'войск не видно')}</p>${loot}
+    <p class="bd">${t.kind==='mine'?`Отряд займёт рудник на ${Core.MINEC[t.ti].min} мин и принесёт ${fmt(Core.MINEC[t.ti].silver)} серебра. Если рудник занят, придётся сражаться, силы врага лучше разведать.`:t.kind==='mob'?`Враги: ${fmtComp(t.comp)}. Награда ${Core.MOBS[t.mi].silver[0]}–${Core.MOBS[t.mi].silver[1]} серебра и шанс материалов.`:t.kind==='node'?`Отряд соберёт, сколько унесёт, и вернётся. Сбор занимает ${fmtT(gatherSecs())}.`:(t.kind==='player'?'Разведка (может устареть): ':'Защитники: ')+(fmtComp(t.comp)||'войск не видно')}</p>${loot}
     ${rows?presetsHTML():''}${rows||'<p class="note">Дома нет войск. Обучите их в Казарме.</p>'}
     <div class="pv" id="pv"></div>
     <div class="acts"><button class="btn" id="go" data-act="go">Выступить</button><button class="btn ghost" data-act="all">Всё войско</button><button class="btn ghost" data-act="half">Пополам</button><button class="btn ghost" data-act="cancel">Отмена</button></div></div>`;
@@ -1711,11 +1759,12 @@ function readSend(){
   return s;
 }
 function modalPreview(){
-  const t=S.targets.find(x=>x.id===ui.modal);if(!t)return;
+  const t=getTg(ui.modal);if(!t)return;
   const s=readSend(),tot=sum(s),go=$('go');
   if(S.marches.length>=slots(lvl('hall'))){$('pv').textContent='Все отряды заняты. Дождитесь возвращения.';go.classList.add('off');return;}
   if(!tot){$('pv').textContent='Выберите, кого отправить.';go.classList.add('off');return;}
   go.classList.remove('off');
+  if(t.kind==='mine'){$('pv').textContent=mineV(t.mine).o?'Рудник занят: исход боя неизвестен. Раненые вернутся домой.':`Рудник свободен, отряд займёт его без боя. Путь ${fmtT(marchSecs(t.dist))} в одну сторону.`;return;}
   if(t.kind==='node'){
     const cr=carryOf(s);$('pv').textContent=`Унесёте до ${fmt(Math.min(cr,sum(t.loot)))} ед. Туда и обратно ${fmtT(marchSecs(t.dist)*2+gatherSecs())}.`;return;
   }
@@ -1810,6 +1859,9 @@ function onAct(act,arg){
     case 'tutskip':try{localStorage.setItem(tutKey(),'1');}catch(e){}render();return;
     case 'tab':ui.tab=arg;if(arg==='shop')loadShop();if(arg==='top'){loadSeason();if(Date.now()-ui.rankAt>20000)loadRank();}if(arg==='clan')loadClan();if(arg==='quests'){loadEvents();loadInvite();}if(arg==='chat')loadSoc();render();return;
     case 'pay':toast('Оплата пока не подключена');return;
+    case 'hsub':ui.hsub=arg;render();return;
+    case 'heal':act2('heal');return;
+    case 'mscout':act2('mscout',arg);return;
     case 'msub':ui.msub=arg;render();if(arg==='boss')loadBoss();return;
     case 'bhit':bossHit(arg);return;
     case 'wprof':ui.tab='chat';ui.sub='world';ui.soc.peer=null;render();loadSoc();openProf({id:arg});return;

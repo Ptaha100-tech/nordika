@@ -19,7 +19,7 @@ const B = {
   sawmill:    { n: 'Лесопилка',        r: 'ᛒ', res: 'wood',   base: 300, cost: { wood: 40, stone: 40 }, t: 15 },
   quarry:     { n: 'Каменоломня',      r: 'ᚲ', res: 'stone',  base: 260, cost: { wood: 70, stone: 20 }, t: 15 },
   ironmine:   { n: 'Железный рудник',  r: 'ᛁ', res: 'iron',   base: 200, cost: { wood: 80, stone: 60 }, t: 18 },
-  silvermine: { n: 'Серебряная шахта', r: 'ᛊ', res: 'silver', base: 120, cost: { wood: 120, stone: 90, iron: 40 }, t: 22 },
+  silvermine: { n: 'Хижина шамана', r: 'ᛊ', cost: { wood: 120, stone: 90, iron: 40 }, t: 22 },
   storehouse: { n: 'Амбар',            r: 'ᛉ', cost: { wood: 90, stone: 70 }, t: 18 },
   vault:      { n: 'Хранилище',        r: 'ᚺ', cost: { wood: 100, stone: 120, iron: 50 }, t: 20 },
   barracks:   { n: 'Казарма',          r: 'ᛏ', cost: { wood: 100, stone: 80, iron: 30 }, t: 20 },
@@ -76,7 +76,9 @@ const HOOK = {
   sameClan: () => false,
   getState: () => null,
   touch: () => {},
-  alert: () => {}
+  alert: () => {},
+  mines: () => ({}),
+  setMine: () => {}
 };
 
 const rnd = (a, b) => a + Math.random() * (b - a);
@@ -212,7 +214,7 @@ function newItem(il, w, slot) {
   return { id: 'i' + (S.mid++), slot: slot && SLOTS[slot] ? slot : pick(SLOTK), r, plus: 0, af: rollAf() };
 }
 function giveItem(it, why, t) {
-  if (S.eq.inv.length >= eqCap(S)) { addLog(`Находка «${itemName(it)}» пропала: сумка полна.`, 'info', t); return false; }
+  if (bagUsed(S) >= eqCap(S)) { addLog(`Находка «${itemName(it)}» пропала: сумка полна.`, 'info', t); return false; }
   S.eq.inv.push(it); addLog(`${why}: ${RARN[it.r].toLowerCase()} «${itemName(it)}» (+${itemPct(it)}% ${SLOTS[it.slot].w}).`, 'good', t); toast(`Находка: ${itemName(it)}`);
   return true;
 }
@@ -299,6 +301,9 @@ function ensure(st) {
     if (st.train && !st.train.t) st.train.t = T(st.train.type);
     if (st.upg && st.upg.key) { const c = tierCost(st.upg.key, st.upg.to); for (const r in c) st.res[r] = (st.res[r] || 0) + c[r]; st.upg = null; }
   }
+  if (!st.wounded) st.wounded = {};
+  if (!st.mats) st.mats = {};
+  ensureMobs(st);
   if (st.gems === undefined) { st.gems = 0; st.vip = 0; st.daily = 0; st.bought = {}; }
 }
 const tierOf = (st, k) => (st.tier && st.tier[k]) || 1;
@@ -353,7 +358,7 @@ const prot = () => 300 * lvl('vault');
 /* Добыча и награды не превышают вместимость Амбара (уже лежащее сверху не отнимаем). */
 const addCapped = (k, v) => { const c = cap(), cur = S.res[k] || 0; S.res[k] = Math.max(cur, Math.min(c, cur + v)); };
 function prodAt(id, L) { const b = B[id]; return L ? Math.round(b.base * L * (1 + 0.12 * (L - 1)) * ecoMul()) : 0; }
-function rate(rid) { const id = BORDER.find(k => B[k].res === rid); return prodAt(id, lvl(id)); }
+function rate(rid) { if (rid === 'silver') return Math.round(25 * lvl('hall') * ecoMul()); const id = BORDER.find(k => B[k].res === rid); return prodAt(id, lvl(id)); }
 const upCost = (id, L) => { const o = {}; for (const k in B[id].cost) o[k] = Math.round(B[id].cost[k] * grow(L, 1.55, 1.10)); return o; };
 /* Первые уровни строятся быстро, чтобы новичок за первые минуты увидел результат. */
 const techCut = (k) => (S && S.tech ? Math.max(0.55, 1 - 0.03 * (S.tech[k] || 0)) : 1);
@@ -424,7 +429,7 @@ function topUpPlayers() {
 }
 function genTarget(kind) {
   const H = lvl('hall');
-  kind = kind || pick(['camp', 'jarl', 'node']);
+  kind = kind || pick(['jarl', 'node']);
   if (kind === 'player') {
     const p = HOOK.pickPlayers(S, 1)[0];
     if (p) return playerTarget(p);
@@ -450,8 +455,9 @@ function genTarget(kind) {
   return { id: 't' + (S.mid++), kind, name, level, comp, loot, defb, res, dist: ri(8, 32) };
 }
 function refreshTargets() {
-  S.targets = [];
-  ['node', 'node', 'node', 'node', 'camp', 'camp', 'camp', 'camp'].forEach(k => S.targets.push(genTarget(k)));
+  const mobs = S.targets.filter(t => t.kind === 'mob');
+  S.targets = mobs;
+  ['node', 'node', 'node', 'node', 'node', 'node'].forEach(k => S.targets.push(genTarget(k)));
   HOOK.pickPlayers(S, 4).forEach(p => S.targets.push(playerTarget(p)));
   while (S.targets.filter(t => t.kind === 'player' || t.kind === 'jarl').length < 2) S.targets.push(genTarget('jarl'));
   S.tgtAt = nowMs();
@@ -471,7 +477,9 @@ function nextEvent(tn) {
   if (S.train && S.train.end <= tn) c.push({ time: S.train.end, run: finishTrain });
   if (S.study && S.study.end <= tn) c.push({ time: S.study.end, run: finishStudy });
   if (S.upg && S.upg.end <= tn) c.push({ time: S.upg.end, run: finishUpg });
+  if (S.heal && S.heal.end <= tn) c.push({ time: S.heal.end, run: finishHeal });
   S.marches.forEach(m => {
+    if (m.phase === 'hold' && m.hEnd <= tn) c.push({ time: m.hEnd, run: () => endHold(m) });
     if (m.phase === 'gather' && m.gEnd <= tn) c.push({ time: m.gEnd, run: () => endGather(m) });
     if (m.phase === 'out' && m.arrive <= tn) c.push({ time: m.arrive, run: () => resolveMarch(m) });
     if (m.phase === 'back' && m.back <= tn) c.push({ time: m.back, run: () => returnMarch(m) });
@@ -498,6 +506,7 @@ function settle(D, to) {
       if (S.train && S.train.end <= to) c.push({ time: S.train.end, run: finishTrain });
       if (S.study && S.study.end <= to) c.push({ time: S.study.end, run: finishStudy });
       if (S.upg && S.upg.end <= to) c.push({ time: S.upg.end, run: finishUpg });
+      if (S.heal && S.heal.end <= to) c.push({ time: S.heal.end, run: finishHeal });
       if (!c.length) break;
       c.sort((a, b) => a.time - b.time);
       produce(Math.max(c[0].time, S.t)); c[0].run();
@@ -530,6 +539,133 @@ function approxN(n) { if (n <= 0) return 0; if (n < 10) return 10; const st = n 
 function fmtApprox(c) { return sortKeys(c).filter(k => validKey(k) && (c[k] || 0) > 0).map(k => `${sname(k)} ~${approxN(c[k])}`).join(' · '); }
 const carryOf = (s, st) => { st = st || S; return Math.round(Object.keys(s).filter(validKey).reduce((a, k) => a + (s[k] || 0) * U[stype(k)].carry * tmul(stier(k)), 0) * lootB(st)); };
 
+/* ============ Раненые, материалы, мобы, рудники ============ */
+const HUT = 'silvermine';
+const hutCap = st => { const L = (st.b && st.b[HUT]) || 0; return L ? Math.round(40 * L * (1 + 0.2 * (L - 1))) : 0; };
+/* Из потерь 60% становятся ранеными (пока есть место в Хижине шамана), остальные гибнут. */
+function woundSt(st, lost) {
+  if (!st.wounded) st.wounded = {};
+  let room = hutCap(st) - sum(st.wounded), dead = 0, hurt = 0;
+  for (const k in lost) {
+    const n = lost[k] || 0; if (!n || !validKey(k)) continue;
+    const w = Math.min(Math.round(n * 0.6), Math.max(0, room)); room -= w;
+    if (w) { st.wounded[k] = (st.wounded[k] || 0) + w; hurt += w; }
+    dead += n - w;
+  }
+  return { dead, hurt };
+}
+const wnote = w => w && w.hurt ? ` Раненых: ${w.hurt}.` : '';
+const healCost = st => { const o = { food: 0, wood: 0 }; for (const k in (st.wounded || {})) { const n = st.wounded[k] || 0, c = U[stype(k)].cost; for (const r in c) o[r] = (o[r] || 0) + Math.ceil(c[r] * 0.4 * n); } return o; };
+const healSecs = st => { const n = sum(st.wounded || {}), L = (st.b && st.b[HUT]) || 1; return Math.max(10, Math.round(n * 4 * CFG.t / (1 + 0.15 * (L - 1)))); };
+function startHeal() {
+  if (!lvl(HUT)) { toast('Постройте Хижину шамана'); return; }
+  if (S.heal) return;
+  const n = sum(S.wounded || {}); if (!n) { toast('Раненых нет'); return; }
+  const c = healCost(S); if (!canAfford(c)) { toast('Не хватает ресурсов'); return; }
+  pay(c); const d = healSecs(S) * 1000;
+  S.heal = { n: Object.assign({}, S.wounded), start: nowMs(), end: nowMs() + d, dur: d }; S.wounded = {};
+}
+function finishHeal() {
+  const h = S.heal; let tot = 0;
+  for (const k in h.n) { S.troops[k] = (S.troops[k] || 0) + h.n[k]; tot += h.n[k]; }
+  S.heal = null; addLog(`Шаман исцелил воинов: ${tot}.`, 'good', h.end); toast(`Исцелено воинов: ${tot}`);
+}
+/* Материалы для крафта живут в той же сумке, что и вещи (стопка до 99). */
+const MATS = { pelt: 'Волчья шкура', fang: 'Клык вепря', bone: 'Кость тролля', amber: 'Янтарь', frost: 'Ледяной осколок', ash: 'Вулканический пепел', rune: 'Рунная пыль', scale: 'Чешуя змея' };
+const MATK = Object.keys(MATS), STACK = 99;
+const bagUsed = st => (st.eq.inv || []).length + Object.values(st.mats || {}).reduce((a, n) => a + Math.ceil((n || 0) / STACK), 0);
+function giveMat(id, n) {
+  if (!MATS[id] || !(n > 0)) return false;
+  if (!S.mats) S.mats = {};
+  const cur = S.mats[id] || 0, need = Math.ceil((cur + n) / STACK) - Math.ceil(cur / STACK);
+  if (bagUsed(S) + need > eqCap(S)) return false;
+  S.mats[id] = cur + n; return true;
+}
+const MOBS = [
+  { n: 'Лесные волки',      lv: 1, silver: [30, 60],   rs: 20, drops: [['pelt', 0.55], ['fang', 0.2]] },
+  { n: 'Дикие вепри',       lv: 2, silver: [50, 100],  rs: 20, drops: [['fang', 0.5], ['bone', 0.2]] },
+  { n: 'Горные тролли',     lv: 3, silver: [80, 150],  rs: 30, drops: [['bone', 0.5], ['pelt', 0.25], ['amber', 0.15]] },
+  { n: 'Ледяные ётуны',     lv: 5, silver: [150, 260], rs: 30, drops: [['frost', 0.5], ['bone', 0.25], ['amber', 0.2]] },
+  { n: 'Огненные великаны', lv: 7, silver: [250, 400], rs: 45, drops: [['ash', 0.45], ['amber', 0.25], ['frost', 0.15]] },
+  { n: 'Морские змеи',      lv: 9, silver: [400, 650], rs: 60, drops: [['scale', 0.45], ['rune', 0.25], ['ash', 0.2]] }
+];
+function mobTarget(i) {
+  const d = MOBS[i], n = Math.round(5 * Math.pow(d.lv, 1.5) + 3);
+  const keys = shuffle(Object.keys(U)).slice(0, 2);
+  return { id: 'mob' + i, kind: 'mob', mi: i, name: d.n, level: d.lv, comp: botComp(randComp(n, keys), d.lv), loot: {}, defb: 1, dist: 6 + 2 * i, until: 0 };
+}
+function ensureMobs(st) {
+  if (!Array.isArray(st.targets)) return;
+  st.targets = st.targets.filter(t => t.kind !== 'camp');
+  const keepS = S; S = st;
+  try { MOBS.forEach((d, i) => { if (!st.targets.some(t => t.id === 'mob' + i)) st.targets.push(mobTarget(i)); }); } finally { S = keepS; }
+}
+const MINEC = [
+  { n: 'Малая жила',        min: 15,  silver: 600,   dist: 9 },
+  { n: 'Медная копь',       min: 30,  silver: 1400,  dist: 13 },
+  { n: 'Серебряная копь',   min: 60,  silver: 3200,  dist: 17 },
+  { n: 'Глубокий рудник',   min: 120, silver: 7000,  dist: 22 },
+  { n: 'Королевская шахта', min: 240, silver: 16000, dist: 28 }
+];
+const MINE_PER = 4;
+const MINE_IDS = []; MINEC.forEach((d, t) => { for (let i = 0; i < MINE_PER; i++) MINE_IDS.push('m' + t + '_' + i); });
+function mineTarget(id) {
+  const m = /^m([0-4])_([0-3])$/.exec(String(id)); if (!m) return null;
+  const ti = +m[1], d = MINEC[ti];
+  return { id: 'mine:' + id, kind: 'mine', mine: id, ti, name: d.n + ' №' + (+m[2] + 1), level: ti + 1, dist: d.dist, comp: {}, loot: { silver: d.silver }, defb: 1 };
+}
+const mineDur = ti => MINEC[ti].min * 60000 * CFG.t;
+const mineBusy = (id, t) => { const o = HOOK.mines()[id]; return o && o.end > (t || nowMs()) ? o : null; };
+function endHold(m) {
+  const ti = m.tgt.ti, d = MINEC[ti];
+  m.loot = { silver: d.silver }; m.phase = 'back'; m.back = m.hEnd + m.dur; gainXp(20 + 10 * (ti + 1));
+  const o = HOOK.mines()[m.tgt.mine]; if (o && o.mid === m.id) HOOK.setMine(m.tgt.mine, null);
+  addLog(`Рудник «${m.tgt.name}» удержан. Отряд несёт ${d.silver} серебра.`, 'good', m.hEnd); toast(`Рудник удержан: ${m.tgt.name}`);
+}
+function resolveMine(m) {
+  const tg = m.tgt, t = m.arrive, d = MINEC[tg.ti], id = tg.mine, o = mineBusy(id, t);
+  const home = () => { m.phase = 'back'; m.back = t + m.dur; };
+  const occupy = () => {
+    const dur = mineDur(tg.ti); m.phase = 'hold'; m.hEnd = t + dur; m.hDur = dur; m.loot = {};
+    HOOK.setMine(id, { pid: S.pid, name: S.name || 'Ярл', mid: m.id, end: m.hEnd, since: t });
+    addLog(`Рудник «${tg.name}» занят. Держим ${d.min} мин, награда ${d.silver} серебра.`, 'good', t); toast(`Рудник занят: ${tg.name}`);
+  };
+  if (o && o.pid === S.pid) { home(); return; }
+  if (!o) { occupy(); return; }
+  const D = HOOK.getState(o.pid), m2 = D && (D.marches || []).find(x => x.id === o.mid && x.phase === 'hold');
+  if (!m2) { HOOK.setMine(id, null); occupy(); return; }
+  const r = battle(m.send, m2.send, atkB(S), defB(D));
+  const wa = woundSt(S, r.lostA), wd = woundSt(D, r.lostD);
+  m2.send = r.survD; m.send = r.survA;
+  const aName = S.name || 'Ярл';
+  if (r.win) {
+    const f = Math.max(0, Math.min(1, (t - (m2.hEnd - m2.hDur)) / m2.hDur));
+    m2.loot = { silver: Math.floor(d.silver * f * 0.5) }; m2.phase = 'back'; m2.back = t + m2.dur; HOOK.setMine(id, null);
+    HOOK.alert(D.pid, `⛏ Ярл «${aName}» отбил у вас рудник «${tg.name}».`, 'a');
+    addLogTo(D, `Ярл «${aName}» отбил у вас рудник «${tg.name}». Ваши потери: ${fmtComp(r.lostD) || 'нет'}.${wnote(wd)} Отряд несёт ${m2.loot.silver} серебра.`, 'bad', t);
+    addLog(`Вы отбили рудник «${tg.name}» у ярла «${o.name}». Ваши потери: ${fmtComp(r.lostA) || 'нет'}.${wnote(wa)}`, 'good', t);
+    occupy();
+  } else {
+    HOOK.alert(D.pid, `🛡 Вы удержали рудник «${tg.name}» против ярла «${aName}».`, 'a');
+    addLogTo(D, `Вы удержали рудник «${tg.name}» против ярла «${aName}». Ваши потери: ${fmtComp(r.lostD) || 'нет'}.${wnote(wd)}`, 'good', t);
+    addLog(`Не удалось отбить рудник «${tg.name}». Ваши потери: ${fmtComp(r.lostA) || 'нет'}.${wnote(wa)}`, 'bad', t); toast(`Рудник удержан врагом: ${tg.name}`);
+    if (sum(r.survA) > 0) home(); else S.marches = S.marches.filter(x => x !== m);
+  }
+  HOOK.touch(o.pid);
+}
+function mscout(id) {
+  const tg = mineTarget(id); if (!tg) return;
+  const o = mineBusy(id); if (!o) { toast('Рудник свободен'); return; }
+  if (o.pid === S.pid) return;
+  const sc = { food: 60 * (tg.ti + 1), wood: 50 * (tg.ti + 1) };
+  if (!canAfford(sc)) { toast('Не хватает ресурсов для разведки'); return; }
+  pay(sc);
+  const D = HOOK.getState(o.pid), m2 = D && (D.marches || []).find(x => x.id === o.mid && x.phase === 'hold');
+  if (!S.mscout) S.mscout = {};
+  S.mscout[id] = { t: nowMs(), name: o.name, comp: m2 ? fmtApprox(m2.send) : '', end: o.end };
+  toast('Разведка рудника выполнена');
+}
+
 function resolveMarch(m) {
   const tg = m.tgt, t = m.arrive;
   if (tg.kind === 'node') {
@@ -538,21 +674,27 @@ function resolveMarch(m) {
     m.phase = 'gather'; m.gStart = t; m.gEnd = t + gatherSecs() * 1000; return;
   }
   if (tg.kind === 'player') return resolvePlayer(m);
+  if (tg.kind === 'mine') return resolveMine(m);
   const r = battle(m.send, tg.comp, atkB(S), tg.defb);
+  const wa = woundSt(S, r.lostA);
   if (r.win) {
-    gainXp(tg.kind === 'camp' ? 25 + 10 * tg.level : 35 + 12 * tg.level);
+    gainXp(tg.kind === 'camp' || tg.kind === 'mob' ? 25 + 10 * tg.level : 35 + 12 * tg.level);
     const carry = carryOf(r.survA);
     const tot = sum(tg.loot), f = tot > 0 ? Math.min(1, carry / tot) : 0;
     m.loot = {}; for (const k in tg.loot) m.loot[k] = Math.floor(tg.loot[k] * f);
+    if (tg.kind === 'mob') {
+      const md = MOBS[tg.mi]; m.loot = { silver: ri(md.silver[0], md.silver[1]) }; m.mats = {};
+      md.drops.forEach(([id, p]) => { if (Math.random() < p) m.mats[id] = ri(1, 2); });
+      const real = S.targets.find(x => x.id === tg.id); if (real) real.until = t + md.rs * 60000 * CFG.t;
+    }
     m.send = r.survA; m.phase = 'back'; m.back = t + m.dur;
-    S.stat.wins++; if (tg.kind === 'camp') S.stat.campWins++;
-    if (tg.kind === 'camp' && Math.random() < 0.15) giveItem(newItem(Math.ceil((tg.level || 1) / 4), [80, 18, 2]), 'Трофей из лагеря', t);
-    S.targets = S.targets.filter(x => x.id !== tg.id); S.targets.push(genTarget(tg.kind));
-    addLog(`Победа над «${tg.name}». Ваши потери: ${fmtComp(r.lostA) || 'нет'}. Потери врага: ${fmtComp(r.lostD) || 'нет'}. Добыча: ${fmtRes(m.loot)}.`, 'good', t);
+    S.stat.wins++; if (tg.kind === 'camp' || tg.kind === 'mob') S.stat.campWins++;
+    if (tg.kind !== 'mob') { S.targets = S.targets.filter(x => x.id !== tg.id); S.targets.push(genTarget(tg.kind)); }
+    addLog(`Победа над «${tg.name}». Ваши потери: ${fmtComp(r.lostA) || 'нет'}.${wnote(wa)} Потери врага: ${fmtComp(r.lostD) || 'нет'}. Добыча: ${fmtRes(m.loot)}.`, 'good', t);
     toast(`Победа над «${tg.name}»`);
   } else {
     m.loot = {}; m.send = r.survA;
-    addLog(`Поражение у «${tg.name}». Ваши потери: ${fmtComp(r.lostA) || 'нет'}. Потери врага: ${fmtComp(r.lostD) || 'нет'}.`, 'bad', t);
+    addLog(`Поражение у «${tg.name}». Ваши потери: ${fmtComp(r.lostA) || 'нет'}.${wnote(wa)} Потери врага: ${fmtComp(r.lostD) || 'нет'}.`, 'bad', t);
     toast(`Поражение у «${tg.name}»`);
     if (sum(r.survA) > 0) { m.phase = 'back'; m.back = t + m.dur; }
     else S.marches = S.marches.filter(x => x !== m);
@@ -568,6 +710,7 @@ function resolvePlayer(m) {
   if (D.shield > t) { m.loot = {}; home(); addLog(`Город «${tg.name}» под щитом. Отряд вернулся без боя.`, 'info', t); toast('Цель под щитом'); return; }
   const r = battle(m.send, D.troops, atkB(A), defB(D));
   D.troops = r.survD;
+  const wa = woundSt(A, r.lostA), wd = woundSt(D, r.lostD);
   const aName = A.name || 'Неизвестный ярл';
   const raid = (win, loot) => { (D.raids || (D.raids = [])).unshift({ t, pid: A.pid, name: aName, win, lost: fmtComp(r.lostD) || '', elost: fmtComp(r.lostA) || '', loot: loot || '' }); if (D.raids.length > 20) D.raids.pop(); };
   if (r.win) {
@@ -576,17 +719,17 @@ function resolvePlayer(m) {
     const f = tot > 0 ? Math.min(1, carryOf(r.survA) / tot) : 0;
     m.loot = {}; RES.forEach(x => { const g = Math.floor(take[x.id] * f); m.loot[x.id] = g; D.res[x.id] -= g; });
     D.shield = t + 45 * 60000; raid(true, fmtRes(m.loot)); HOOK.alert(D.pid, `⚔ Ярл «${aName}» разграбил ваш город. Унесли: ${fmtRes(m.loot)}.`, 'a');
-    addLogTo(D, `Ярл «${aName}» разграбил ваш город. Унесли: ${fmtRes(m.loot)}. Ваши потери: ${fmtComp(r.lostD) || 'нет'}. Нападавшие потеряли: ${fmtComp(r.lostA) || 'нет'}. Щит на 45 минут.`, 'bad', t);
+    addLogTo(D, `Ярл «${aName}» разграбил ваш город. Унесли: ${fmtRes(m.loot)}. Ваши потери: ${fmtComp(r.lostD) || 'нет'}.${wnote(wd)} Нападавшие потеряли: ${fmtComp(r.lostA) || 'нет'}. Щит на 45 минут.`, 'bad', t);
     m.send = r.survA; home();
     A.stat.wins++; A.stat.pvpWins++; gainXp(60 + 15 * (tg.level || 1));
-    addLog(`Победа над ярлом «${tg.name}». Ваши потери: ${fmtComp(r.lostA) || 'нет'}. Потери врага: ${fmtComp(r.lostD) || 'нет'}. Добыча: ${fmtRes(m.loot)}.`, 'good', t);
+    addLog(`Победа над ярлом «${tg.name}». Ваши потери: ${fmtComp(r.lostA) || 'нет'}.${wnote(wa)} Потери врага: ${fmtComp(r.lostD) || 'нет'}. Добыча: ${fmtRes(m.loot)}.`, 'good', t);
     toast(`Победа над «${tg.name}»`);
     S.targets = S.targets.filter(x => x.id !== tg.id); S.targets.push(genTarget('player'));
   } else {
     D.stat.defWins++; raid(false); HOOK.alert(D.pid, `🛡 Вы отбили нападение ярла «${aName}».`, 'a');
-    addLogTo(D, `Вы отбили нападение ярла «${aName}». Ваши потери: ${fmtComp(r.lostD) || 'нет'}. Нападавшие потеряли: ${fmtComp(r.lostA) || 'нет'}.`, 'good', t);
+    addLogTo(D, `Вы отбили нападение ярла «${aName}». Ваши потери: ${fmtComp(r.lostD) || 'нет'}.${wnote(wd)} Нападавшие потеряли: ${fmtComp(r.lostA) || 'нет'}.`, 'good', t);
     m.loot = {}; m.send = r.survA;
-    addLog(`Поражение у ярла «${tg.name}». Ваши потери: ${fmtComp(r.lostA) || 'нет'}. Потери врага: ${fmtComp(r.lostD) || 'нет'}.`, 'bad', t);
+    addLog(`Поражение у ярла «${tg.name}». Ваши потери: ${fmtComp(r.lostA) || 'нет'}.${wnote(wa)} Потери врага: ${fmtComp(r.lostD) || 'нет'}.`, 'bad', t);
     toast(`Поражение у «${tg.name}»`);
     if (sum(r.survA) > 0) home(); else S.marches = S.marches.filter(x => x !== m);
   }
@@ -601,7 +744,9 @@ function endGather(m) {
 }
 function returnMarch(m) {
   for (const k in m.send) S.troops[k] = (S.troops[k] || 0) + m.send[k];
-  for (const k in m.loot) addCapped(k, m.loot[k]);
+  for (const k in m.loot) { if (k === 'silver') S.res.silver = (S.res.silver || 0) + (m.loot[k] || 0); else addCapped(k, m.loot[k]); }
+  let lostM = 0; for (const id in (m.mats || {})) { if (!giveMat(id, m.mats[id])) lostM += m.mats[id]; else addLog(`Добыча: ${MATS[id]} × ${m.mats[id]}.`, 'good'); }
+  if (lostM) { addLog(`Сумка полна: пропало материалов ${lostM}.`, 'info'); toast('Сумка полна, часть добычи пропала'); }
   S.marches = S.marches.filter(x => x !== m);
   toast('Дружина вернулась домой');
 }
@@ -613,11 +758,12 @@ function enemyRaid() {
   const comp = botComp(randComp(n, shuffle(Object.keys(U)).slice(0, 2)), H);
   const r = battle(comp, S.troops, 1, defB(S));
   S.troops = r.survD;
+  const wd = woundSt(S, r.lostD);
   if (r.win) {
     const lost = {};
     RES.forEach(x => { const l = Math.floor(Math.max(0, S.res[x.id] - prot()) * (H <= 3 ? 0.05 : H <= 6 ? 0.1 : 0.15)); S.res[x.id] -= l; lost[x.id] = l; });
     S.shield = t + 120 * 60000; S.nextRaid = Math.max(S.nextRaid, S.shield + ri(90, 150) * 60000);
-    addLog(`Набег! ${n} врагов прорвались в город. Унесли: ${fmtRes(lost)}. Ваши потери: ${fmtComp(r.lostD) || 'нет'}. Враги потеряли: ${fmtComp(r.lostA) || 'нет'}. Щит на 2 часа.`, 'bad', t);
+    addLog(`Набег! ${n} врагов прорвались в город. Унесли: ${fmtRes(lost)}. Ваши потери: ${fmtComp(r.lostD) || 'нет'}.${wnote(wd)} Враги потеряли: ${fmtComp(r.lostA) || 'нет'}. Щит на 2 часа.`, 'bad', t);
     toast('Враги разграбили город');
   } else {
     S.stat.defWins++;
@@ -625,7 +771,7 @@ function enemyRaid() {
     for (const k in tr) S.res[k] = Math.max(S.res[k], Math.min(cp, S.res[k] + tr[k]));
     let bonus = ''; if (Math.random() < 0.25) { S.haste += 1; bonus = ' и 1 ускорение'; }
     gainXp(20 + killed);
-    addLog(`Набег отбит! ${n} врагов разбиты. Враги потеряли: ${fmtComp(r.lostA) || 'нет'}. Ваши потери: ${fmtComp(r.lostD) || 'нет'}. Трофеи: ${fmtRes(tr)}${bonus}.`, 'good', t);
+    addLog(`Набег отбит! ${n} врагов разбиты. Враги потеряли: ${fmtComp(r.lostA) || 'нет'}. Ваши потери: ${fmtComp(r.lostD) || 'нет'}.${wnote(wd)} Трофеи: ${fmtRes(tr)}${bonus}.`, 'good', t);
     toast('Набег отбит, трофеи получены');
   }
 }
@@ -678,7 +824,7 @@ function spendSkill(k) {
   const H = S.hero; if (!HSK[k] || H.sp < 1 || (H.sk[k] || 0) >= MAXSK) return;
   H.sp--; H.sk[k] = (H.sk[k] || 0) + 1;
 }
-function jobObj(kind) { return kind === 'q' ? S.q : kind === 'q2' ? S.q2 : kind === 'train' ? S.train : kind === 'study' ? S.study : kind === 'upg' ? S.upg : null; }
+function jobObj(kind) { return kind === 'q' ? S.q : kind === 'q2' ? S.q2 : kind === 'train' ? S.train : kind === 'study' ? S.study : kind === 'upg' ? S.upg : kind === 'heal' ? S.heal : null; }
 /* ---- клан: помощь соклановцев ---- */
 const CLAN_COST = { wood: 500, stone: 500 }, CLAN_HALL = 3;
 function jobInfo(kind) {
@@ -700,8 +846,10 @@ function chargeClan() {
 function useHaste(kind) { const o = jobObj(kind); if (!o || S.haste < 1) return; S.haste--; o.end -= 300000; }
 function freeFinish(kind) { const o = jobObj(kind); if (!o) return; if (o.end - nowMs() <= 60000) o.end = nowMs(); }
 function sendMarch(tid, send) {
-  const tg = S.targets.find(x => x.id === tid);
+  const tg = String(tid).startsWith('mine:') ? mineTarget(String(tid).slice(5)) : S.targets.find(x => x.id === tid);
   if (!tg || S.marches.length >= slots(lvl('hall')) || !send || typeof send !== 'object') return false;
+  if (tg.kind === 'mob') { const real = S.targets.find(x => x.id === tg.id); if (real && real.until > nowMs()) { toast('Враги ещё не вернулись'); return false; } }
+  if (tg.kind === 'mine') { const o = mineBusy(tg.mine); if (o && o.pid === S.pid) { toast('Этот рудник уже ваш'); return false; } if (S.marches.some(x => x.tgt && x.tgt.mine === tg.mine)) { toast('Отряд уже идёт к руднику'); return false; } }
   if (tg.kind === 'player' && HOOK.sameClan(S.pid, tg.pid)) { toast('Нельзя нападать на соклановца'); return false; }
   const s = {}; let tot = 0;
   for (const k in send) { if (!validKey(k)) continue; const v = Math.floor(Number(send[k])) || 0, x = Math.max(0, Math.min(S.troops[k] || 0, v)); if (x > 0) { s[k] = x; tot += x; } }
@@ -850,7 +998,7 @@ function claimStreak() {
   S.streak = { n: cont + 1, day: d };
   if (rw.gems) { S.gems += rw.gems; parts.push(rw.gems + ' рунных камней'); }
   if (rw.haste) { S.haste += rw.haste; parts.push(rw.haste + ' ускорений'); }
-  if (rw.res) { const c = cap(); for (const r of RES) { if (r.id === 'silver' && !lvl('silvermine')) continue; S.res[r.id] = Math.min(Math.max(c, S.res[r.id]), S.res[r.id] + rate(r.id) * rw.res); } parts.push(rw.res + ' ч добычи'); }
+  if (rw.res) { const c = cap(); for (const r of RES) { S.res[r.id] = Math.min(Math.max(c, S.res[r.id]), S.res[r.id] + rate(r.id) * rw.res); } parts.push(rw.res + ' ч добычи'); }
   addLog(`Награда за ${i.n}-й день подряд: ${parts.join(', ')}.`, 'good'); toast('Награда за вход получена');
   return true;
 }
@@ -863,7 +1011,7 @@ function buy(id) {
   S.gems -= it.gems;
   if (it.haste) S.haste += it.haste;
   if (it.shieldH) S.shield = Math.max(S.shield, t) + it.shieldH * 3600000;
-  if (it.resH) { const c = cap(); for (const r of RES) { const id2 = r.id; if (id2 === 'silver' && !lvl('silvermine')) continue; S.res[id2] = Math.min(Math.max(c, S.res[id2]), S.res[id2] + rate(id2) * it.resH); } }
+  if (it.resH) { const c = cap(); for (const r of RES) { const id2 = r.id; S.res[id2] = Math.min(Math.max(c, S.res[id2]), S.res[id2] + rate(id2) * it.resH); } }
   if (it.helper) S.helper = true;
   if (it.vipD) S.vip = Math.max(S.vip || 0, t) + it.vipD * 86400000;
   S.bought[id] = (S.bought[id] || 0) + 1;
@@ -928,6 +1076,8 @@ function act(a, arg) {
     case 'claim': if (typeof arg === 'string') claim(arg); break;
     case 'intro': S.introDone = true; break;
     case 'bag': buyBag(); break;
+    case 'heal': startHeal(); break;
+    case 'mscout': if (typeof arg === 'string') mscout(arg); break;
     case 'spin': spinWheel(); break;
     case 'dice': rollDice(arg); break;
     case 'preset': { const i = Math.floor(Number(arg && arg.i)); if (!(i >= 0 && i < 5) || !arg.comp || typeof arg.comp !== 'object') break; const c = {}; for (const k in arg.comp) { if (!validKey(k)) continue; const v = Math.max(0, Math.min(1e6, Math.floor(Number(arg.comp[k])) || 0)); if (v) c[k] = v; } if (!Array.isArray(S.presets)) S.presets = []; while (S.presets.length < 5) S.presets.push(null); S.presets[i] = c; break; }
@@ -966,6 +1116,7 @@ function fmtT(sec) {
 
 const API = {
   armyAtk, newItem, giveItem, SLOTS, SLOTK, LOOKS, EQS, slotType, EQ_IL, RARN, EQMAX, BAG_COST, BAG_STEP, eqCap, itemPct, itemName, forgeCost, forgeLvl, scrapOf, eqB, jarlStats, jarlPower, setBonus, jMain, affVal, plusOf, itemPower, AFN, MAXPLUS, TM, SETB,
+  hutCap, wnote, healCost, healSecs, MATS, MATK, STACK, bagUsed, giveMat, MOBS, MINEC, MINE_IDS, mineTarget, mineBusy, mineDur,
   RES, RI, B, BORDER, U, WEAK, TECH, QUESTS, MAXL, TMAX, CFG, HOOK, NODE, TIERN, TIER_NEED, MAXT, HSK, MAXHL, MAXSK,
   get S() { return S; },
   use, ensure, newState, update, produce, settle, battle, act, score, verdict,
