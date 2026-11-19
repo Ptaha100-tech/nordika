@@ -786,6 +786,8 @@ function eqHTML(){
   return `<section class="card"><h2>Снаряжение ярла</h2><p class="sm muted">Шлем, броня, оружие, кольца и другое дают бонусы к атаке, защите, ноше и добыче.</p><button class="btn" data-act="eq" type="button">Открыть снаряжение</button></section>`;
 }
 function matStacks(){const o=[],m=S.mats||{};Object.keys(m).forEach(id=>{let n=m[id];while(n>0){o.push({mat:id,n:Math.min(99,n)});n-=99;}});return o;}
+function extraStacks(){const o=[],T=['','серебр.','золот.','эпич.'];Object.keys(S.rec||{}).forEach(k=>{const n=S.rec[k];if(n>0){const q=k.split(':');o.push({rec:k,n,nm:'Рецепт: '+((Core.SLOTS[q[0]]||{}).n||q[0]).toLowerCase()+' '+(T[+q[1]]||'')});}});const sc=S.scr||{};['n','s','g'].forEach(c=>{if(sc[c]>0)o.push({scr:c,n:sc[c],nm:Core.SCROLLS[c].n});});return o;}
+function extraCell(x){return `<div class="eqs mat" title="${esc(x.nm)}"><span class="matn">${esc(x.nm)}</span>${x.scr?`<img class="eqi" src="/img/scr-${x.scr}.webp" alt="" onerror="this.style.display='none'">`:`<span class="eqi" style="display:flex;align-items:center;justify-content:center;font-size:34px">📜</span><b style="position:absolute;left:0;right:0;top:56%;text-align:center;font-size:10px;line-height:1.1;color:#3b2410;text-shadow:0 0 3px #fff8">${esc(x.nm.replace('Рецепт: ',''))}</b>`}<i class="eqil">${x.n}</i></div>`;}
 function matCell(x){const nm=Core.MATS[x.mat]||x.mat;return `<div class="eqs mat" title="${esc(nm)}"><span class="matn">${esc(nm)}</span><img class="eqi" src="/img/mat-${x.mat}.webp?v=1" alt="" onerror="this.style.display='none'"><i class="eqil">${x.n}</i></div>`;}
 function eqMenuHTML(){
   const m=ui.eqMenu;if(!m)return '';
@@ -815,9 +817,9 @@ function eqSheet(){
   const bars=[['rd','Атака','atk'],['gn','Защита','def'],['bl','Ноша','loot'],['gd','Добыча','eco']],BY=[1225,1282,1338,1394];
   const so=ui.eqSort||'r',EQO=Object.keys(Core.SLOTS),SORTN={r:'s',s:'l',l:'p',p:'r'},SORTT={r:'тир',s:'слот',l:'заточка',p:'бонус'};
   const inv=E.inv.slice().sort((a,b)=>so==='s'?EQO.indexOf(a.slot)-EQO.indexOf(b.slot)||b.r-a.r||Core.plusOf(b)-Core.plusOf(a):so==='l'?Core.plusOf(b)-Core.plusOf(a)||b.r-a.r:so==='p'?Core.itemPct(b)-Core.itemPct(a):b.r-a.r||Core.plusOf(b)-Core.plusOf(a));
-  const ms=matStacks(),allc=inv.concat(ms),pages=Math.max(1,Math.ceil(allc.length/25));if(ui.eqPg==null||ui.eqPg>=pages)ui.eqPg=Math.max(0,pages-1);
+  const ms=matStacks().concat(extraStacks()),allc=inv.concat(ms),pages=Math.max(1,Math.ceil(allc.length/25));if(ui.eqPg==null||ui.eqPg>=pages)ui.eqPg=Math.max(0,pages-1);
   const pg=allc.slice(ui.eqPg*25,ui.eqPg*25+25),CX=[117,310,503,696,889],CY=[1572,1759,1958,2143,2327],mid=ui.eqMenu&&ui.eqMenu.id;
-  const cells=pg.map((it,n)=>`<div class="eqp" style="${P(CX[n%5],CY[Math.floor(n/5)],CX[n%5]+158,CY[Math.floor(n/5)]+151)}">${it.mat?matCell(it):`<button class="eqs r${it.r} t-${it.slot}${it.r} ${mid===it.id?'sel':''}" data-act="eqsel" data-arg="i:${it.id}" type="button">${eqIcon(it)}<i class="eqil">${Core.plusOf(it)?'+'+Core.plusOf(it):''}</i></button>`}</div>`).join('');
+  const cells=pg.map((it,n)=>`<div class="eqp" style="${P(CX[n%5],CY[Math.floor(n/5)],CX[n%5]+158,CY[Math.floor(n/5)]+151)}">${it.mat?matCell(it):it.nm?extraCell(it):`<button class="eqs r${it.r} t-${it.slot}${it.r} ${mid===it.id?'sel':''}" data-act="eqsel" data-arg="i:${it.id}" type="button">${eqIcon(it)}<i class="eqil">${Core.plusOf(it)?'+'+Core.plusOf(it):''}</i></button>`}</div>`).join('');
   $('modal').innerHTML=`<div class="sheet eqf"><div class="eqfin eq2">
     <div class="eqp eqtt" style="${P(235,65,935,170)}"><span>Снаряжение</span></div>
     <button class="eqp eqcl" style="${P(985,40,1115,140)}" data-act="sheetx" type="button" aria-label="Закрыть">✕</button>
@@ -852,7 +854,7 @@ function forgeSheet(){
   const pk=ui.eqPick||(ui.eqPick={}),mm=!!ui.eqMulti;
   Object.keys(pk).forEach(id=>{if(!E.inv.some(x=>x.id===id))delete pk[id];});
   let cells=inv.map(it=>`<button class="eqs r${it.r} t-${it.slot}${it.r} ${(mm?pk[it.id]:sel&&sel.id===it.id)?'sel':''}" data-act="eqsel" data-arg="i:${it.id}" type="button">${eqIcon(it)}<i class="eqil">${Core.plusOf(it)?'+'+Core.plusOf(it):''}</i>${mm&&pk[it.id]?'<b class="eqck">✓</b>':''}</button>`).join('');
-  const msF=matStacks();cells+=msF.map(matCell).join('');
+  const msF=matStacks();cells+=msF.map(matCell).join('')+extraStacks().map(extraCell).join('');
   for(let n=inv.length+msF.length;n<Math.max(15,Math.ceil((inv.length+msF.length)/5)*5);n++)cells+='<div class="eqs empty"></div>';
   const pcw=v=>v;
   let det='<p class="muted sm">Нажмите на предмет в сумке, чтобы увидеть бонус.</p>';
