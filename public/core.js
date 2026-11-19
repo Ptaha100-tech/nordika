@@ -848,7 +848,7 @@ function canUp(id) {
 function startBuild(id) {
   if (!B[id] || canUp(id)) return;
   if ((S.q && S.q.id === id) || (S.q2 && S.q2.id === id)) return;
-  const key = !S.q ? 'q' : (S.helper && !S.q2 ? 'q2' : null);
+  const key = !S.q ? 'q' : ((S.helper || isVip()) && !S.q2 ? 'q2' : null);
   if (!key) return;
   const L = lvl(id), c = upCost(id, L);
   if (!canAfford(c)) return;
@@ -942,7 +942,7 @@ const SHOP = [
   { id: 'shield72', g: 'shield', t: 'Щит на 3 дня',    d: 'Три дня без набегов.',                                       gems: 120, shieldH: 72 },
   { id: 'res4',     g: 'res',    t: 'Мешок припасов',  d: 'Четыре часа добычи всех ресурсов сразу.',                    gems: 25,  resH: 4 },
   { id: 'res24',    g: 'res',    t: 'Сундук припасов', d: 'Сутки добычи всех ресурсов сразу (не больше места на складе).', gems: 120, resH: 24 },
-  { id: 'vip7',     g: 'vip',    t: 'VIP на 7 дней',   d: 'Добыча +15%, склад +20%, ежедневный дар больше, звезда в чате.',   gems: 80,  vipD: 7 },
+  { id: 'vip7',     g: 'vip',    t: 'VIP на 7 дней',   d: 'Добыча +15%, склад +20%, помощник строителя (вторая очередь стройки), ежедневный дар больше, метка VIP в чате.',   gems: 80,  vipD: 7 },
   { id: 'vip30',    g: 'vip',    t: 'VIP на 30 дней',  d: 'То же самое на месяц. Выгоднее на 25%.',                     gems: 250, vipD: 30 }
 ];
 const DAILY_MS = 20 * 3600 * 1000;

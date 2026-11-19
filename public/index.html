@@ -367,6 +367,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--frost);outline-
 .arbox.l .artx{top:18%}
 .artx p{margin:0 0 6px}.artx .ast{font-size:11px;opacity:.85}.artx .apl{font-size:14px;color:#ffd24a}
 .arbtn{width:min(70vw,300px);aspect-ratio:480/125;background-size:100% 100%;border:0;color:#ffe9b0;font-weight:700;font-size:16px;letter-spacing:.5px;text-shadow:0 2px 3px #000}
+.vipt{display:inline-block;font-size:9px;font-weight:800;letter-spacing:.5px;color:#2a1a00;background:linear-gradient(#ffe08a,#d9a63a);border-radius:4px;padding:0 4px;line-height:14px;vertical-align:1px}
 .mobrow{display:flex;gap:10px;align-items:center}.mobimg{width:84px;height:84px;object-fit:contain;flex:none}
 .eqs.mat .matn{font-size:8px;line-height:1.05;text-align:center;padding:2px;color:#d8c7a8;word-break:break-word}
 .eqs.r1{border-color:#b9c9da}.eqs.r2{border-color:#e8c15a;box-shadow:0 0 8px #e8c15a88}.eqs.r3{border-color:#c78bff;box-shadow:0 0 10px #c78bffaa}.eqs.sel{outline:2px solid #f2b233}
@@ -662,11 +663,11 @@ function viewCity(){
   h+=`<div class="shortc"><button class="btn" data-act="fgopen" type="button"><img class="uic s" src="/img/ui-forge.webp?v=1" alt=""> Кузница</button><button class="btn" data-act="oracle" type="button"><img class="uic s" src="/img/ui-oracle.webp?v=1" alt=""> Оракул</button><button class="btn" data-act="tavern" type="button"><span class="uic s emo">🎲</span> Таверна</button></div><div class="shortc"><button class="btn" data-act="tab" data-arg="shop" type="button"><img class="uic s" src="/img/ui-gem.webp?v=1" alt=""> Магазин</button><button class="btn" data-act="top" type="button"><img class="uic s" src="/img/ui-top.webp?v=1" alt=""> Топ</button><button class="btn" id="lg" data-act="tab" data-arg="log" type="button"><span class="uic s emo">📜</span> Хроника</button></div>`;
   h+=jobsHTML('city');
   BORDER.forEach(id=>{
-    const b=B[id],L=lvl(id),block=canUp(id),busyB=(S.q&&S.q.id===id)||(S.q2&&S.q2.id===id),freeQ=!S.q||(S.helper&&!S.q2);
+    const b=B[id],L=lvl(id),block=canUp(id),busyB=(S.q&&S.q.id===id)||(S.q2&&S.q2.id===id),freeQ=!S.q||((S.helper||Core.isVip())&&!S.q2);
     let act='';
     if(block)act=`<p class="note">${block}</p>`;
     else if(busyB)act=`<p class="note">Идёт стройка</p>`;
-    else if(!freeQ)act=`<p class="note">Строители заняты${S.helper?'':' · <a href="#" class="lnk" data-act="gohelper">Помощник строителя</a>'}</p>`;
+    else if(!freeQ)act=`<p class="note">Строители заняты${(S.helper||Core.isVip())?'':' · <a href="#" class="lnk" data-act="gohelper">Помощник строителя</a>'}</p>`;
     else act=costHTML(upCost(id,L))+`<button class="btn" data-act="up" data-arg="${id}" data-gate="1">${L?'Улучшить':'Построить'} · ${fmtT(upSecs(id,L))}</button>`;
     h+=`<article class="card bld"><canvas class="pic" width="152" height="152" data-b="${id}" aria-label="${b.n}, уровень ${L}"></canvas><div class="bb">
       <div class="bt"><h3>${b.n}</h3><span class="lv">${L?'Ур. '+L:'Нет'}</span></div>
@@ -1132,7 +1133,7 @@ const stick=b=>{if(b)b.scrollTop=b.scrollHeight;};
 const avH=(pid,name)=>{const h=parseInt(String(pid).slice(0,3),16)%360;return `<span class="cav" style="--h:${h}" data-act="prof" data-arg="${pid}"><i>${esc(String(name||'?').trim().charAt(0).toUpperCase())}</i><img src="/api/av/${pid}" alt="" decoding="async" onerror="this.remove()"></span>`;};
 const msgH=(pid,name,tag,t,text,o)=>{o=o||{};const key=o.ch?o.ch+':'+o.id:'';
   const ctl=o.id?`${o.me?`<button class="rpl" data-act="medit" data-arg="${key}" aria-label="Изменить">✎</button><button class="rpl ${ui.delc===key?'dq':''}" data-act="mdel" data-arg="${key}" aria-label="Удалить">${ui.delc===key?'Удалить?':'🗑'}</button>`:''}<button class="rpl" data-act="reply" data-arg="${key}" aria-label="Ответить">↩</button>`:'';
-  return `<div class="m ${o.me?'me':''} ${o.ment?'ment':''}">${avH(pid,name)}<div class="mb"><div class="mh">${tag?`<span class="tag4">${esc(tag)}</span>`:''}<b class="nmb" data-act="prof" data-arg="${pid}">${o.vip?'<span style="color:var(--accent)">★</span> ':''}${esc(name)}</b><time>${hhmm(t)}${o.ed?' · изм.':''}</time>${ctl}</div>${o.rp?`<div class="mq"><b>${esc(o.rp.n)}</b> ${esc(o.rp.x)}</div>`:''}${text?`<div class="mt">${esc(text)}</div>`:''}${o.img?`<img class="mimg" src="/ci/${o.img}" data-act="zoom" data-arg="${o.img}" loading="lazy" alt="Фото">`:''}</div></div>`;};
+  return `<div class="m ${o.me?'me':''} ${o.ment?'ment':''}">${avH(pid,name)}<div class="mb"><div class="mh">${tag?`<span class="tag4">${esc(tag)}</span>`:''}<b class="nmb" data-act="prof" data-arg="${pid}">${o.vip?'<span class="vipt">VIP</span> ':''}${esc(name)}</b><time>${hhmm(t)}${o.ed?' · изм.':''}</time>${ctl}</div>${o.rp?`<div class="mq"><b>${esc(o.rp.n)}</b> ${esc(o.rp.x)}</div>`:''}${text?`<div class="mt">${esc(text)}</div>`:''}${o.img?`<img class="mimg" src="/ci/${o.img}" data-act="zoom" data-arg="${o.img}" loading="lazy" alt="Фото">`:''}</div></div>`;};
 const MX=m=>({id:m.id,rp:m.rp,img:m.img,ed:m.ed});
 const barHTML=ch=>{const r=ui.rp&&ui.rp.ch===ch?ui.rp:null,e=ui.ed&&ui.ed.ch===ch?ui.ed:null;return r?`<div class="cbar"><span>↩ <b>${esc(r.name)}</b>: ${esc(r.x)}</span><button class="rpl" data-act="rpx" type="button" aria-label="Отмена">✕</button></div>`:e?`<div class="cbar"><span>✎ Изменение сообщения</span><button class="rpl" data-act="rpx" type="button" aria-label="Отмена">✕</button></div>`:'';};
 const rowHTML=(ch,id,ph,act)=>`${barHTML(ch)}<div class="crow"><button class="btn small ghost" data-act="photo" data-arg="${ch}" type="button" aria-label="Фото">📷</button><input id="${id}" data-keep maxlength="200" placeholder="${ph}" autocomplete="off" enterkeyhint="send"><button class="btn small" data-act="${act}">${ui.ed&&ui.ed.ch===ch?'Сохранить':'Отправить'}</button></div>`;
