@@ -840,7 +840,7 @@ const KIND={node:'Ресурсная точка',camp:'Разбойники',jar
 ui.msub='world';ui.hsub='mob';var MINES=[];
 function getTg(id){return String(id).startsWith('mine:')?Core.mineTarget(String(id).slice(5)):S.targets.find(x=>x.id===id);}
 const mineV=id=>MINES.find(m=>m.id===id)||{id,o:null};
-const MSUB=[['node','Сбор'],['hunt','Охота'],['boss','Боссы'],['world','Мир']];
+const MSUB=[['node','Сбор'],['hunt','Охота'],['arena','Арена'],['boss','Боссы'],['world','Мир']];
 function raidsHTML(){
   const rs=(S.raids||[]).filter(r=>Core.now()-r.t<48*3600000);
   if(!rs.length)return '';
@@ -890,6 +890,7 @@ function viewMap(){
   h+=`<div class="msub">${MSUB.map(m=>`<button class="btn ${ui.msub===m[0]?'on':'ghost'}" data-act="msub" data-arg="${m[0]}">${m[1]} <span class="muted sm">${cnt[m[0]]===undefined?'':cnt[m[0]]}</span></button>`).join('')}</div>`;
   if(ui.msub==='world')return h+raidsHTML()+worldMapHTML();
   if(ui.msub==='hunt')return h+huntHTML();
+  if(ui.msub==='arena')return h+arenaHTML();
   if(ui.msub==='boss')return h+bossHTML();
   const note='Мирные места, где отряд собирает ресурсы. Чем дальше точка, тем дольше путь.';
   h+=`<p class="note" style="margin:0 0 8px">${note}</p>`;
@@ -1199,6 +1200,45 @@ function clSheet(latest){
 async function loadBoss(){
   if(!S||ui.tab!=='map'||ui.msub!=='boss')return;
   try{ui.boss=await call('GET','/api/boss');ui.bossAt=Date.now();if(ui.tab==='map'&&ui.msub==='boss')render(true);}catch(e){}
+}
+async function loadArena(){
+  if(!S||ui.tab!=='map'||ui.msub!=='arena')return;
+  try{const j=await call('GET','/api/arena');ui.arena=j.view;if(ui.tab==='map'&&ui.msub==='arena'&&!ui.modal)render(true);}catch(e){}
+}
+let abusy=false;
+async function arenaCall(b){
+  if(abusy)return;abusy=true;
+  try{const j=await call('POST','/api/arena',b);apply(j);ui.arena=j.view;if(j.fight)arenaSheet(j.fight);else render(true);}
+  catch(e){toast(e.message||'Не получилось');}
+  abusy=false;
+}
+function arenaFight(id){arenaCall({a:'fight',id});}
+function arenaHTML(){
+  const a=ui.arena;if(!a)return '<p class="muted sm">Загрузка…</p>';
+  const row=(r,btn)=>`<div class="item"><div><b>${r.pos}.</b> ${esc(r.name)} <span class="muted sm">· мощь ${fmt(r.power)}</span></div>${btn||''}</div>`;
+  let h=`<p class="note" style="margin:0 0 8px">Арена ярлов: бой один на один идёт сам. Удар зависит от силы, брони и крита ярла, то есть от вещей, заточки и знаний Оракула. Победа поднимает в рейтинге, поражение опускает. Соперник может быть не в игре.</p>`;
+  h+=`<section class="card"><h3>Лучшие ярлы</h3>${a.top.map(r=>`<div class="item" style="${r.me?'color:var(--accent,#e8c15a)':''}"><div><b>${r.pos}.</b> ${esc(r.name)}${r.me?' (вы)':''}</div><span class="muted sm">мощь ${fmt(r.power)}</span></div>`).join('')}
+  ${a.pos>10?`<div class="item" style="color:var(--accent,#e8c15a)"><div><b>${a.pos}.</b> Вы</div><span class="muted sm">мощь ${fmt(a.power)}</span></div>`:''}</section>`;
+  h+=`<section class="card"><div class="trow2"><h3>Ваше место: ${a.pos} из ${a.total}</h3><span class="pill ${a.left?'good':'mute'}">Боёв: ${a.left}</span></div>
+  <p class="sm muted">Ваша мощь ${fmt(a.power)} · сила ${a.me.str} · здоровье ${a.me.hp} · броня ${a.me.arm} · крит ${a.me.crt}%. Бесплатно ${a.free} боёв в день.</p>
+  <div class="acts"><button class="btn small ghost" data-act="abuy" type="button">+1 бой · ${a.buy} ${IG}</button><button class="btn small ghost" data-act="arefresh" type="button">Другие соперники</button></div></section>`;
+  h+=`<section class="card"><h3>Соперники</h3>${a.opp.map(r=>row(r,`<button class="btn small ${a.left?'':'off'}" data-act="afight" data-arg="${r.id}" type="button">Сразиться</button>`)).join('')}</section>`;
+  return h;
+}
+function arenaSheet(f){
+  $('modal').innerHTML=`<div class="sheet"><div class="trow2"><h3>Бой на арене</h3><button class="btn small ghost" data-act="sheetx" type="button">Закрыть</button></div>
+  <div class="dtable"><div><small>Вы</small><div class="bar"><i id="ahp" style="width:100%;transition:width .4s"></i></div><b id="ahn" class="sm">${f.hpA}</b></div><div><small>${esc(f.opp)}</small><div class="bar"><i id="aho" style="width:100%;transition:width .4s"></i></div><b id="aon" class="sm">${f.hpB}</b></div></div>
+  <div id="alog" class="sm" style="min-height:120px;max-height:200px;overflow:auto;margin:8px 0"></div>
+  <div id="ares" class="wres">&nbsp;</div></div>`;
+  $('modal').hidden=false;
+  let i=0;const lg=$('alog');
+  const iv=setInterval(()=>{
+    if(!$('alog')){clearInterval(iv);return;}
+    if(i>=f.log.length){clearInterval(iv);const r=$('ares');r.textContent=f.win?`Победа! Место ${f.from} → ${f.to}. Награда: ${f.reward} серебра.`:`Поражение. Место ${f.from} → ${f.to}. Утешение: ${f.reward} серебра.`;r.classList.add('pop');return;}
+    const e=f.log[i++];
+    $('ahp').style.width=Math.max(0,e.hp[0]/f.hpA*100)+'%';$('aho').style.width=Math.max(0,e.hp[1]/f.hpB*100)+'%';$('ahn').textContent=e.hp[0];$('aon').textContent=e.hp[1];
+    const d=document.createElement('div');d.textContent=(e.s==='p'?'Вы бьёте: ':f.opp+' бьёт: ')+e.d+(e.c?' (крит!)':'');if(e.c)d.style.fontWeight='700';lg.appendChild(d);lg.scrollTop=lg.scrollHeight;
+  },550);
 }
 let bbusy=false;
 async function bossHit(t){
@@ -1889,7 +1929,11 @@ function onAct(act,arg){
     case 'hsub':ui.hsub=arg;render();return;
     case 'heal':act2('heal');return;
     case 'mscout':act2('mscout',arg);return;
-    case 'msub':ui.msub=arg;render();if(arg==='boss')loadBoss();return;
+    case 'msub':ui.msub=arg;render();if(arg==='boss')loadBoss();if(arg==='arena')loadArena();return;
+    case 'afight':arenaFight(arg);return;
+    case 'abuy':arenaCall({a:'buy'});return;
+    case 'arefresh':arenaCall({a:'refresh'});return;
+    case 'aclose':closeModal();loadArena();return;
     case 'bhit':bossHit(arg);return;
     case 'wprof':ui.tab='chat';ui.sub='world';ui.soc.peer=null;render();loadSoc();openProf({id:arg});return;
     case 'reply':{const[ch,id]=String(arg).split(':'),m=findMsg(ch,id);if(!m)return;ui.ed=null;ui.rp={ch,id,name:msgName(ch,m),x:(m.text||'Фото').slice(0,60)};render();const el=$(CH[ch].inp);if(el)el.focus();return;}

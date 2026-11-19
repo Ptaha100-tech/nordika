@@ -106,7 +106,7 @@ const cctx = {
   notify: (pid, text) => { const u = users.get(pid); if (u) { Core.addLogTo(u.state, text, 'good'); markDirty(u); } }
 };
 setInterval(flush, 2000).unref();
-function shutdown() { flush(); flushMines(); flushClans(); flushSocial(); process.exit(0); }
+function shutdown() { flush(); flushMines(); flushArena(); flushClans(); flushSocial(); process.exit(0); }
 process.on('SIGINT', shutdown); process.on('SIGTERM', shutdown);
 
 /* ---------- связь ядра с игроками ---------- */
@@ -368,6 +368,89 @@ function dailyBoss() {
   return b;
 }
 function bossTick() { try { worldBoss(); dailyBoss(); for (const c of Object.values(cstore.clans || {})) clanBoss(c); } catch (e) { console.error('boss', e.message); } }
+
+/* ---------- Арена ярлов ---------- */
+const ARENA_FILE = path.join(DATA_DIR, 'arena.json');
+let ARENA = { order: [], bots: {} };
+try { ARENA = JSON.parse(fs.readFileSync(ARENA_FILE, 'utf8')) || ARENA; } catch (e) {}
+if (!Array.isArray(ARENA.order) || !ARENA.bots) ARENA = { order: [], bots: {} };
+let arenaDirty = false;
+const flushArena = () => { if (!arenaDirty) return; arenaDirty = false; try { fs.writeFileSync(ARENA_FILE, JSON.stringify(ARENA)); } catch (e) {} };
+setInterval(flushArena, 2000).unref();
+(function arenaSeed() {
+  if (ARENA.order.length) return;
+  const A1 = ['Бьорн', 'Ульф', 'Гуннар', 'Эйрик', 'Свейн', 'Торвальд', 'Ивар', 'Олаф', 'Харальд', 'Сигурд', 'Ингвар', 'Гейр'], A2 = ['Рыжий', 'Тихий', 'Сивый', 'Крепкий', 'Одноглазый', 'Кривой', 'Седой', 'Мрачный'];
+  for (let i = 0; i < 40; i++) {
+    const id = 'ab' + i;
+    ARENA.bots[id] = { name: A1[(i * 5) % A1.length] + ' ' + A2[(i * 3 + 1) % A2.length], power: Math.round(2600 * Math.pow(0.9, i) + 120) };
+    ARENA.order.push(id);
+  }
+  arenaDirty = true;
+})();
+const ARENA_FREE = 5, ARENA_BUY = 10, ARENA_MAXX = 20;
+const arenaDay = () => Math.floor((Date.now() + 3 * 3600000) / 86400000);
+const arenaAlive = id => !!ARENA.bots[id] || (users.has(id) && !users.get(id).banned);
+const arenaName = id => ARENA.bots[id] ? ARENA.bots[id].name : (users.get(id) || {}).name || '?';
+function arenaPower(id) { if (ARENA.bots[id]) return ARENA.bots[id].power; const u = users.get(id); if (!u) return 0; Core.use(u.state); return Core.jarlPower(u.state); }
+function arenaStats(id) {
+  if (!ARENA.bots[id]) { const u = users.get(id); Core.use(u.state); const j = Core.jarlStats(u.state); return { str: j.str, hp: j.hp, arm: j.arm, crt: j.crt }; }
+  const k = ARENA.bots[id].power / 411;
+  return { str: Math.round(62 * k), hp: Math.round(340 * k), arm: Math.round(6 * Math.sqrt(k) * 1.5), crt: Math.min(45, Math.round(10 + 6 * Math.sqrt(k))) };
+}
+function arenaJoin(uid) {
+  ARENA.order = ARENA.order.filter(arenaAlive);
+  if (ARENA.order.includes(uid)) return;
+  const p = arenaPower(uid), i = ARENA.order.findIndex(x => arenaPower(x) < p);
+  if (i < 0) ARENA.order.push(uid); else ARENA.order.splice(i, 0, uid);
+  arenaDirty = true;
+}
+function arenaState(u) {
+  const a = u.state.arena = u.state.arena || { day: 0, used: 0, extra: 0, opp: [] };
+  if (a.day !== arenaDay()) { a.day = arenaDay(); a.used = 0; a.extra = 0; }
+  return a;
+}
+const arenaLeft = a => Math.max(0, ARENA_FREE + a.extra - a.used);
+function arenaPickOpp(u) {
+  const me = arenaPower(u.id);
+  const c = ARENA.order.filter(x => x !== u.id && arenaAlive(x)).map(x => ({ id: x, d: Math.abs(arenaPower(x) - me) })).sort((a, b) => a.d - b.d).slice(0, 8);
+  for (let i = c.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [c[i], c[j]] = [c[j], c[i]]; }
+  return c.slice(0, 5).map(x => x.id).sort((x, y) => ARENA.order.indexOf(x) - ARENA.order.indexOf(y));
+}
+function arenaView(u) {
+  arenaJoin(u.id); const a = arenaState(u);
+  if (!a.opp || a.opp.length < Math.min(5, ARENA.order.length - 1) || a.opp.some(x => !arenaAlive(x))) a.opp = arenaPickOpp(u);
+  const row = id => ({ id, pos: ARENA.order.indexOf(id) + 1, name: arenaName(id), power: arenaPower(id) });
+  return { pos: ARENA.order.indexOf(u.id) + 1, total: ARENA.order.length, power: arenaPower(u.id), me: arenaStats(u.id), left: arenaLeft(a), free: ARENA_FREE, extra: a.extra, buy: ARENA_BUY, top: ARENA.order.slice(0, 10).map(id => Object.assign(row(id), { me: id === u.id })), opp: a.opp.map(row) };
+}
+function arenaSim(A, B) {
+  let ha = A.hp, hb = B.hp; const log = [];
+  for (let r = 0; r < 40 && ha > 0 && hb > 0; r++) {
+    for (const side of ['p', 'o']) {
+      const at = side === 'p' ? A : B, df = side === 'p' ? B : A;
+      const crit = Math.random() * 100 < Math.min(60, at.crt);
+      const d = Math.max(1, Math.round(at.str * (0.85 + Math.random() * 0.3) * (1 - df.arm / (df.arm + 60)) * (crit ? 1.8 : 1)));
+      if (side === 'p') hb = Math.max(0, hb - d); else ha = Math.max(0, ha - d);
+      log.push({ s: side, d, c: crit ? 1 : 0, hp: [ha, hb] });
+      if (ha <= 0 || hb <= 0) break;
+    }
+  }
+  return { win: hb <= 0 ? true : ha <= 0 ? false : ha / A.hp >= hb / B.hp, log, hpA: A.hp, hpB: B.hp };
+}
+function arenaFight(u, oid) {
+  arenaJoin(u.id); const a = arenaState(u);
+  if (!a.opp.includes(oid) || !arenaAlive(oid)) return { error: 'Этот соперник недоступен. Обновите список.' };
+  if (arenaLeft(a) <= 0) return { error: 'Бои на сегодня закончились.' };
+  const sim = arenaSim(arenaStats(u.id), arenaStats(oid));
+  const before = ARENA.order.indexOf(u.id), op = ARENA.order.indexOf(oid), oppPower = arenaPower(oid);
+  a.used++;
+  let to = before;
+  if (sim.win) to = Math.max(0, Math.min(before - 1, op)); else to = Math.min(ARENA.order.length - 1, before + (op > before ? 1 : 2));
+  if (to !== before) { ARENA.order.splice(before, 1); ARENA.order.splice(to, 0, u.id); }
+  const reward = sim.win ? 60 + Math.round(oppPower * 0.15) : 10;
+  Core.use(u.state); u.state.res.silver = (u.state.res.silver || 0) + reward;
+  a.opp = arenaPickOpp(u); arenaDirty = true; markDirty(u);
+  return { fight: { win: sim.win, log: sim.log, hpA: sim.hpA, hpB: sim.hpB, opp: arenaName(oid), oppPower, from: before + 1, to: to + 1, reward } };
+}
 function bossView(u) {
   const now = Date.now(), st = u.state, day = Core.dayId(now), bt = (st.boss && st.boss.d === day) ? st.boss : { d: day, w: 0, c: 0 };
   const wb = worldBoss(), rows = topRows(wb.dmg), me = rows.findIndex(r => r.pid === u.id);
@@ -784,6 +867,16 @@ async function api(req, res, url) {
       u.frame = f;
     }
     markDirty(u); return json(res, 200, { img: u.avatar || '', fr: u.frame || 0 });
+  }
+  if (req.method === 'GET' && url === '/api/arena') { touchState(u); return json(res, 200, { view: arenaView(u) }); }
+  if (req.method === 'POST' && url === '/api/arena') {
+    if (limited('arena:' + u.id, 6, 10000)) return json(res, 429, { error: 'Слишком быстро.' });
+    let b; try { b = await readBody(req); } catch (e) { return json(res, 400, { error: 'Некорректный запрос' }); }
+    touchState(u); arenaJoin(u.id); const a = arenaState(u); let r = {};
+    if (b.a === 'buy') { if (a.extra >= ARENA_MAXX) return json(res, 400, { error: 'Больше боёв сегодня купить нельзя.' }); if ((u.state.gems || 0) < ARENA_BUY) return json(res, 400, { error: 'Не хватает рунных камней.' }); u.state.gems -= ARENA_BUY; a.extra++; markDirty(u); }
+    else if (b.a === 'refresh') { a.opp = arenaPickOpp(u); markDirty(u); }
+    else if (b.a === 'fight') { r = arenaFight(u, String(b.id || '')); if (r.error) return json(res, 400, { error: r.error }); }
+    return json(res, 200, Object.assign({ view: arenaView(u), state: u.state, cfg: { t: Core.CFG.t }, now: Date.now(), inc: incomingOf(u.id), mines: mineView(u.id) }, r));
   }
   if (req.method === 'GET' && url === '/api/boss') return json(res, 200, bossView(u));
   if (req.method === 'POST' && url === '/api/boss/hit') {
