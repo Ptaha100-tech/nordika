@@ -412,6 +412,21 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--frost);outline-
 @keyframes eqbr{50%{filter:brightness(1.22) saturate(1.15)}}
 @keyframes eqrune{50%{filter:brightness(1.5) hue-rotate(-12deg) drop-shadow(0 0 4px #4aa8ff)}}
 @keyframes eqtw{0%,100%{opacity:0;transform:scale(.4)}50%{opacity:1;transform:scale(1.1) rotate(20deg)}}
+
+/* эффекты по тирам и заточке */
+.eqs.r3:not(.zz)::before{content:"";position:absolute;inset:0;z-index:2;pointer-events:none;left:0;right:auto;top:0;font-size:0;
+ background:radial-gradient(circle,#ffd27a 0 1.4px,#0000 2.2px) 18% 10%/100% 50%,radial-gradient(circle,#ff7a3c 0 1.2px,#0000 2px) 62% 40%/100% 50%,radial-gradient(circle,#ffe9a8 0 1px,#0000 1.8px) 85% 70%/100% 50%,radial-gradient(circle,#c78bff 0 1.2px,#0000 2px) 40% 90%/100% 50%;
+ background-repeat:repeat-y;animation:eqemb 2.6s linear infinite;-webkit-mask-image:linear-gradient(#0000,#000 25%,#000 70%,#0000);mask-image:linear-gradient(#0000,#000 25%,#000 70%,#0000);text-shadow:none;width:auto;opacity:.9}
+.eqs.r3 .eqi{animation:eqfire 2.2s ease-in-out infinite}
+.eqs.r3{border-color:#c78bff;animation:eqepic 2.4s ease-in-out infinite}
+.eqs.pl1{box-shadow:0 0 6px #7fd0ff99}
+.eqs.pl2{box-shadow:0 0 10px #ffd24acc,inset 0 0 6px #ffd24a66;animation:eqpl2 1.8s ease-in-out infinite}
+.eqs.pl3{animation:eqrb 3s linear infinite}
+@keyframes eqemb{to{background-position-y:18% -50%,62% -10%,85% 20%,40% 40%}}
+@keyframes eqfire{50%{filter:brightness(1.25) saturate(1.2) drop-shadow(0 0 3px #ff7a3c)}}
+@keyframes eqepic{0%,100%{box-shadow:0 0 8px #c78bff99,0 0 2px #ff7a3c}50%{box-shadow:0 0 16px #ff7a3ccc,0 0 6px #c78bff}}
+@keyframes eqpl2{50%{box-shadow:0 0 16px #ffd24a,inset 0 0 10px #ffd24a99}}
+@keyframes eqrb{0%{box-shadow:0 0 14px #ff5a5a,inset 0 0 6px #ff5a5a66}33%{box-shadow:0 0 14px #5aff8a,inset 0 0 6px #5aff8a66}66%{box-shadow:0 0 14px #5a8aff,inset 0 0 6px #5a8aff66}100%{box-shadow:0 0 14px #ff5a5a,inset 0 0 6px #ff5a5a66}}
 @media (prefers-reduced-motion:reduce){.eqs,.eqs::after,.eqs::before,.eqs .eqi{animation:none!important}}
 
 /* чат: аватарки и компактные сообщения */
@@ -779,9 +794,10 @@ function eqIcon(it,k){
   const t=it?it.slot:Core.slotType(k);
   return `<span class="eqg">${EQG[t]}</span>${it?`<img class="eqi" src="img/eq-${it.slot}${ART[it.r]}.webp?v=2" alt="" onerror="this.remove()">`:''}`;
 }
+function plC(it){const p=it?Core.plusOf(it):0;return p>=10?'pl3':p>=7?'pl2':p>=4?'pl1':'';}
 function eqCell(k){
   const it=S.eq.s[k],sel=ui.eqSel&&ui.eqSel.slot===k;
-  return `<div class="eqc"><button class="eqs ${it?'r'+it.r+' t-'+it.slot+it.r:''} ${sel?'sel':''}" data-act="eqsel" data-arg="s:${k}" type="button">${eqIcon(it,k)}${it?`<i class="eqil">${Core.plusOf(it)?'+'+Core.plusOf(it):''}</i>`:''}</button><span>${EQSN[k]}</span></div>`;
+  return `<div class="eqc"><button class="eqs ${it?'r'+it.r+' t-'+it.slot+it.r+' '+plC(it):''} ${sel?'sel':''}" data-act="eqsel" data-arg="s:${k}" type="button">${eqIcon(it,k)}${it?`<i class="eqil">${Core.plusOf(it)?'+'+Core.plusOf(it):''}</i>`:''}</button><span>${EQSN[k]}</span></div>`;
 }
 function eqHTML(){
   return `<section class="card"><h2>Снаряжение ярла</h2><p class="sm muted">Шлем, броня, оружие, кольца и другое дают бонусы к атаке, защите, ноше и добыче.</p><button class="btn" data-act="eq" type="button">Открыть снаряжение</button></section>`;
@@ -826,7 +842,7 @@ function eqSheet(){
   const inv=E.inv.slice().sort((a,b)=>so==='s'?EQO.indexOf(a.slot)-EQO.indexOf(b.slot)||b.r-a.r||Core.plusOf(b)-Core.plusOf(a):so==='l'?Core.plusOf(b)-Core.plusOf(a)||b.r-a.r:so==='p'?Core.itemPct(b)-Core.itemPct(a):b.r-a.r||Core.plusOf(b)-Core.plusOf(a));
   const ms=matStacks().concat(extraStacks()),allc=inv.concat(ms),pages=Math.max(1,Math.ceil(allc.length/25));if(ui.eqPg==null||ui.eqPg>=pages)ui.eqPg=Math.max(0,pages-1);
   const pg=allc.slice(ui.eqPg*25,ui.eqPg*25+25),CX=[117,310,503,696,889],CY=[1572,1759,1958,2143,2327],mid=ui.eqMenu&&ui.eqMenu.id;
-  const cells=pg.map((it,n)=>`<div class="eqp" style="${P(CX[n%5],CY[Math.floor(n/5)],CX[n%5]+158,CY[Math.floor(n/5)]+151)}">${it.mat?matCell(it):it.nm?extraCell(it):`<button class="eqs r${it.r} t-${it.slot}${it.r} ${mid===it.id?'sel':''}" data-act="eqsel" data-arg="i:${it.id}" type="button">${eqIcon(it)}<i class="eqil">${Core.plusOf(it)?'+'+Core.plusOf(it):''}</i></button>`}</div>`).join('');
+  const cells=pg.map((it,n)=>`<div class="eqp" style="${P(CX[n%5],CY[Math.floor(n/5)],CX[n%5]+158,CY[Math.floor(n/5)]+151)}">${it.mat?matCell(it):it.nm?extraCell(it):`<button class="eqs r${it.r} t-${it.slot}${it.r} ${plC(it)} ${mid===it.id?'sel':''}" data-act="eqsel" data-arg="i:${it.id}" type="button">${eqIcon(it)}<i class="eqil">${Core.plusOf(it)?'+'+Core.plusOf(it):''}</i></button>`}</div>`).join('');
   $('modal').innerHTML=`<div class="sheet eqf"><div class="eqfin eq2">
     <div class="eqp eqtt" style="${P(235,65,935,170)}"><span>Снаряжение</span></div>
     <button class="eqp eqcl" style="${P(985,40,1115,140)}" data-act="sheetx" type="button" aria-label="Закрыть">✕</button>
@@ -860,7 +876,7 @@ function forgeSheet(){
   const so=ui.eqSort||'r',EQO=Object.keys(Core.SLOTS),inv=E.inv.slice().sort((a,b)=>so==='s'?EQO.indexOf(a.slot)-EQO.indexOf(b.slot)||b.r-a.r||Core.plusOf(b)-Core.plusOf(a):so==='l'?Core.plusOf(b)-Core.plusOf(a)||b.r-a.r:so==='p'?Core.itemPct(b)-Core.itemPct(a):b.r-a.r||Core.plusOf(b)-Core.plusOf(a)).filter(it=>f==='all'||(f==='w'&&['weapon','gloves','ring','amulet'].includes(it.slot))||(f==='a'&&['armor','helm','pants','cloak','belt'].includes(it.slot)));
   const pk=ui.eqPick||(ui.eqPick={}),mm=!!ui.eqMulti;
   Object.keys(pk).forEach(id=>{if(!E.inv.some(x=>x.id===id))delete pk[id];});
-  let cells=inv.map(it=>`<button class="eqs r${it.r} t-${it.slot}${it.r} ${(mm?pk[it.id]:sel&&sel.id===it.id)?'sel':''}" data-act="eqsel" data-arg="i:${it.id}" type="button">${eqIcon(it)}<i class="eqil">${Core.plusOf(it)?'+'+Core.plusOf(it):''}</i>${mm&&pk[it.id]?'<b class="eqck">✓</b>':''}</button>`).join('');
+  let cells=inv.map(it=>`<button class="eqs r${it.r} t-${it.slot}${it.r} ${plC(it)} ${(mm?pk[it.id]:sel&&sel.id===it.id)?'sel':''}" data-act="eqsel" data-arg="i:${it.id}" type="button">${eqIcon(it)}<i class="eqil">${Core.plusOf(it)?'+'+Core.plusOf(it):''}</i>${mm&&pk[it.id]?'<b class="eqck">✓</b>':''}</button>`).join('');
   const msF=matStacks();cells+=msF.map(matCell).join('')+extraStacks().map(extraCell).join('');
   for(let n=inv.length+msF.length;n<Math.max(15,Math.ceil((inv.length+msF.length)/5)*5);n++)cells+='<div class="eqs empty"></div>';
   const pcw=v=>v;
