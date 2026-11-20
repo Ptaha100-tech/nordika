@@ -1163,6 +1163,12 @@ function act(a, arg) {
     case 'equip': if (typeof arg === 'string') equip(arg); break;
     case 'unequip': if (typeof arg === 'string' && EQS.includes(arg)) unequip(arg); break;
     case 'scrap': if (typeof arg === 'string') scrap(arg); break;
+    case 'sellx': {
+      const q = String(arg || '').split('|');
+      if (q[0] === 'r') { const k = q[1], n = (S.rec || {})[k] || 0, t = +k.split(':')[1]; if (n > 0 && REC_PRICE[t - 1]) { S.rec[k]--; if (!S.rec[k]) delete S.rec[k]; const g = Math.round(REC_PRICE[t - 1] * 0.4); S.res.silver += g; toast('Рецепт разобран: +' + g + ' серебра'); } }
+      else if (q[0] === 's') { const k = q[1], n = (S.scr || {})[k] || 0; if (n > 0 && SCROLLS[k] && SCROLLS[k].silver) { S.scr[k]--; const g = Math.round(SCROLLS[k].silver * 0.5); S.res.silver += g; toast('Свиток разобран: +' + g + ' серебра'); } }
+      break;
+    }
     case 'scrapmany': scrapMany(arg); break;
   }
 }
