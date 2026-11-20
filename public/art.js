@@ -251,6 +251,26 @@ DRAW.vault=(c,x,y,L,T)=>{
   const w=Math.sin(T*0.004)*3;c.fillStyle='#9b3b30';c.beginPath();c.moveTo(px,y-83);c.lineTo(px+15,y-79+w);c.lineTo(px,y-72);c.closePath();c.fill();
   const a=0.5+0.5*Math.sin(T*0.005);c.strokeStyle='rgba(240,205,110,'+a.toFixed(2)+')';c.lineWidth=1.2;c.beginPath();c.moveTo(x-3,y-4);c.lineTo(x+3,y-4);c.moveTo(x,y-7);c.lineTo(x,y-1);c.stroke();
 };
+DRAW.wall=(c,x,y,L,T)=>{
+  c.fillStyle='rgba(0,0,0,.28)';c.beginPath();c.ellipse(x,y+1,52,6,0,0,TAU);c.fill();
+  const h=24+Math.min(L,10)*1.6;
+  c.fillStyle='#727a81';c.fillRect(x-50,y-h,100,h);c.fillStyle='#5f666c';c.fillRect(x-50,y-h+h*0.55,100,h*0.45);
+  c.strokeStyle='rgba(0,0,0,.28)';c.lineWidth=1;for(let r=1;r<5;r++){c.beginPath();c.moveTo(x-50,y-r*h/5);c.lineTo(x+50,y-r*h/5);c.stroke();}
+  for(let i=0;i<7;i++){c.fillStyle='#7b8388';c.fillRect(x-50+i*15,y-h-7,9,7);}
+  c.fillStyle='#14181b';c.beginPath();c.moveTo(x-9,y);c.lineTo(x-9,y-16);c.quadraticCurveTo(x,y-27,x+9,y-16);c.lineTo(x+9,y);c.closePath();c.fill();
+  const w=Math.sin(T*0.004)*2;c.fillStyle='#9b3b30';c.beginPath();c.moveTo(x+36,y-h-7);c.lineTo(x+36,y-h-27);c.lineTo(x+50,y-h-23+w);c.lineTo(x+36,y-h-18);c.closePath();c.fill();
+};
+DRAW.tower=(c,x,y,L,T)=>{
+  c.fillStyle='rgba(0,0,0,.28)';c.beginPath();c.ellipse(x,y+1,22,5,0,0,TAU);c.fill();
+  const h=60+Math.min(L,10)*2;
+  c.fillStyle='#727a81';c.fillRect(x-16,y-h,32,h);c.fillStyle='#5f666c';c.fillRect(x+3,y-h,13,h);
+  c.strokeStyle='rgba(0,0,0,.28)';c.lineWidth=1;for(let r=1;r<9;r++){c.beginPath();c.moveTo(x-16,y-r*h/9);c.lineTo(x+16,y-r*h/9);c.stroke();}
+  c.fillStyle='#8a9399';c.fillRect(x-21,y-h-4,42,8);
+  c.fillStyle='#3d4248';c.beginPath();c.moveTo(x-20,y-h-4);c.lineTo(x,y-h-26);c.lineTo(x+20,y-h-4);c.closePath();c.fill();
+  c.fillStyle='#14181b';c.fillRect(x-3,y-h+10,6,12);c.fillRect(x-3,y-h+32,6,12);
+  const a=0.5+0.5*Math.sin(T*0.005);c.fillStyle='rgba(255,170,70,'+(0.5+0.4*a).toFixed(2)+')';c.fillRect(x-2,y-h+13,4,6);
+  const w=Math.sin(T*0.004)*3;c.strokeStyle='#4a3524';c.lineWidth=2;c.beginPath();c.moveTo(x,y-h-26);c.lineTo(x,y-h-42);c.stroke();c.fillStyle='#9b3b30';c.beginPath();c.moveTo(x,y-h-41);c.lineTo(x+14,y-h-37+w);c.lineTo(x,y-h-31);c.closePath();c.fill();
+};
 DRAW.barracks=(c,x,y,L,T)=>{
   c.fillStyle='rgba(95,76,54,.6)';c.beginPath();c.ellipse(x,y-18,66,27,0,0,TAU);c.fill();
   const stake=(sx,sy)=>{c.fillStyle='#6b4a30';c.beginPath();c.moveTo(sx-2.5,sy);c.lineTo(sx-2.5,sy-12);c.lineTo(sx,sy-16);c.lineTo(sx+2.5,sy-12);c.lineTo(sx+2.5,sy);c.closePath();c.fill();c.strokeStyle='rgba(0,0,0,.35)';c.lineWidth=0.8;c.stroke();};

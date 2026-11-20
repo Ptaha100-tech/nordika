@@ -23,9 +23,11 @@ const B = {
   storehouse: { n: 'Амбар',            r: 'ᛉ', cost: { wood: 90, stone: 70 }, t: 18 },
   vault:      { n: 'Хранилище',        r: 'ᚺ', cost: { wood: 100, stone: 120, iron: 50 }, t: 20 },
   barracks:   { n: 'Казарма',          r: 'ᛏ', cost: { wood: 100, stone: 80, iron: 30 }, t: 20 },
-  oracle:     { n: 'Оракул',           r: 'ᚨ', cost: { wood: 120, stone: 100, silver: 60 }, t: 25 }
+  oracle:     { n: 'Оракул',           r: 'ᚨ', cost: { wood: 120, stone: 100, silver: 60 }, t: 25 },
+  wall:       { n: 'Городская стена',  r: 'ᛞ', cost: { wood: 150, stone: 220, iron: 60 }, t: 30, need: 5 },
+  tower:      { n: 'Сторожевая башня', r: 'ᛚ', cost: { wood: 120, stone: 160, iron: 120, silver: 40 }, t: 30, need: 8 }
 };
-const BORDER = ['hall', 'farm', 'sawmill', 'quarry', 'ironmine', 'silvermine', 'storehouse', 'vault', 'barracks', 'oracle'];
+const BORDER = ['hall', 'farm', 'sawmill', 'quarry', 'ironmine', 'silvermine', 'storehouse', 'vault', 'barracks', 'oracle', 'wall', 'tower'];
 const U = {
   spear:  { n: 'Ополченец', pl: 'Ополченцы', atk: 10, def: 14, carry: 20, cost: { food: 30, wood: 25 }, t: 6,  need: 1, counters: 'cav' },
   archer: { n: 'Охотник',   pl: 'Охотники',   atk: 16, def: 8,  carry: 15, cost: { food: 20, wood: 40 }, t: 8,  need: 2, counters: 'spear' },
@@ -332,7 +334,13 @@ const tmul = t => 1 + 0.3 * (t - 1);
 const tiersOf = st => { const o = {}; for (const k in U) o[k] = tierOf(st, k); return o; };
 const botTiers = L => { const t = Math.min(MAXT, 1 + Math.floor((Math.max(1, L) - 1) / 4)); return { spear: t, archer: t, cav: t }; };
 const atkB = st => 1 + 0.06 * st.tech.atk + 0.03 * (heroOf(st).sk.atk || 0) + eqB(st, 'atk');
-const defB = st => 1 + 0.06 * st.tech.def + 0.03 * (heroOf(st).sk.def || 0) + eqB(st, 'def');
+const defB = st => 1 + 0.06 * st.tech.def + 0.03 * (heroOf(st).sk.def || 0) + eqB(st, 'def') + 0.04 * ((st.b && st.b.wall) || 0);
+/* Сторожевая башня: перед боем обстреливает нападающих, 1% воинов за уровень, не больше 30%. */
+function towerVolley(comp, L) {
+  const f = Math.min(0.3, 0.01 * (L || 0)), left = {}, lost = {};
+  for (const k in comp) { const n = comp[k] || 0, x = Math.min(n, Math.round(n * f)); lost[k] = x; left[k] = n - x; }
+  return { left, lost, n: sum(lost) };
+}
 const lootB = st => 1 + 0.05 * (heroOf(st).sk.loot || 0) + eqB(st, 'loot');
 const unitName = (k, t) => TIERN[k][(t || 1) - 1];
 /* Войска лежат отдельными стопками по ступеням: ключ 'spear' — 1 ступень, 'spear3' — 3 ступень. */
@@ -790,6 +798,7 @@ function resolvePlayer(m) {
   settle(D, Math.max(t, D.t));
   if (HOOK.sameClan(S.pid, tg.pid)) { m.loot = {}; home(); addLog(`Ярл «${tg.name}» теперь ваш соклановец. Отряд вернулся без боя.`, 'info', t); return; }
   if (D.shield > t) { m.loot = {}; home(); addLog(`Город «${tg.name}» под щитом. Отряд вернулся без боя.`, 'info', t); toast('Цель под щитом'); return; }
+  const vol = towerVolley(m.send, (D.b && D.b.tower) || 0); m.send = vol.left;
   const r = battle(m.send, D.troops, atkB(A), defB(D));
   D.troops = r.survD;
   const wa = woundSt(A, r.lostA), wd = woundSt(D, r.lostD);
@@ -804,14 +813,14 @@ function resolvePlayer(m) {
     addLogTo(D, `Ярл «${aName}» разграбил ваш город. Унесли: ${fmtRes(m.loot)}. Ваши потери: ${fmtComp(r.lostD) || 'нет'}.${wnote(wd)} Нападавшие потеряли: ${fmtComp(r.lostA) || 'нет'}. Щит на 45 минут.`, 'bad', t);
     m.send = r.survA; home();
     A.stat.wins++; A.stat.pvpWins++; bpAddTo(A, 20); gainXp(60 + 15 * (tg.level || 1));
-    addLog(`Победа над ярлом «${tg.name}». Ваши потери: ${fmtComp(r.lostA) || 'нет'}.${wnote(wa)} Потери врага: ${fmtComp(r.lostD) || 'нет'}. Добыча: ${fmtRes(m.loot)}.`, 'good', t);
+    addLog(`Победа над ярлом «${tg.name}».${vol.n ? ` Башня врага сразила ${vol.n}.` : ''} Ваши потери: ${fmtComp(r.lostA) || 'нет'}.${wnote(wa)} Потери врага: ${fmtComp(r.lostD) || 'нет'}. Добыча: ${fmtRes(m.loot)}.`, 'good', t);
     toast(`Победа над «${tg.name}»`);
     S.targets = S.targets.filter(x => x.id !== tg.id); S.targets.push(genTarget('player'));
   } else {
     D.stat.defWins++; raid(false); HOOK.alert(D.pid, `🛡 Вы отбили нападение ярла «${aName}».`, 'a');
     addLogTo(D, `Вы отбили нападение ярла «${aName}». Ваши потери: ${fmtComp(r.lostD) || 'нет'}.${wnote(wd)} Нападавшие потеряли: ${fmtComp(r.lostA) || 'нет'}.`, 'good', t);
     m.loot = {}; m.send = r.survA;
-    addLog(`Поражение у ярла «${tg.name}». Ваши потери: ${fmtComp(r.lostA) || 'нет'}.${wnote(wa)} Потери врага: ${fmtComp(r.lostD) || 'нет'}.`, 'bad', t);
+    addLog(`Поражение у ярла «${tg.name}».${vol.n ? ` Башня врага сразила ${vol.n}.` : ''} Ваши потери: ${fmtComp(r.lostA) || 'нет'}.${wnote(wa)} Потери врага: ${fmtComp(r.lostD) || 'нет'}.`, 'bad', t);
     toast(`Поражение у «${tg.name}»`);
     if (sum(r.survA) > 0) home(); else S.marches = S.marches.filter(x => x !== m);
   }
@@ -837,7 +846,7 @@ function enemyRaid() {
   if (S.shield > t) { S.nextRaid = Math.max(S.nextRaid, S.shield + ri(90, 150) * 60000); return; }   // после щита не сразу
   const H = lvl('hall');
   const n = Math.max(4, Math.round(4 * Math.pow(H, 1.55) * rnd(0.8, 1.5)));
-  const comp = botComp(randComp(n, shuffle(Object.keys(U)).slice(0, 2)), H);
+  const comp0 = botComp(randComp(n, shuffle(Object.keys(U)).slice(0, 2)), H), vol = towerVolley(comp0, lvl('tower')), comp = vol.left;
   const r = battle(comp, S.troops, 1, defB(S));
   S.troops = r.survD;
   const wd = woundSt(S, r.lostD);
@@ -845,7 +854,7 @@ function enemyRaid() {
     const lost = {};
     RES.forEach(x => { const l = Math.floor(Math.max(0, S.res[x.id] - prot()) * (H <= 3 ? 0.05 : H <= 6 ? 0.1 : 0.15)); S.res[x.id] -= l; lost[x.id] = l; });
     S.shield = t + 120 * 60000; S.nextRaid = Math.max(S.nextRaid, S.shield + ri(90, 150) * 60000);
-    addLog(`Набег! ${n} врагов прорвались в город. Унесли: ${fmtRes(lost)}. Ваши потери: ${fmtComp(r.lostD) || 'нет'}.${wnote(wd)} Враги потеряли: ${fmtComp(r.lostA) || 'нет'}. Щит на 2 часа.`, 'bad', t);
+    addLog(`Набег! ${n} врагов прорвались в город.${vol.n ? ` Башня сразила ${vol.n}.` : ''} Унесли: ${fmtRes(lost)}. Ваши потери: ${fmtComp(r.lostD) || 'нет'}.${wnote(wd)} Враги потеряли: ${fmtComp(r.lostA) || 'нет'}. Щит на 2 часа.`, 'bad', t);
     toast('Враги разграбили город');
   } else {
     S.stat.defWins++;
@@ -853,7 +862,7 @@ function enemyRaid() {
     for (const k in tr) S.res[k] = Math.max(S.res[k], Math.min(cp, S.res[k] + tr[k]));
     let bonus = ''; if (Math.random() < 0.25) { S.haste += 1; bonus = ' и 1 ускорение'; }
     gainXp(20 + killed);
-    addLog(`Набег отбит! ${n} врагов разбиты. Враги потеряли: ${fmtComp(r.lostA) || 'нет'}. Ваши потери: ${fmtComp(r.lostD) || 'нет'}.${wnote(wd)} Трофеи: ${fmtRes(tr)}${bonus}.`, 'good', t);
+    addLog(`Набег отбит! ${n} врагов разбиты.${vol.n ? ` Башня сразила ${vol.n}.` : ''} Враги потеряли: ${fmtComp(r.lostA) || 'нет'}. Ваши потери: ${fmtComp(r.lostD) || 'нет'}.${wnote(wd)} Трофеи: ${fmtRes(tr)}${bonus}.`, 'good', t);
     toast('Набег отбит, трофеи получены');
   }
 }
@@ -862,6 +871,7 @@ function enemyRaid() {
 function canUp(id) {
   const L = lvl(id);
   if (L >= MAXL) return 'Максимальный уровень';
+  if (B[id].need && L === 0 && lvl('hall') < B[id].need) return `Нужна Палата ярла ур. ${B[id].need}`;
   if (id !== 'hall' && L + 1 > lvl('hall')) return `Нужна Палата ярла ур. ${L + 1}`;
   return '';
 }

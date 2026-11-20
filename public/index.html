@@ -668,6 +668,8 @@ function effect(id,L){
   if(id==='storehouse'){const vm=Core.isVip()?1.2:1;return `Вместимость: ${fmt(Math.round(Core.capAt(L,lvl('hall'))*vm))}`+(nx?` → ${fmt(Math.round(Core.capAt(L+1,lvl('hall'))*vm))}`:'');}
   if(id==='vault')return `Прячет от грабежа: ${fmt(300*L)} каждого ресурса`+(nx?` → ${fmt(300*(L+1))}`:'');
   if(id==='barracks')return `Обучение +${15*(L-1)}%, партия до ${10*L}`+(nx?` → +${15*L}%, до ${10*(L+1)}`:'');
+  if(id==='wall')return L?`Защита города +${4*L}%`+(nx?` → +${4*(L+1)}%`:''):'Усиливает защиту города от нападений';
+  if(id==='tower')return L?`Обстрел нападающих: −${Math.min(30,L)}% воинов`+(nx?` → −${Math.min(30,L+1)}%`:''):'Обстреливает нападающих до боя';
   if(id==='oracle')return L?`Знания доступны до ур. ${L}`+(nx?` → ${L+1}`:''):'Откроет знания Оракула';
   if(id==='hall')return `Потолок зданий: ур. ${L} · походов одновременно: ${slots(L)}`+(nx?` → ур. ${L+1}`+(slots(L+1)>slots(L)?`, походов ${slots(L+1)}`:''):'');
   return '';
