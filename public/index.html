@@ -179,7 +179,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--frost);outline-
 #modal:has(.eqf){background:#000b}
 #modal{position:fixed;inset:0;background:rgba(4,7,9,.74);display:flex;align-items:flex-end;justify-content:center;z-index:20}
 .mq{border-left:3px solid var(--accent);background:#0003;border-radius:3px;padding:2px 6px;margin:2px 0 3px;font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.mq b{color:var(--frost);font-weight:600}
-.mimg{display:block;max-width:100%;max-height:220px;border-radius:6px;margin-top:4px;cursor:zoom-in}
+.mimg{display:block;max-width:100%;max-height:220px;min-height:80px;object-fit:contain;border-radius:6px;margin-top:4px;cursor:zoom-in}
 .cbar{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-top:8px;padding:4px 8px;border-left:3px solid var(--accent);background:var(--surface2);border-radius:4px;font-size:12px;color:var(--muted)}.cbar span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.cbar+.crow{margin-top:4px}
 .rpl.dq{color:var(--blood);font-weight:700}
 .subtabs.cht .btn.ghost,.subtabs.cht .btn.on{background:none;color:#f6dc9a;text-shadow:0 1px 2px #000;border:solid transparent;border-width:7px 12px;border-image:url(/img/btn-leather.webp?v=1) 24% 14% fill/7px 12px stretch;padding:2px 2px;min-height:34px}.subtabs.cht .btn.ghost{filter:brightness(.72) saturate(.8)}.subtabs.cht .btn.on{filter:brightness(1.3) saturate(1.15)}
@@ -1157,7 +1157,7 @@ async function loadClan(){
     const j=await call('GET','/api/clan');ui.clan=j;ui.clanAt=Date.now();
     if(ui.tab!=='clan'&&!(ui.tab==='chat'&&ui.sub==='clan')){live();return;}
     const ae=document.activeElement,box=$('cbox');
-    if(ae&&ae.id==='cmsg'&&box&&j.clan){const stick=box.scrollTop+box.clientHeight>=box.scrollHeight-20;box.innerHTML=chatHTML(j.clan);if(stick)box.scrollTop=box.scrollHeight;}
+    if(ae&&ae.id==='cmsg'&&box&&j.clan)setBox(box,chatHTML(j.clan));
     else render();
   }catch(e){}
 }
@@ -1220,12 +1220,18 @@ async function loadShop(){try{ui.shop=await call('GET','/api/shop');if(ui.tab===
 ui.sub='world';ui.soc={d:null,peer:null,prof:null,at:0};
 let sbusy=false;
 const stick=b=>{if(b)b.scrollTop=b.scrollHeight;};
+/* Якорь чата: запоминаем, какое сообщение было вверху экрана, и после обновления возвращаем его на то же место. Тогда чат не прыгает, когда старые сообщения уходят сверху или догружаются картинки. */
+function setBox(x,html){if(x._h===html)return;const sn=snap(x);x._h=html;x.innerHTML=html;unsnap(x,sn);}
+function snap(x){if(!x)return null;const r=x.getBoundingClientRect(),el=[...x.querySelectorAll('.m[data-mid]')].find(e=>e.getBoundingClientRect().bottom>r.top+1);return{bot:x.scrollTop+x.clientHeight>=x.scrollHeight-20,top:x.scrollTop,mid:el?el.dataset.mid:'',d:el?el.getBoundingClientRect().top-r.top:0};}
+function unsnap(x,s){if(!x||!s)return;if(s.bot){stick(x);return;}const el=s.mid&&[...x.querySelectorAll('.m[data-mid]')].find(e=>e.dataset.mid===s.mid);if(el){x.scrollTop+=(el.getBoundingClientRect().top-x.getBoundingClientRect().top)-s.d;}else x.scrollTop=s.top;}
+document.addEventListener('scroll',e=>{const x=e.target;if(x&&x.classList&&x.classList.contains('cbox'))x.dataset.stk=(x.scrollTop+x.clientHeight>=x.scrollHeight-20)?'1':'';},true);
+document.addEventListener('load',e=>{const im=e.target;if(im&&im.classList&&im.classList.contains('mimg')){const x=im.closest('.cbox');if(x&&x.dataset.stk==='1')stick(x);}},true);
 const avH=(pid,name)=>{const h=parseInt(String(pid).slice(0,3),16)%360;return `<span class="cav" style="--h:${h}" data-act="prof" data-arg="${pid}"><i>${esc(String(name||'?').trim().charAt(0).toUpperCase())}</i><img src="/api/av/${pid}" alt="" decoding="async" onerror="this.remove()"></span>`;};
 const hnH=(name,hs)=>hs?`<span class="hnm hs-${hs}">${esc(name)}</span>`:esc(name);
 const heroB=hs=>hs?'<span class="herot">HERO</span> ':'';
 const msgH=(pid,name,tag,t,text,o)=>{o=o||{};const key=o.ch?o.ch+':'+o.id:'';
   const ctl=o.id?`${o.me?`<button class="rpl" data-act="medit" data-arg="${key}" aria-label="Изменить">✎</button><button class="rpl ${ui.delc===key?'dq':''}" data-act="mdel" data-arg="${key}" aria-label="Удалить">${ui.delc===key?'Удалить?':'🗑'}</button>`:''}<button class="rpl" data-act="reply" data-arg="${key}" aria-label="Ответить">↩</button>`:'';
-  return `<div class="m ${o.me?'me':''} ${o.ment?'ment':''} ${o.hs?'hs-'+o.hs:''}">${avH(pid,name)}<div class="mb"><div class="mh">${tag?`<span class="tag4">${esc(tag)}</span>`:''}<b class="nmb" data-act="prof" data-arg="${pid}">${o.hs?heroB(o.hs):o.vip?'<span class="vipt">VIP</span> ':''}${hnH(name,o.hs)}</b><time>${hhmm(t)}${o.ed?' · изм.':''}</time>${ctl}</div>${o.rp?`<div class="mq"><b>${esc(o.rp.n)}</b> ${esc(o.rp.x)}</div>`:''}${text?`<div class="mt">${esc(text)}</div>`:''}${o.img?`<img class="mimg" src="/ci/${o.img}" data-act="zoom" data-arg="${o.img}" loading="lazy" alt="Фото">`:''}</div></div>`;};
+  return `<div class="m ${o.me?'me':''} ${o.ment?'ment':''} ${o.hs?'hs-'+o.hs:''}" data-mid="${o.id||''}">${avH(pid,name)}<div class="mb"><div class="mh">${tag?`<span class="tag4">${esc(tag)}</span>`:''}<b class="nmb" data-act="prof" data-arg="${pid}">${o.hs?heroB(o.hs):o.vip?'<span class="vipt">VIP</span> ':''}${hnH(name,o.hs)}</b><time>${hhmm(t)}${o.ed?' · изм.':''}</time>${ctl}</div>${o.rp?`<div class="mq"><b>${esc(o.rp.n)}</b> ${esc(o.rp.x)}</div>`:''}${text?`<div class="mt">${esc(text)}</div>`:''}${o.img?`<img class="mimg" src="/ci/${o.img}" data-act="zoom" data-arg="${o.img}" loading="lazy" alt="Фото">`:''}</div></div>`;};
 const MX=m=>({id:m.id,rp:m.rp,img:m.img,ed:m.ed});
 const barHTML=ch=>{const r=ui.rp&&ui.rp.ch===ch?ui.rp:null,e=ui.ed&&ui.ed.ch===ch?ui.ed:null;return r?`<div class="cbar"><span>↩ <b>${esc(r.name)}</b>: ${esc(r.x)}</span><button class="rpl" data-act="rpx" type="button" aria-label="Отмена">✕</button></div>`:e?`<div class="cbar"><span>✎ Изменение сообщения</span><button class="rpl" data-act="rpx" type="button" aria-label="Отмена">✕</button></div>`:'';};
 const rowHTML=(ch,id,ph,act)=>`${barHTML(ch)}<div class="crow"><button class="btn small ghost" data-act="photo" data-arg="${ch}" type="button" aria-label="Фото">📷</button><input id="${id}" data-keep maxlength="200" placeholder="${ph}" autocomplete="off" enterkeyhint="send"><button class="btn small" data-act="${act}">${ui.ed&&ui.ed.ch===ch?'Сохранить':'Отправить'}</button></div>`;
@@ -1335,7 +1341,7 @@ function viewArena(){return jobsHTML('arena')+arenaHTML();}
 function arenaHTML(){
   const a=ui.arena;if(!a)return '<p class="muted sm">Загрузка…</p>';
   const row=(r,btn)=>`<div class="item"><div><b>${r.pos}.</b> ${heroB(r.hs)}${hnH(r.name,r.hs)} <span class="muted sm">· мощь ${fmt(r.power)} · сила ${r.str} · здор. ${r.hp}</span></div>${btn||''}</div>`;
-  let h=`<p class="note" style="margin:0 0 8px">Арена ярлов: бой один на один идёт сам. Мощь здесь боевая: считается по силе, здоровью, броне и криту. Удар зависит от силы, брони и крита ярла, то есть от вещей, заточки и знаний Оракула. Это лестница: бросить вызов можно ярлам выше вас по списку. Победа над ним меняет вас с ним местами, поэтому слабых соперников бить ради места бесполезно. С каждым соперником один бой в день. Соперник может быть не в игре.</p>`;
+  let h=`<p class="note" style="margin:0 0 8px">Арена ярлов: бой один на один идёт сам. Мощь здесь боевая: считается по силе, здоровью, броне и криту. Удар зависит от силы, брони и крита ярла, то есть от вещей, заточки и знаний Оракула. Это лестница: бросить вызов можно ярлам выше вас по списку. Принцип «царь горы»: победитель занимает лучшее из двух мест, проигравший худшее. Победа над слабым места не даёт, а проигрыш ему отправит вас на его место. С каждым соперником один бой в день. Соперник может быть не в игре.</p>`;
   h+=`<section class="card"><h3>Лучшие ярлы</h3>${a.top.map(r=>`<div class="item" style="${r.me?'color:var(--accent,#e8c15a)':''}"><div><b>${r.pos}.</b> ${heroB(r.hs)}${hnH(r.name,r.hs)}${r.me?' (вы)':''}</div><span class="muted sm">мощь ${fmt(r.power)}</span></div>`).join('')}
   ${a.pos>10?`<div class="item" style="color:var(--accent,#e8c15a)"><div><b>${a.pos}.</b> Вы</div><span class="muted sm">мощь ${fmt(a.power)}</span></div>`:''}</section>`;
   h+=`<section class="card"><div class="trow2"><h3>Ваше место: ${a.pos} из ${a.total}</h3><span class="pill ${a.left?'good':'mute'}">Боёв: ${a.left}</span></div>
@@ -1524,8 +1530,8 @@ async function loadSoc(){
     const ae=document.activeElement;
     if(ae&&ae.hasAttribute&&ae.hasAttribute('data-keep')){
       const w=$('wbox'),b=$('dbox');
-      if(w&&ui.sub==='world'){const s=w.scrollTop+w.clientHeight>=w.scrollHeight-20;w.innerHTML=worldHTML(j);if(s)stick(w);}
-      if(b&&j.thread){const s=b.scrollTop+b.clientHeight>=b.scrollHeight-20;b.innerHTML=dmHTML(j.thread,j.me);if(s)stick(b);}
+      if(w&&ui.sub==='world')setBox(w,worldHTML(j));
+      if(b&&j.thread)setBox(b,dmHTML(j.thread,j.me));
     }else render();
   }catch(e){}
 }
@@ -1853,14 +1859,15 @@ function render(bg){
   const ap=$('app');ap.classList.toggle('chatfull',ui.tab==='chat');
   ap.classList.toggle('chatlock',ui.tab==='chat'&&(ui.sub==='world'||ui.sub==='clan'||(ui.sub==='dm'&&!!ui.soc.peer)));
   const v=$('view'),top=v.scrollTop,list=$('list');
-  const bs={};['cbox','wbox','dbox'].forEach(i=>{const x=$(i);if(x)bs[i]={top:x.scrollTop,bot:x.scrollTop+x.clientHeight>=x.scrollHeight-20};});   // запоминаем, где читал чат
+  const bs={};['cbox','wbox','dbox'].forEach(i=>{const x=$(i);if(x)bs[i]=snap(x);});   // запоминаем, где читал чат
   const keep={};list.querySelectorAll('[data-keep]').forEach(el=>{keep[el.id]=el.value;});
   const html=(ui.tab==='top'||ui.tab==='chat'||ui.tab==='clan'?'':tutHTML())+VIEWS[ui.tab]();
   if(bg&&ui.lh===html&&ui.lt===ui.tab){live();return;}   // ничего не изменилось: список не трогаем
   ui.lh=html;ui.lt=ui.tab;
   list.innerHTML=html;
   for(const id in keep){const el=document.getElementById(id);if(el)el.value=keep[id];}
-  if(ui.tab==='clan'||ui.tab==='chat'){['cbox','wbox','dbox'].forEach(i=>{const x=$(i);if(!x)return;if(bs[i]&&!bs[i].bot)x.scrollTop=bs[i].top;else stick(x);});}
+  ['cbox','wbox','dbox'].forEach(i=>{const x=$(i);if(x)x._h=x.innerHTML;});
+  if(ui.tab==='clan'||ui.tab==='chat'){['cbox','wbox','dbox'].forEach(i=>{const x=$(i);if(!x)return;if(bs[i])unsnap(x,bs[i]);else stick(x);});}
   try{window.Art&&Art.paintIn(list,id=>lvl(id));if(ui.tab==='city')Art.animateIn(list,id=>lvl(id));}catch(e){}
   if(ui.tab==='map'&&ui.msub==='world')wmInit();
   showHero(ui.tab);showLogo(ui.tab==='city');

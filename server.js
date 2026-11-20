@@ -421,7 +421,7 @@ function arenaJoin(uid) {
 }
 function arenaState(u) {
   const a = u.state.arena = u.state.arena || { day: 0, used: 0, extra: 0, opp: [], fought: {} };
-  if (a.day !== arenaDay()) { a.day = arenaDay(); a.used = 0; a.extra = 0; a.fought = {}; }
+  if (a.day !== arenaDay()) { a.day = arenaDay(); a.used = 0; a.extra = 0; a.fought = {}; a.rot = 0; }
   if (!a.fought) a.fought = {};
   return a;
 }
@@ -429,10 +429,12 @@ const arenaLeft = (a, uid) => Math.max(0, ARENA_FREE + (uid && heroStyle(uid) ? 
 /* Позиционный ладдер: бросить вызов можно тем, кто выше по списку (до 10 мест), и одному слабее. С каждым соперником один бой в день. */
 function arenaPickOpp(u) {
   const ord = ARENA.order, me = ord.indexOf(u.id), a = arenaState(u), ok = id => id !== u.id && arenaAlive(id) && !a.fought[id];
-  const above = ord.slice(Math.max(0, me - 10), Math.max(0, me)).filter(ok).reverse().slice(0, 4);
-  const below = ord.slice(me + 1, me + 4).filter(ok).slice(0, 1);
-  let res = above.concat(below);
-  if (res.length < 5) res = res.concat(ord.slice(me + 1, me + 8).filter(x => ok(x) && !res.includes(x))).slice(0, 5);
+  const above = ord.slice(Math.max(0, me - 10), Math.max(0, me)).filter(ok).reverse();   // от ближайших к дальним
+  const below = ord.slice(me + 1, me + 4).filter(ok);
+  const rot = (arr, n, k) => { const o = []; for (let i = 0; i < Math.min(n, arr.length); i++) o.push(arr[(k + i) % arr.length]); return o; };
+  const r = a.rot || 0;
+  let res = rot(above, 4, r * 2).concat(rot(below, 1, r));
+  if (res.length < 5) res = res.concat(ord.slice(me + 1, me + 10).filter(x => ok(x) && !res.includes(x))).slice(0, 5);
   return res.sort((x, y) => ord.indexOf(x) - ord.indexOf(y));
 }
 function arenaView(u) {
@@ -467,9 +469,9 @@ function arenaFight(u, oid) {
   if (sim.win) { const stt = u.state.stat = u.state.stat || {}; stt.arenaWins = (stt.arenaWins || 0) + 1; }
   Core.bpAddTo(u.state, sim.win ? 20 : 8);
   let to = before;
-  if (sim.win && op < before) to = op;                       // победа над тем, кто выше: занимаете его место
-  else if (!sim.win && op > before) to = Math.min(ARENA.order.length - 1, before + 1);   // поражение от слабого: падаете на место
-  if (to !== before) { ARENA.order.splice(before, 1); ARENA.order.splice(to, 0, u.id); }
+  if (sim.win && op < before) to = op;         // «царь горы»: победитель занимает лучшее из двух мест, проигравший — худшее
+  else if (!sim.win && op > before) to = op;   // проиграли тому, кто стоял ниже: меняетесь с ним местами
+  if (to !== before) { ARENA.order[before] = oid; ARENA.order[to] = u.id; }
   const reward = sim.win ? (op < before ? 60 + Math.round(oppPower * 0.15) : 15) : 10;
   Core.use(u.state); u.state.res.silver = (u.state.res.silver || 0) + reward;
   let granted = false;
@@ -901,7 +903,7 @@ async function api(req, res, url) {
     let b; try { b = await readBody(req); } catch (e) { return json(res, 400, { error: 'Некорректный запрос' }); }
     touchState(u); arenaJoin(u.id); const a = arenaState(u); let r = {};
     if (b.a === 'buy') { if (a.extra >= ARENA_MAXX) return json(res, 400, { error: 'Больше боёв сегодня купить нельзя.' }); if ((u.state.gems || 0) < ARENA_BUY) return json(res, 400, { error: 'Не хватает рунных камней.' }); u.state.gems -= ARENA_BUY; a.extra++; markDirty(u); }
-    else if (b.a === 'refresh') { a.opp = arenaPickOpp(u); markDirty(u); }
+    else if (b.a === 'refresh') { a.rot = (a.rot || 0) + 1; a.opp = arenaPickOpp(u); markDirty(u); }
     else if (b.a === 'fight') { r = arenaFight(u, String(b.id || '')); if (r.error) return json(res, 400, { error: r.error }); }
     return json(res, 200, Object.assign({ view: arenaView(u), state: u.state, cfg: { t: Core.CFG.t }, now: Date.now(), inc: incomingOf(u.id), mines: mineView(u.id) }, r));
   }
