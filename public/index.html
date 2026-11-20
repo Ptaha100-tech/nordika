@@ -414,6 +414,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--frost);outline-
 @keyframes eqtw{0%,100%{opacity:0;transform:scale(.4)}50%{opacity:1;transform:scale(1.1) rotate(20deg)}}
 
 /* эффекты по тирам и заточке */
+.skb{border:1px solid var(--line);border-radius:8px;padding:6px 10px;margin:8px 0;background:#0003}.skh{display:flex;justify-content:space-between;align-items:center;color:var(--accent);font-family:Georgia,serif}
 .eqs.r3:not(.zz)::before{content:"";position:absolute;inset:0;z-index:2;pointer-events:none;left:0;right:auto;top:0;font-size:0;
  background:radial-gradient(circle,#ffd27a 0 1.4px,#0000 2.2px) 18% 10%/100% 50%,radial-gradient(circle,#ff7a3c 0 1.2px,#0000 2px) 62% 40%/100% 50%,radial-gradient(circle,#ffe9a8 0 1px,#0000 1.8px) 85% 70%/100% 50%,radial-gradient(circle,#c78bff 0 1.2px,#0000 2px) 40% 90%/100% 50%;
  background-repeat:repeat-y;animation:eqemb 2.6s linear infinite;-webkit-mask-image:linear-gradient(#0000,#000 25%,#000 70%,#0000);mask-image:linear-gradient(#0000,#000 25%,#000 70%,#0000);text-shadow:none;width:auto;opacity:.9}
@@ -777,12 +778,16 @@ function heroHTML(){
     <button class="btn small ghost" data-act="looks" type="button" style="margin:2px 0 6px">Сменить облик</button>
     <div class="bar" style="margin:6px 0 2px"><i style="width:${maxed?100:Math.min(100,H.xp/need*100)}%"></i></div>
     <p class="bd">${maxed?'Высший уровень':`Опыт ${Math.floor(H.xp)} из ${need}`}${H.sp?` · <b style="color:var(--accent)">очков навыков: ${H.sp}</b>`:''}</p></div></article>`;
-  h+=`<section class="card"><h2>Навыки ярла</h2>`;
-  Object.keys(HSK).forEach(k=>{
-    const L=H.sk[k]||0;
-    h+=`<div class="trow2" style="margin:8px 0"><div style="min-width:0"><b>${HSK[k].n}</b> <span class="lv">${L}/${MAXSK}</span><p class="sm muted">${HSK[k].d}</p></div><button class="btn small" data-act="skill" data-arg="${k}" ${H.sp<1||L>=MAXSK?'disabled':''}>+1</button></div>`;
+  const ttl=Core.jarlTitle(S);
+  h+=`<section class="card"><h2>Навыки ярла${ttl?` <span class="lv">${ttl}</span>`:''}</h2><p class="sm muted">Очков: <b style="color:var(--accent)">${H.sp}</b>. Три пути: воин усиливает ярла в бою, страж даёт здоровье и броню, добытчик ускоряет рост и хозяйство.</p>`;
+  Object.keys(Core.HBR).forEach(b=>{
+    const ks=Object.keys(HSK).filter(k=>HSK[k].b===b),tot=ks.reduce((a,k)=>a+(H.sk[k]||0),0);
+    h+=`<div class="skb"><div class="skh"><b>${Core.HBR[b].n}</b><span class="lv">${tot} оч.</span></div>`;
+    ks.forEach(k=>{const L=H.sk[k]||0;
+      h+=`<div class="trow2" style="margin:6px 0"><div style="min-width:0"><b>${HSK[k].n}</b> <span class="lv">${L}/${MAXSK}</span><p class="sm muted">${HSK[k].d}</p></div><button class="btn small" data-act="skill" data-arg="${k}" ${H.sp<1||L>=MAXSK?'disabled':''}>+1</button></div>`;});
+    h+=`</div>`;
   });
-  h+=`<p class="note">Опыт приходит за победы, сбор и отбитые набеги. Каждый уровень даёт очко навыка.</p></section>`;
+  h+=`<p class="note">Опыт приходит за победы, сбор и отбитые набеги. Каждый уровень даёт очко, а на 10, 20 и 30 уровне сразу два.</p>${Core.skillPts(S)?`<button class="btn small ghost" data-act="respec" type="button">Сбросить навыки (${fmtRes({silver:Core.respecCost()})})</button>`:''}</section>`;
   return h+eqHTML();
 }
 const RC=['var(--fg)','#b9c9da','#e8c15a','#c78bff'],ART=[0,1,2,3];

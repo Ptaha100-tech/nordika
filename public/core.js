@@ -40,10 +40,25 @@ const TIERN = {
 const TIER_NEED = [1, 4, 8, 12, 16, 21, 26];   // какая Казарма нужна для ступени
 const MAXT = 7;
 const HSK = {
-  atk:  { n: 'Ярость',   d: '+3% к атаке всех воинов за уровень' },
-  def:  { n: 'Стойкость', d: '+3% к защите города за уровень' },
-  loot: { n: 'Хватка',   d: '+5% к ноше воинов за уровень' }
+  atk:  { n: 'Ярость',        d: '+3% к атаке всех воинов за уровень', b: 'w' },
+  jstr: { n: 'Мощь удара',    d: '+3% к силе ярла (арена) за уровень', b: 'w' },
+  jcrt: { n: 'Меткий глаз',   d: '+0,6% к шансу крита ярла за уровень', b: 'w' },
+  def:  { n: 'Стойкость',     d: '+3% к защите города за уровень', b: 's' },
+  jvit: { n: 'Крепкое тело',  d: '+4% к здоровью ярла (арена) за уровень', b: 's' },
+  jarm: { n: 'Закалка',       d: '+3% к броне ярла (арена) за уровень', b: 's' },
+  loot: { n: 'Хватка',        d: '+5% к ноше воинов за уровень', b: 'd' },
+  eco:  { n: 'Хозяйственность', d: '+3% к добыче ресурсов в городе за уровень', b: 'd' },
+  xp:   { n: 'Мудрость',      d: '+5% к опыту ярла за уровень', b: 'd' }
 };
+const HBR = { w: { n: 'Воин', t: 'Воин' }, s: { n: 'Страж', t: 'Страж' }, d: { n: 'Добытчик', t: 'Добытчик' } };
+const skillPts = st => { let n = 0; const k = (st.hero && st.hero.sk) || {}; for (const x in k) n += k[x] || 0; return n; };
+function jarlTitle(st) {
+  const k = (st.hero && st.hero.sk) || {}, sum = { w: 0, s: 0, d: 0 };
+  for (const x in k) if (HSK[x]) sum[HSK[x].b] += k[x] || 0;
+  const t = sum.w + sum.s + sum.d; if (t < 5) return '';
+  const b = Object.keys(sum).sort((a, c) => sum[c] - sum[a])[0];
+  return sum[b] >= 0.6 * t ? (t >= 30 ? 'Великий ' : t >= 15 ? 'Опытный ' : '') + HBR[b].t : 'Универсал';
+}
 const MAXHL = 30, MAXSK = 10;
 const WEAK = {}; Object.keys(U).forEach(k => { WEAK[k] = Object.keys(U).find(x => U[x].counters === k); });
 const TECH = {
@@ -189,10 +204,10 @@ function jarlStats(st) {
   if (st.eq) EQS.forEach(k => { const it = st.eq.s[k]; if (!it) return; const m = SLOTS[slotType(k)].js; sum[m[0]] += jMain(it); if (it.af && it.af[0] in sum) sum[it.af[0]] += affVal(it); });
   const sb = 1 + setBonus(st) * 2;
   return {
-    str: Math.round((10 + 2 * H.lv + sum.str * sb) * (1 + 0.04 * (T.jstr || 0))),
-    hp: Math.round((300 + 40 * H.lv + sum.vit * sb) * (1 + 0.05 * (T.jvit || 0))),
-    arm: Math.round((5 + H.lv + sum.arm * sb) * (1 + 0.04 * (T.jarm || 0))),
-    crt: Math.min(60, Math.round((5 + sum.crt * sb + 0.5 * (T.jcrt || 0)) * 10) / 10)
+    str: Math.round((10 + 2 * H.lv + sum.str * sb) * (1 + 0.04 * (T.jstr || 0) + 0.03 * ((H.sk || {}).jstr || 0))),
+    hp: Math.round((300 + 40 * H.lv + sum.vit * sb) * (1 + 0.05 * (T.jvit || 0) + 0.04 * ((H.sk || {}).jvit || 0))),
+    arm: Math.round((5 + H.lv + sum.arm * sb) * (1 + 0.04 * (T.jarm || 0) + 0.03 * ((H.sk || {}).jarm || 0))),
+    crt: Math.min(60, Math.round((5 + sum.crt * sb + 0.5 * (T.jcrt || 0) + 0.6 * ((H.sk || {}).jcrt || 0)) * 10) / 10)
   };
 }
 /* Мощь ярла: уровень, очки навыков, вещи и знания Оракула. */
@@ -348,8 +363,8 @@ const tierCost = (k, to) => { const f = Math.pow(2.2, to - 2); return { food: Ma
 const tierSecs = to => Math.round(60 * Math.pow(2, to - 2) * CFG.t);
 function gainXp(n) {
   const H = S.hero; if (H.lv >= MAXHL) return;
-  H.xp += n;
-  while (H.lv < MAXHL && H.xp >= xpNeed(H.lv)) { H.xp -= xpNeed(H.lv); H.lv++; H.sp++; addLog(`Ярл достиг ${H.lv} уровня. Есть очко навыка.`, 'good'); toast(`Ярл: уровень ${H.lv}`); }
+  H.xp += Math.round(n * (1 + 0.05 * ((H.sk || {}).xp || 0)));
+  while (H.lv < MAXHL && H.xp >= xpNeed(H.lv)) { H.xp -= xpNeed(H.lv); H.lv++; H.sp += (H.lv === 10 || H.lv === 20 || H.lv === 30) ? 2 : 1; addLog(`Ярл достиг ${H.lv} уровня. Есть очко навыка.`, 'good'); toast(`Ярл: уровень ${H.lv}`); }
   if (H.lv >= MAXHL) H.xp = 0;
 }
 const lvl = id => S.b[id] || 0;
@@ -357,7 +372,7 @@ const slots = h => 1 + (h >= 4 ? 1 : 0) + (h >= 8 ? 1 : 0) + (h >= 14 ? 1 : 0) +
 const capAt = (st, h) => Math.round(3000 + 1800 * (st - 1) * (1 + 0.1 * (st - 1)) + 300 * (h - 1));
 const isVip = () => (S.vip || 0) > nowMs() || heroOn(S);
 const cap = () => Math.round(capAt(lvl('storehouse'), lvl('hall')) * (isVip() ? 1.2 : 1));
-const ecoMul = () => (1 + 0.05 * S.tech.eco + eqB(S, 'eco')) * (isVip() ? 1.15 : 1);
+const ecoMul = () => (1 + 0.05 * S.tech.eco + 0.03 * (S.hero.sk.eco || 0) + eqB(S, 'eco')) * (isVip() ? 1.15 : 1);
 const prot = () => 300 * lvl('vault');
 /* Добыча и награды не превышают вместимость Амбара (уже лежащее сверху не отнимаем). */
 const addCapped = (k, v) => { const c = cap(), cur = S.res[k] || 0; S.res[k] = Math.max(cur, Math.min(c, cur + v)); };
@@ -884,6 +899,7 @@ function startUpg(k, to, only) {
   const dur = p.secs * 1000;
   S.upg = { k, to, n: p.n, end: nowMs() + dur, dur, sid: 'j' + (S.mid++) };
 }
+const respecCost = () => 300 * (S.hero ? S.hero.lv : 1);
 function spendSkill(k) {
   const H = S.hero; if (!HSK[k] || H.sp < 1 || (H.sk[k] || 0) >= MAXSK) return;
   H.sp--; H.sk[k] = (H.sk[k] || 0) + 1;
@@ -1136,6 +1152,7 @@ function act(a, arg) {
     case 'study': if (typeof arg === 'string') startStudy(arg); break;
     case 'tierup': if (arg && typeof arg === 'object') startUpg(arg.k, arg.to, arg.from); break;
     case 'skill': if (typeof arg === 'string') spendSkill(arg); break;
+    case 'respec': { const H = S.hero, n = skillPts(S), c = respecCost(); if (!n) break; if (S.res.silver < c) { toast('Не хватает серебра'); break; } S.res.silver -= c; H.sp += n; H.sk = {}; toast('Навыки сброшены'); break; }
     case 'haste': if (typeof arg === 'string') useHaste(arg); break;
     case 'free': if (typeof arg === 'string') freeFinish(arg); break;
     case 'refresh': if (nowMs() >= S.tgtAt + 30000) refreshTargets(); break;
@@ -1194,7 +1211,7 @@ function fmtT(sec) {
 const API = {
   armyAtk, newItem, giveItem, SLOTS, SLOTK, LOOKS, EQS, slotType, EQ_IL, RARN, EQMAX, BAG_COST, BAG_STEP, eqCap, itemPct, itemName, forgeCost, forgeLvl, scrapOf, eqB, jarlStats, jarlPower, setBonus, jMain, affVal, plusOf, itemPower, AFN, MAXPLUS, TM, SETB,
   heroOn, REC_PRICE, SCROLLS, ENH_P, epicReq, hutCap, wnote, healCost, healSecs, MATS, MATK, STACK, bagUsed, giveMat, MOBS, MINEC, MINE_MIN, MINE_IDS, mineTarget, mineBusy, mineDur,
-  RES, RI, B, BORDER, U, WEAK, TECH, QUESTS, MAXL, TMAX, CFG, HOOK, NODE, TIERN, TIER_NEED, MAXT, HSK, MAXHL, MAXSK,
+  RES, RI, B, BORDER, U, WEAK, TECH, QUESTS, MAXL, TMAX, CFG, HOOK, NODE, TIERN, TIER_NEED, MAXT, HSK, HBR, MAXHL, MAXSK, skillPts, jarlTitle, respecCost,
   get S() { return S; },
   use, ensure, newState, update, produce, settle, battle, act, score, verdict,
   lvl, slots, cap, capAt, rate, prodAt, upCost, upSecs, canUp, canAfford, trainRate, maxBatch, trainSecs, techCost, techSecs, gatherSecs, marchSecs,
