@@ -817,14 +817,23 @@ function eqHTML(){
 function matStacks(){const o=[],m=S.mats||{};Object.keys(m).forEach(id=>{let n=m[id];while(n>0){o.push({mat:id,n:Math.min(99,n)});n-=99;}});return o;}
 function extraStacks(){const o=[],T=['','серебр.','золот.','эпич.'];Object.keys(S.rec||{}).forEach(k=>{const n=S.rec[k];if(n>0){const q=k.split(':');o.push({rec:k,n,nm:'Рецепт: '+((Core.SLOTS[q[0]]||{}).n||q[0]).toLowerCase()+' '+(T[+q[1]]||'')});}});const sc=S.scr||{};['n','s','g'].forEach(c=>{if(sc[c]>0)o.push({scr:c,n:sc[c],nm:Core.SCROLLS[c].n});});return o;}
 function extraCell(x){return `<button class="eqs mat" type="button" data-act="eqsel" data-arg="${x.rec?'r:'+x.rec.replace(':','|'):'x:'+x.scr}" title="${esc(x.nm)}"><span class="matn">${esc(x.nm)}</span>${x.scr?`<img class="eqi" src="/img/scr-${x.scr}.webp" alt="" onerror="this.style.display='none'">`:`<span class="eqi" style="display:flex;align-items:center;justify-content:center;font-size:34px">📜</span><b style="position:absolute;left:0;right:0;top:56%;text-align:center;font-size:10px;line-height:1.1;color:#3b2410;text-shadow:0 0 3px #fff8">${esc(x.nm.replace('Рецепт: ',''))}</b>`}<i class="eqil">${x.n}</i></button>`;}
-function matCell(x){const nm=Core.MATS[x.mat]||x.mat;return `<div class="eqs mat" title="${esc(nm)}"><span class="matn">${esc(nm)}</span><img class="eqi" src="/img/mat-${x.mat}.webp?v=1" alt="" onerror="this.style.display='none'"><i class="eqil">${x.n}</i></div>`;}
+function matInfo(m){
+  const R=['','I','II','III'],src=Core.MOBS.filter(d=>d.drops.some(q=>q[0]===m)).map(d=>d.n+' ('+Math.round(d.drops.find(q=>q[0]===m)[1]*100)+'%)');
+  const use=[];for(let t=1;t<=3;t++){const o=[];Object.keys(Core.SLOTS).forEach(sl=>{const rq=Core.epicReq(sl,t);if(rq&&rq.mats[m])o.push(Core.SLOTS[sl].n.toLowerCase()+' ×'+rq.mats[m]);});if(o.length)use.push(`<b>Ковка ${['','серебряной','золотой','эпической'][t]} вещи:</b> ${o.join(', ')}`);}
+  return {src,use};
+}
+function recText(k){const q=k.split(':'),t=+q[1],rq=Core.epicReq(q[0],t);if(!rq)return 'Рецепт для ковки.';const nm=(Core.SLOTS[q[0]]||{}).n||q[0];
+  return `Позволяет выковать вещь «${esc(nm.toLowerCase())}» уровня ${['','серебряного','золотого','эпического'][t]} у кузнеца (вкладка «Эпик»). Расходуется при ковке. Нужны: вещь прошлого уровня, ${Object.keys(rq.mats).map(m=>Core.MATS[m]+' ×'+rq.mats[m]).join(', ')} и ${rq.silver} серебра.`;}
+function matCell(x){const nm=Core.MATS[x.mat]||x.mat;return `<button class="eqs mat" type="button" data-act="eqsel" data-arg="m:${x.mat}" title="${esc(nm)}"><span class="matn">${esc(nm)}</span><img class="eqi" src="/img/mat-${x.mat}.webp?v=1" alt="" onerror="this.style.display='none'"><i class="eqil">${x.n}</i></button>`;}
 function eqMenuHTML(){
   const m=ui.eqMenu;if(!m)return '';
   const E=S.eq;let body='',acts='';
+  if(m.mat){const n=(S.mats||{})[m.mat]||0,I=matInfo(m.mat);if(!n){ui.eqMenu=null;return '';}
+    return `<div class="eqmenu"><p class="sm" style="margin:2px 0"><b>${esc(Core.MATS[m.mat])}</b>, ${n} шт.</p><p class="sm muted" style="margin:2px 0">Материал для эпической ковки у кузнеца: вкладка «Эпик». Хранится в сумке, 99 штук занимают одну ячейку.</p>${I.src.length?`<p class="sm" style="margin:2px 0"><b>Выпадает:</b> ${esc(I.src.join(', '))}</p>`:'<p class="sm" style="margin:2px 0"><b>Выпадает:</b> с редких боссов</p>'}${I.use.length?`<p class="sm" style="margin:2px 0">${I.use.join('<br>')}</p>`:''}<div class="eqmb"><button class="btn small ghost" data-act="eqmx" type="button">Закрыть</button></div></div>`;}
   if(m.rec||m.scr){let nm,g,arg;
     if(m.rec){const q=m.rec.split(':'),n=(S.rec||{})[m.rec]||0;if(!n){ui.eqMenu=null;return '';}nm='Рецепт: '+((Core.SLOTS[q[0]]||{}).n||q[0]).toLowerCase()+' ('+['','серебряный','золотой','эпический'][+q[1]]+'), '+n+' шт.';g=Math.round(Core.REC_PRICE[+q[1]-1]*0.4);arg='r|'+m.rec;}
     else{const n=(S.scr||{})[m.scr]||0;if(!n){ui.eqMenu=null;return '';}nm=Core.SCROLLS[m.scr].n+', '+n+' шт.';g=Core.SCROLLS[m.scr].silver?Math.round(Core.SCROLLS[m.scr].silver*0.5):0;arg='s|'+m.scr;}
-    body=`<p class="sm" style="margin:2px 0"><b>${esc(nm)}</b></p><p class="sm muted" style="margin:2px 0">${m.rec?'Рецепт нужен для эпической ковки.':'Свиток нужен для заточки.'}</p>`;
+    body=`<p class="sm" style="margin:2px 0"><b>${esc(nm)}</b></p><p class="sm muted" style="margin:2px 0">${m.rec?recText(m.rec):'Свиток для заточки вещей в кузнице: даёт +1 к заточке. '+({n:'Обычный: до +3 заточка всегда удаётся, дальше шанс 65%. При неудаче вещь пропадает, а осколки дают серебро.',s:'Надёжный: до +3 всегда удаётся, дальше шанс 85%. При неудаче вещь не пропадает, а откатывается до +3.',g:'Золотой: заточка проходит со 100% шансом.'}[m.scr]||'')}</p>`;
     acts=g?`<button class="btn small" data-act="sellx" data-arg="${arg}" type="button">Разобрать (+${g} серебра)</button>`:'<span class="sm muted">Этот свиток разобрать нельзя</span>';
     return `<div class="eqmenu">${body}<div class="eqmb">${acts}<button class="btn small ghost" data-act="eqmx" type="button">Закрыть</button></div></div>`;}
   if(m.id){const it=E.inv.find(x=>x.id===m.id);if(!it){ui.eqMenu=null;return '';}
@@ -2126,7 +2135,7 @@ function onAct(act,arg){
     case 'eqmx':ui.eqMenu=null;eqSheet();return;
     case 'eqpg':ui.eqPg=Math.max(0,(ui.eqPg||0)+parseInt(arg,10));ui.eqMenu=null;eqSheet();return;
     case 'equip':case 'unequip':case 'scrap':case 'sellx':ui.eqMenu=null;act2(act,arg);return;
-    case 'eqsel':{const [a,v]=String(arg).split(':');if(!ui.fgOpen&&(a==='r'||a==='x')){ui.eqMenu=a==='r'?{rec:v.replace('|',':')}:{scr:v};eqSheet();return;}if(!ui.fgOpen){if(ui.eqLP){ui.eqLP=false;return;}ui.eqMenu=a==='i'?{id:v}:{slot:v};eqSheet();return;}if(ui.eqMulti&&ui.fgOpen&&a==='i'){const pk=ui.eqPick=ui.eqPick||{};pk[v]=!pk[v];ui.eqConf=false;forgeSheet();return;}ui.eqSel=a==='i'?{id:v}:{slot:v};if(ui.fgOpen)forgeSheet();else eqSheet();return;}
+    case 'eqsel':{const [a,v]=String(arg).split(':');if(!ui.fgOpen&&(a==='r'||a==='x'||a==='m')){ui.eqMenu=a==='r'?{rec:v.replace('|',':')}:a==='m'?{mat:v}:{scr:v};eqSheet();return;}if(!ui.fgOpen){if(ui.eqLP){ui.eqLP=false;return;}ui.eqMenu=a==='i'?{id:v}:{slot:v};eqSheet();return;}if(ui.eqMulti&&ui.fgOpen&&a==='i'){const pk=ui.eqPick=ui.eqPick||{};pk[v]=!pk[v];ui.eqConf=false;forgeSheet();return;}ui.eqSel=a==='i'?{id:v}:{slot:v};if(ui.fgOpen)forgeSheet();else eqSheet();return;}
     case 'frame':saveAv({fr:Number(arg)});return;
     case 'avclr':saveAv({clear:true});return;
     case 'top':topSheet();return;
