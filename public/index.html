@@ -985,12 +985,26 @@ function questCard(q){
     <div class="bar"><i style="width:${cur/q.max*100}%;transition:none"></i></div>
     <div class="tgb"><div class="costs" style="margin:0">${rw}</div>${got?'<span class="muted sm">Получено</span>':`<button class="btn small ${done?'':'off'}" data-act="claim" data-arg="${q.id}">Забрать</button>`}</div></article>`;
 }
+function rwText(rw){const o=[],N={wood:'дерева',food:'еды',stone:'камня',iron:'железа',silver:'серебра'};
+  for(const k in rw){const v=rw[k];if(k==='gems')o.push(v+' рунных камней');else if(k==='haste')o.push(v+' ускорений');else if(k==='scr')o.push('свитки заточки: '+Object.keys(v).map(x=>Core.SCROLLS[x].n.toLowerCase()+' ×'+v[x]).join(', '));else if(k==='rec')o.push('рецепты: '+v.map(x=>{const q=x.split(':');return ((Core.SLOTS[q[0]]||{}).n||q[0]).toLowerCase()+' '+['','серебр.','золот.','эпич.'][+q[1]];}).join(', '));else if(k==='heroD')o.push('Hero на '+v+' дн.');else o.push(v+' '+(N[k]||k));}
+  return o.join(' · ');}
+function campHTML(){
+  const C=S.camp||{ch:0},N=Core.CAMP.length;
+  if(C.ch>=N)return `<section class="card camp"><h2>Сага Нордики</h2><p class="sm muted"><i>${esc(C.out||'')}</i></p><p><b>Вы завершили сагу. Фьорд помнит ваше имя.</b></p></section>`;
+  const c=Core.CAMP[C.ch],ok=Core.campReady();
+  return `<section class="card camp"><h2>Сага Нордики <span class="lv">глава ${C.ch+1} из ${N}</span></h2>
+  ${C.out?`<p class="sm muted"><i>${esc(C.out)}</i></p>`:''}
+  <h3 style="margin:6px 0 2px">${esc(c.n)}</h3><p class="sm" style="font-style:italic">${esc(c.intro)}</p>
+  ${c.goals.map(g=>{const v=Math.min(g.max,g.cur());return `<div class="sm" style="margin:5px 0">${v>=g.max?'✔ ':''}${esc(g.t)} <span class="lv">${Math.floor(v)}/${g.max}</span><div class="bar" style="margin:3px 0"><i style="width:${v/g.max*100}%"></i></div></div>`;}).join('')}
+  <p class="sm muted">Награда: ${esc(rwText(c.rw))}</p>
+  <button class="btn" data-act="campgo" type="button" ${ok?'':'disabled'}>${ok?'Завершить главу':'Цели ещё не выполнены'}</button></section>`;
+}
 function viewQuests(){
   const pr=q=>Math.min(1,q.cur()/q.max);
   const ready=QUESTS.filter(q=>!S.claimed[q.id]&&q.cur()>=q.max);
   const prog=QUESTS.filter(q=>!S.claimed[q.id]&&q.cur()<q.max).sort((a,b)=>pr(b)-pr(a)||a.max-b.max);
   const got=QUESTS.filter(q=>S.claimed[q.id]);
-  let h=eventsHTML()+`<h2>Задания <span class="lv">${got.length} из ${QUESTS.length}</span></h2>`;
+  let h=campHTML()+eventsHTML()+`<h2>Задания <span class="lv">${got.length} из ${QUESTS.length}</span></h2>`;
   if(ready.length)h+=`<h3>Можно забрать</h3>`+ready.map(questCard).join('');
   h+=`<h3>В работе</h3>`+(prog.slice(0,ui.qall?999:12).map(questCard).join('')||'<p class="muted sm">Все дела выполнены.</p>');
   if(prog.length>12)h+=`<button class="btn ghost" data-act="qall">${ui.qall?'Свернуть':'Показать все ('+prog.length+')'}</button>`;

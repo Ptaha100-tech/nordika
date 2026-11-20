@@ -464,6 +464,7 @@ function arenaFight(u, oid) {
   const before = ARENA.order.indexOf(u.id), op = ARENA.order.indexOf(oid), oppPower = arenaPower(oid);
   a.used++;
   a.fought[oid] = 1;
+  if (sim.win) { const stt = u.state.stat = u.state.stat || {}; stt.arenaWins = (stt.arenaWins || 0) + 1; }
   let to = before;
   if (sim.win && op < before) to = op;                       // победа над тем, кто выше: занимаете его место
   else if (!sim.win && op > before) to = Math.min(ARENA.order.length - 1, before + 1);   // поражение от слабого: падаете на место

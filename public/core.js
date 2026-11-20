@@ -319,6 +319,7 @@ function ensure(st) {
   }
   if (!st.wounded) st.wounded = {};
   if (!st.rec) st.rec = {};
+  if (!st.camp || typeof st.camp.ch !== 'number') st.camp = { ch: 0, out: '' };
   if (st.hst && !(st.hst.s === 'a' || st.hst.s === 'b')) st.hst.s = 'a';
   if (!st.scr) st.scr = {};
   if (!st.mats) st.mats = {};
@@ -639,6 +640,7 @@ const MINE_MIN = [10, 40, 100, 250, 600];
 const mineBusy = (id, t) => { const o = HOOK.mines()[id]; return o && o.end > (t || nowMs()) ? o : null; };
 function endHold(m) {
   const ti = m.tgt.ti, d = MINEC[ti];
+  S.stat.mines = (S.stat.mines || 0) + 1;
   m.loot = { silver: d.silver }; m.phase = 'back'; m.back = m.hEnd + m.dur; gainXp(20 + 10 * (ti + 1));
   const o = HOOK.mines()[m.tgt.mine]; if (o && o.mid === m.id) HOOK.setMine(m.tgt.mine, null);
   addLog(`Рудник «${m.tgt.name}» удержан. Отряд несёт ${d.silver} серебра.`, 'good', m.hEnd); toast(`Рудник удержан: ${m.tgt.name}`);
@@ -725,7 +727,7 @@ function epicCraft(arg) {
   for (const m in rq.mats) { S.mats[m] -= rq.mats[m]; if (S.mats[m] <= 0) delete S.mats[m]; }
   S.eq.inv.splice(S.eq.inv.indexOf(base), 1);
   const it = { id: 'i' + (S.mid++), slot, r: t, plus: 0, af: rollAf() };
-  S.eq.inv.push(it); addLog(`Кузнец выковал: ${RARN[t].toLowerCase()} «${itemName(it)}».`, 'good'); toast(`Выковано: ${itemName(it)}`);
+  S.stat.epic = (S.stat.epic || 0) + 1; S.eq.inv.push(it); addLog(`Кузнец выковал: ${RARN[t].toLowerCase()} «${itemName(it)}».`, 'good'); toast(`Выковано: ${itemName(it)}`);
 }
 /* Заточка: до +3 всегда успех; дальше обычный свиток 65% (провал: вещь пропала), надёжный 85% (провал: сброс до +3), свиток 100%. */
 const ENH_P = { n: 0.65, s: 0.85, g: 1 };
@@ -768,6 +770,7 @@ function resolveMarch(m) {
     }
     m.send = r.survA; m.phase = 'back'; m.back = t + m.dur;
     S.stat.wins++; if (tg.kind === 'camp' || tg.kind === 'mob') S.stat.campWins++;
+    if (tg.kind === 'mob' && MOBS[tg.mi] && MOBS[tg.mi].boss) S.stat.boss = (S.stat.boss || 0) + 1;
     if (tg.kind !== 'mob') { S.targets = S.targets.filter(x => x.id !== tg.id); S.targets.push(genTarget(tg.kind)); }
     addLog(`Победа над «${tg.name}». Ваши потери: ${fmtComp(r.lostA) || 'нет'}.${wnote(wa)} Потери врага: ${fmtComp(r.lostD) || 'нет'}. Добыча: ${fmtRes(m.loot)}.`, 'good', t);
     toast(`Победа над «${tg.name}»`);
@@ -939,6 +942,57 @@ function sendMarch(tid, send) {
   if (tg.kind === 'player' && S.shield > t) { S.shield = 0; addLog('Вы напали на ярла. Ваш щит снят.', 'info'); toast('Щит снят: вы напали на игрока'); }
   S.marches.push({ id: 'm' + (S.mid++), tgt: JSON.parse(JSON.stringify(tg)), send: s, phase: 'out', arrive: t + dur, back: 0, loot: {}, dur });
   return true;
+}
+
+/* ============ Сюжетная кампания «Сага Нордики» ============ */
+const sg = k => () => (S.stat[k] || 0);
+const CAMP = [
+  { n: 'Пепел и ветер', intro: 'Ваш род изгнан из родных земель. Ветер носит пепел над пустым берегом, а старый воин говорит: «Хочешь стать ярлом, начни с крыши над головой и топора в руке».',
+    goals: [{ t: 'Подними Палату ярла до 3 уровня', cur: () => lvl('hall'), max: 3 }, { t: 'Обучи 20 воинов', cur: sg('trained'), max: 20 }],
+    out: 'К вечеру над берегом поднялся дым очагов. Люди смотрят на вас иначе: так смотрят на вождя.', rw: { wood: 500, food: 500, gems: 5, haste: 2 } },
+  { n: 'Первая кровь', intro: 'Разбойники грабят рыбацкие лодки. Они не прощают слабости, но и вам нельзя показать её первым.',
+    goals: [{ t: 'Разгроми лагерь разбойников', cur: sg('campWins'), max: 1 }, { t: 'Одержи 5 побед в походах', cur: sg('wins'), max: 5 }],
+    out: 'Лагерь пуст, дым над ним стелется низко. Дружина возвращается с трофеями и песней.', rw: { silver: 500, scr: { n: 2 } } },
+  { n: 'Голос Оракула', intro: 'В горах живёт Оракул. Он видит узоры судьбы в трещинах льда и продаёт знание тем, кто умеет слушать. Но сначала нужен надёжный погреб.',
+    goals: [{ t: 'Изучи первое знание в Оракуле', cur: sg('researched'), max: 1 }, { t: 'Построй Хранилище', cur: () => lvl('vault'), max: 1 }],
+    out: '«Сильный сражается, мудрый выбирает бой», шепчет Оракул. Руны на камне гаснут, но слова остаются.', rw: { silver: 600, gems: 5, haste: 2 } },
+  { n: 'Охота на зверя', intro: 'С гор спустились волки и вепри, лес за деревней стал опасен. Кто очистит его, тот получит и шкуры, и славу.',
+    goals: [{ t: 'Победи монстров или лагеря 8 раз', cur: sg('campWins'), max: 8 }, { t: 'Подними ярла до 5 уровня', cur: () => heroOf(S).lv, max: 5 }],
+    out: 'Лес снова шумит спокойно. У костра ярл слышит, что о нём уже поют в соседних селениях.', rw: { silver: 1000, haste: 3, rec: ['weapon:1'] } },
+  { n: 'Хозяин рудника', intro: 'Серебро течёт из недр, как кровь из раны. Кто держит рудник, тот держит и казну. Но шахты не отдают себя даром.',
+    goals: [{ t: 'Удержи рудник до конца', cur: sg('mines'), max: 1 }, { t: 'Подними Палату ярла до 8 уровня', cur: () => lvl('hall'), max: 8 }],
+    out: 'Первая тачка серебра выкатилась на свет. Казначей пересчитывает её дважды и улыбается.', rw: { silver: 2000, gems: 8, scr: { s: 1 } } },
+  { n: 'Арена ярлов', intro: 'В долине построили арену, и каждый ярл хочет доказать там своё имя. Слава бывает громкой, но недолгой.',
+    goals: [{ t: 'Выиграй 3 боя на арене', cur: sg('arenaWins'), max: 3 }, { t: 'Подними ярла до 10 уровня', cur: () => heroOf(S).lv, max: 10 }],
+    out: 'Песок арены помнит ваши шаги. Зрители скандируют имя ярла, пока он поднимает щит.', rw: { silver: 3000, gems: 10, rec: ['armor:1'] } },
+  { n: 'Кузница богов', intro: 'Старый кузнец говорит, что в огне можно закалить не только железо, но и судьбу. Принеси ему всё нужное, и он покажет.',
+    goals: [{ t: 'Выкуй вещь по рецепту купца', cur: sg('epic'), max: 1 }, { t: 'Одержи 15 побед в походах', cur: sg('wins'), max: 15 }],
+    out: 'Молот звенит в такт сердцу. Новая вещь тяжела и тепла, будто живая.', rw: { gems: 15, scr: { s: 2 }, haste: 5 } },
+  { n: 'Зов Рагнарёка', intro: 'Небо на западе багровеет. Старики шепчутся о конце времён, но воины ждут приказа. Пора показать, что фьорд готов.',
+    goals: [{ t: 'Подними Палату ярла до 15 уровня', cur: () => lvl('hall'), max: 15 }, { t: 'Подними ярла до 15 уровня', cur: () => heroOf(S).lv, max: 15 }, { t: 'Одержи 25 побед в походах', cur: sg('wins'), max: 25 }],
+    out: 'Дружина стоит строем на ветру. Никто не отводит глаз от красного неба.', rw: { silver: 8000, gems: 20, haste: 8 } },
+  { n: 'Змей Нидхёгг', intro: 'Под корнями мирового древа ворочается Нидхёгг. Его дыхание плавит камень, но его сердце хранит ключ к твоей судьбе.',
+    goals: [{ t: 'Победи дракона Нидхёгг', cur: sg('boss'), max: 1 }],
+    out: 'Змей пал. Над долиной тишина, пока не прозвучал первый рог, возвещающий победу.', rw: { gems: 30, scr: { g: 1 }, rec: ['helm:2'] } },
+  { n: 'Сердце фьорда', intro: 'Вы прошли путь от изгнанника до вождя. Остался последний шаг: стать тем, чьё имя произносят шёпотом даже за морем.',
+    goals: [{ t: 'Подними Палату ярла до 20 уровня', cur: () => lvl('hall'), max: 20 }, { t: 'Подними ярла до 20 уровня', cur: () => heroOf(S).lv, max: 20 }, { t: 'Выиграй 10 боёв на арене', cur: sg('arenaWins'), max: 10 }],
+    out: 'Фьорд выдохнул. Теперь это ваш дом, ваша сила и ваше сердце. Сага Нордики записана в камне.', rw: { silver: 20000, gems: 50, haste: 10, heroD: 3 } }
+];
+const campDone = st => (st.camp ? st.camp.ch : 0) >= CAMP.length;
+function campReady() { const c = CAMP[S.camp.ch]; return !!c && c.goals.every(g => g.cur() >= g.max); }
+function campClaim() {
+  const c = CAMP[S.camp.ch]; if (!c || !campReady()) return;
+  const rw = c.rw;
+  for (const k in rw) {
+    if (k === 'haste') S.haste += rw[k]; else if (k === 'gems') S.gems += rw[k];
+    else if (k === 'scr') { if (!S.scr) S.scr = {}; for (const x in rw.scr) S.scr[x] = (S.scr[x] || 0) + rw.scr[x]; }
+    else if (k === 'rec') { if (!S.rec) S.rec = {}; rw.rec.forEach(x => { S.rec[x] = (S.rec[x] || 0) + 1; }); }
+    else if (k === 'heroD') S.hst = { s: (S.hst && S.hst.s) || 'a', until: Math.max((S.hst && S.hst.until) || 0, nowMs()) + rw.heroD * 86400000 };
+    else if (k === 'silver') S.res.silver += rw[k];
+    else addCapped(k, rw[k]);
+  }
+  S.camp.out = c.out; S.camp.ch++;
+  addLog(`Глава «${c.n}» завершена.`, 'good'); toast('Глава завершена: ' + c.n);
 }
 function claim(id) {
   const q = QUESTS.find(x => x.id === id);
@@ -1158,6 +1212,7 @@ function act(a, arg) {
     case 'refresh': if (nowMs() >= S.tgtAt + 30000) refreshTargets(); break;
     case 'march': if (arg && typeof arg === 'object') sendMarch(String(arg.id), arg.send); break;
     case 'claim': if (typeof arg === 'string') claim(arg); break;
+    case 'campgo': campClaim(); break;
     case 'intro': S.introDone = true; break;
     case 'bag': buyBag(); break;
     case 'heal': startHeal(); break;
@@ -1211,7 +1266,7 @@ function fmtT(sec) {
 const API = {
   armyAtk, newItem, giveItem, SLOTS, SLOTK, LOOKS, EQS, slotType, EQ_IL, RARN, EQMAX, BAG_COST, BAG_STEP, eqCap, itemPct, itemName, forgeCost, forgeLvl, scrapOf, eqB, jarlStats, jarlPower, setBonus, jMain, affVal, plusOf, itemPower, AFN, MAXPLUS, TM, SETB,
   heroOn, REC_PRICE, SCROLLS, ENH_P, epicReq, hutCap, wnote, healCost, healSecs, MATS, MATK, STACK, bagUsed, giveMat, MOBS, MINEC, MINE_MIN, MINE_IDS, mineTarget, mineBusy, mineDur,
-  RES, RI, B, BORDER, U, WEAK, TECH, QUESTS, MAXL, TMAX, CFG, HOOK, NODE, TIERN, TIER_NEED, MAXT, HSK, HBR, MAXHL, MAXSK, skillPts, jarlTitle, respecCost,
+  RES, RI, B, BORDER, U, WEAK, TECH, QUESTS, MAXL, TMAX, CFG, HOOK, NODE, TIERN, TIER_NEED, MAXT, CAMP, campReady, campDone, HSK, HBR, MAXHL, MAXSK, skillPts, jarlTitle, respecCost,
   get S() { return S; },
   use, ensure, newState, update, produce, settle, battle, act, score, verdict,
   lvl, slots, cap, capAt, rate, prodAt, upCost, upSecs, canUp, canAfford, trainRate, maxBatch, trainSecs, techCost, techSecs, gatherSecs, marchSecs,
