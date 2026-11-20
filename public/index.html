@@ -414,6 +414,10 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--frost);outline-
 @keyframes eqtw{0%,100%{opacity:0;transform:scale(.4)}50%{opacity:1;transform:scale(1.1) rotate(20deg)}}
 
 /* эффекты по тирам и заточке */
+.bprow{display:grid;grid-template-columns:28px 1fr 1fr;gap:6px;align-items:stretch;margin:4px 0}.bpl{display:grid;place-items:center;color:var(--accent)}
+.bpr{display:flex;flex-direction:column;justify-content:space-between;gap:2px;text-align:left;font-size:11px;line-height:1.25;background:#1c1411;border:1px solid #4a3a2a;border-radius:8px;padding:5px 7px;color:#d8c7a8;min-height:44px}.bpr i{font-style:normal;font-size:10px;color:#ffd98a}
+.bpr.rdy{border-color:#ffd24a;box-shadow:0 0 8px #ffd24a66;color:#fff}.bpr.got{opacity:.5}.bpr.lock{opacity:.6;background:#241a2e}
+.bphd{display:grid;grid-template-columns:28px 1fr 1fr;gap:6px;font-size:12px;margin:6px 0;text-align:center}.bpbtns{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}
 .skb{border:1px solid var(--line);border-radius:8px;padding:6px 10px;margin:8px 0;background:#0003}.skh{display:flex;justify-content:space-between;align-items:center;color:var(--accent);font-family:Georgia,serif}
 .eqs.r3:not(.zz)::before{content:"";position:absolute;inset:0;z-index:2;pointer-events:none;left:0;right:auto;top:0;font-size:0;
  background:radial-gradient(circle,#ffd27a 0 1.4px,#0000 2.2px) 18% 10%/100% 50%,radial-gradient(circle,#ff7a3c 0 1.2px,#0000 2px) 62% 40%/100% 50%,radial-gradient(circle,#ffe9a8 0 1px,#0000 1.8px) 85% 70%/100% 50%,radial-gradient(circle,#c78bff 0 1.2px,#0000 2px) 40% 90%/100% 50%;
@@ -603,6 +607,7 @@ async function act(a,arg){
   render();
   if(ui.orOpen&&!$('modal').hidden)oracleSheet();
   if(ui.tvOpen&&!$('modal').hidden)tavernSheet(true);
+  if(ui.bpOpen&&!$('modal').hidden){const m=$('modal'),sh=m.querySelector('.sheet'),st=(sh&&sh.scrollTop)||0,ms=m.scrollTop;bpSheet();const s2=m.querySelector('.sheet');if(s2)s2.scrollTop=st;m.scrollTop=ms;}
   if((ui.eqOpen||ui.fgOpen)&&!$('modal').hidden){if(ui.eqSel&&ui.eqSel.id&&!S.eq.inv.some(x=>x.id===ui.eqSel.id))ui.eqSel=null;if(ui.fgOpen)forgeSheet();else eqSheet();}
 }
 
@@ -988,6 +993,29 @@ function questCard(q){
 function rwText(rw){const o=[],N={wood:'дерева',food:'еды',stone:'камня',iron:'железа',silver:'серебра'};
   for(const k in rw){const v=rw[k];if(k==='gems')o.push(v+' рунных камней');else if(k==='haste')o.push(v+' ускорений');else if(k==='scr')o.push('свитки заточки: '+Object.keys(v).map(x=>Core.SCROLLS[x].n.toLowerCase()+' ×'+v[x]).join(', '));else if(k==='rec')o.push('рецепты: '+v.map(x=>{const q=x.split(':');return ((Core.SLOTS[q[0]]||{}).n||q[0]).toLowerCase()+' '+['','серебр.','золот.','эпич.'][+q[1]];}).join(', '));else if(k==='heroD')o.push('Hero на '+v+' дн.');else o.push(v+' '+(N[k]||k));}
   return o.join(' · ');}
+function bpCard(){
+  const b=Core.bpInit(S),lv=Core.bpLevel(S),left=Math.max(0,Core.bpEnd(Core.now())-Core.now()),days=Math.ceil(left/86400000);
+  const pend=(()=>{let n=0;for(let L=1;L<=lv;L++){if(!b.f.includes(L))n++;if(b.pro&&!b.p.includes(L))n++;}return n;})();
+  const into=lv>=Core.BP_LV?100:(b.pts%Core.BP_PTS);
+  return `<section class="card bpc"><div class="trow2"><h2>Боевой пропуск</h2><span class="lv">${b.pro?'платная линия':'бесплатная'}</span></div>
+  <p class="sm muted">Сезон ещё ${days} дн. Очки идут за стройку, войска, походы, рудники, арену и дела.</p>
+  <div class="sm">Уровень <b>${lv}</b> из ${Core.BP_LV} <span class="muted">· ${lv>=Core.BP_LV?'максимум':into+'/'+Core.BP_PTS+' очков'}</span></div>
+  <div class="bar" style="margin:4px 0 8px"><i style="width:${into}%"></i></div>
+  <button class="btn" data-act="bpopen" type="button">Открыть пропуск${pend?` (наград: ${pend})`:''}</button></section>`;
+}
+function bpSheet(){
+  const b=Core.bpInit(S),lv=Core.bpLevel(S);
+  const row=L=>{const f=Core.bpRw(L,false),p=Core.bpRw(L,true),ok=L<=lv;
+    const cell=(rw,pro)=>{const got=(pro?b.p:b.f).includes(L),lock=pro&&!b.pro;
+      return `<button class="bpr ${got?'got':''} ${ok&&!got&&!lock?'rdy':''} ${lock?'lock':''}" data-act="bpc" data-arg="${L}:${pro?'p':'f'}" type="button" ${(!ok||got||lock)?'disabled':''}><span>${esc(rwText(rw))}</span><i>${got?'✔ получено':lock?'🔒':ok?'забрать':''}</i></button>`;};
+    return `<div class="bprow ${ok?'ok':''}"><b class="bpl">${L}</b>${cell(f,false)}${cell(p,true)}</div>`;};
+  let rows='';for(let L=1;L<=Core.BP_LV;L++)rows+=row(L);
+  $('modal').innerHTML=`<div class="sheet"><h2>Боевой пропуск <span class="lv">ур. ${lv}</span></h2>
+  <div class="bpbtns"><button class="btn small" data-act="bpall" type="button">Забрать всё</button>${b.pro?'':`<button class="btn small price" data-act="buy" data-arg="bp" type="button">Платная линия: ${IG}${Core.BP_PRICE}</button>`}</div>
+  <div class="bphd"><span></span><b>Бесплатно</b><b style="color:#ffd24a">Платная</b></div>${rows}
+  <button class="btn ghost" data-act="sheetx" type="button" style="margin-top:8px">Закрыть</button></div>`;
+  $('modal').hidden=false;ui.bpOpen=true;
+}
 function campHTML(){
   const C=S.camp||{ch:0},N=Core.CAMP.length;
   if(C.ch>=N)return `<section class="card camp"><h2>Сага Нордики</h2><p class="sm muted"><i>${esc(C.out||'')}</i></p><p><b>Вы завершили сагу. Фьорд помнит ваше имя.</b></p></section>`;
@@ -1004,7 +1032,7 @@ function viewQuests(){
   const ready=QUESTS.filter(q=>!S.claimed[q.id]&&q.cur()>=q.max);
   const prog=QUESTS.filter(q=>!S.claimed[q.id]&&q.cur()<q.max).sort((a,b)=>pr(b)-pr(a)||a.max-b.max);
   const got=QUESTS.filter(q=>S.claimed[q.id]);
-  let h=campHTML()+eventsHTML()+`<h2>Задания <span class="lv">${got.length} из ${QUESTS.length}</span></h2>`;
+  let h=campHTML()+bpCard()+eventsHTML()+`<h2>Задания <span class="lv">${got.length} из ${QUESTS.length}</span></h2>`;
   if(ready.length)h+=`<h3>Можно забрать</h3>`+ready.map(questCard).join('');
   h+=`<h3>В работе</h3>`+(prog.slice(0,ui.qall?999:12).map(questCard).join('')||'<p class="muted sm">Все дела выполнены.</p>');
   if(prog.length>12)h+=`<button class="btn ghost" data-act="qall">${ui.qall?'Свернуть':'Показать все ('+prog.length+')'}</button>`;
@@ -1167,7 +1195,7 @@ async function cact(a,p){
 
 /* ---------- магазин ---------- */
 const TG_CONTACT='AlexAmbrela';   // имя в Телеграме для связи, без @
-const SHOPG={build:'Стройка',haste:'Ускорения',shield:'Щиты от набегов',res:'Припасы',vip:'VIP',hero:'Hero'};
+const SHOPG={pass:'Боевой пропуск',build:'Стройка',haste:'Ускорения',shield:'Щиты от набегов',res:'Припасы',vip:'VIP',hero:'Hero'};
 function viewShop(){
   const vip=Core.isVip(),left=Math.max(0,(S.vip||0)-Core.now());
   const dl=Core.dailyLeft();
@@ -1973,7 +2001,7 @@ function uSheet(k){
     <div class="tblw"><table class="tbl"><thead><tr><th>Ст.</th><th>Название</th><th>Атака / защита / ноша</th><th>Цена найма одного</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
   $('modal').hidden=false;
 }
-function closeModal(){ui.tvOpen=false;ui.topOpen=false;ui.eqOpen=false;ui.fgOpen=false;ui.orOpen=false;ui.modal=null;$('modal').hidden=true;$('modal').innerHTML='';}
+function closeModal(){ui.bpOpen=false;ui.tvOpen=false;ui.topOpen=false;ui.eqOpen=false;ui.fgOpen=false;ui.orOpen=false;ui.modal=null;$('modal').hidden=true;$('modal').innerHTML='';}
 
 /* ---------- таверна: колесо фортуны и кости ---------- */
 const WICO=['res-food','res-wood','res-stone','res-iron','res-silver','ui-haste','ui-forge','ui-gem'];
@@ -2096,6 +2124,7 @@ function onAct(act,arg){
     case 'tsub':ui.topSub=arg;topSheet(true);return;
     case 'profp':closeModal();ui.tab='chat';ui.sub='world';ui.soc.peer=null;render();openProf({id:arg}).then(()=>{loadSoc();});return;
     case 'help':helpSheet();return;
+    case 'bpopen':bpSheet();return;
     case 'cl':if(ui.cl)clSheet(false);else loadChangelog(false).then(()=>clSheet(false));return;
     case 'clx':try{localStorage.setItem(CLK,(ui.cl&&ui.cl[0].id)||'');}catch(e){}closeModal();return;
     case 'qall':ui.qall=!ui.qall;render();return;

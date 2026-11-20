@@ -535,11 +535,11 @@ function settle(D, to) {
   } finally { S = keep; quiet = kq; }
 }
 function finishBuild(key) {
-  key = key || 'q'; const q = S[key]; S.b[q.id] = q.to; S[key] = null; S.stat.built++;
+  key = key || 'q'; const q = S[key]; S.b[q.id] = q.to; S[key] = null; S.stat.built++; bpAdd(10);
   addLog(`${B[q.id].n} достигла уровня ${q.to}.`, 'good', q.end); toast(`${B[q.id].n}: уровень ${q.to}`);
 }
 function finishTrain() {
-  const t = S.train, tr = t.t || 1, key = skey(t.type, tr); S.troops[key] = (S.troops[key] || 0) + t.n; S.stat.trained += t.n; S.train = null;
+  const t = S.train, tr = t.t || 1, key = skey(t.type, tr); S.troops[key] = (S.troops[key] || 0) + t.n; S.stat.trained += t.n; S.train = null; bpAdd(8);
   if (tr > (S.tier[t.type] || 1)) S.tier[t.type] = tr;
   addLog(`Обучено: ${t.n} × ${unitName(t.type, tr)}.`, 'good', t.end); toast(`Обучено: ${t.n} × ${unitName(t.type, tr)}`);
 }
@@ -549,7 +549,7 @@ function finishUpg() {
   addLog(`Улучшено воинов: ${tot} → ${unitName(u.k, u.to)} (ступень ${u.to}).`, 'good', u.end); toast(`Улучшено: ${tot} → ${unitName(u.k, u.to)}`);
 }
 function finishStudy() {
-  const s = S.study; S.tech[s.key] = s.to; S.stat.researched++; S.study = null;
+  const s = S.study; S.tech[s.key] = s.to; S.stat.researched++; S.study = null; bpAdd(15);
   addLog(`Оракул открыл знание «${TECH[s.key].n}», уровень ${s.to}.`, 'good', s.end); toast(`Знание: ${TECH[s.key].n} ${s.to}`);
 }
 function fmtRes(o) { return Object.keys(o).filter(k => o[k] > 0 && RI[k]).map(k => `${RI[k].n} ${fmt(o[k])}`).join(' · ') || 'ничего'; }
@@ -640,7 +640,7 @@ const MINE_MIN = [10, 40, 100, 250, 600];
 const mineBusy = (id, t) => { const o = HOOK.mines()[id]; return o && o.end > (t || nowMs()) ? o : null; };
 function endHold(m) {
   const ti = m.tgt.ti, d = MINEC[ti];
-  S.stat.mines = (S.stat.mines || 0) + 1;
+  S.stat.mines = (S.stat.mines || 0) + 1; bpAdd(40);
   m.loot = { silver: d.silver }; m.phase = 'back'; m.back = m.hEnd + m.dur; gainXp(20 + 10 * (ti + 1));
   const o = HOOK.mines()[m.tgt.mine]; if (o && o.mid === m.id) HOOK.setMine(m.tgt.mine, null);
   addLog(`Рудник «${m.tgt.name}» удержан. Отряд несёт ${d.silver} серебра.`, 'good', m.hEnd); toast(`Рудник удержан: ${m.tgt.name}`);
@@ -769,7 +769,7 @@ function resolveMarch(m) {
       const real = S.targets.find(x => x.id === tg.id); if (real) real.until = t + md.rs * 60000;
     }
     m.send = r.survA; m.phase = 'back'; m.back = t + m.dur;
-    S.stat.wins++; if (tg.kind === 'camp' || tg.kind === 'mob') S.stat.campWins++;
+    S.stat.wins++; bpAdd(tg.kind === 'mob' && MOBS[tg.mi] && MOBS[tg.mi].boss ? 80 : 15); if (tg.kind === 'camp' || tg.kind === 'mob') S.stat.campWins++;
     if (tg.kind === 'mob' && MOBS[tg.mi] && MOBS[tg.mi].boss) S.stat.boss = (S.stat.boss || 0) + 1;
     if (tg.kind !== 'mob') { S.targets = S.targets.filter(x => x.id !== tg.id); S.targets.push(genTarget(tg.kind)); }
     addLog(`Победа над «${tg.name}». Ваши потери: ${fmtComp(r.lostA) || 'нет'}.${wnote(wa)} Потери врага: ${fmtComp(r.lostD) || 'нет'}. Добыча: ${fmtRes(m.loot)}.`, 'good', t);
@@ -803,7 +803,7 @@ function resolvePlayer(m) {
     D.shield = t + 45 * 60000; raid(true, fmtRes(m.loot)); HOOK.alert(D.pid, `⚔ Ярл «${aName}» разграбил ваш город. Унесли: ${fmtRes(m.loot)}.`, 'a');
     addLogTo(D, `Ярл «${aName}» разграбил ваш город. Унесли: ${fmtRes(m.loot)}. Ваши потери: ${fmtComp(r.lostD) || 'нет'}.${wnote(wd)} Нападавшие потеряли: ${fmtComp(r.lostA) || 'нет'}. Щит на 45 минут.`, 'bad', t);
     m.send = r.survA; home();
-    A.stat.wins++; A.stat.pvpWins++; gainXp(60 + 15 * (tg.level || 1));
+    A.stat.wins++; A.stat.pvpWins++; bpAddTo(A, 20); gainXp(60 + 15 * (tg.level || 1));
     addLog(`Победа над ярлом «${tg.name}». Ваши потери: ${fmtComp(r.lostA) || 'нет'}.${wnote(wa)} Потери врага: ${fmtComp(r.lostD) || 'нет'}. Добыча: ${fmtRes(m.loot)}.`, 'good', t);
     toast(`Победа над «${tg.name}»`);
     S.targets = S.targets.filter(x => x.id !== tg.id); S.targets.push(genTarget('player'));
@@ -980,9 +980,7 @@ const CAMP = [
 ];
 const campDone = st => (st.camp ? st.camp.ch : 0) >= CAMP.length;
 function campReady() { const c = CAMP[S.camp.ch]; return !!c && c.goals.every(g => g.cur() >= g.max); }
-function campClaim() {
-  const c = CAMP[S.camp.ch]; if (!c || !campReady()) return;
-  const rw = c.rw;
+function giveRw(rw) {
   for (const k in rw) {
     if (k === 'haste') S.haste += rw[k]; else if (k === 'gems') S.gems += rw[k];
     else if (k === 'scr') { if (!S.scr) S.scr = {}; for (const x in rw.scr) S.scr[x] = (S.scr[x] || 0) + rw.scr[x]; }
@@ -991,13 +989,51 @@ function campClaim() {
     else if (k === 'silver') S.res.silver += rw[k];
     else addCapped(k, rw[k]);
   }
-  S.camp.out = c.out; S.camp.ch++;
+}
+function campClaim() {
+  const c = CAMP[S.camp.ch]; if (!c || !campReady()) return;
+  giveRw(c.rw); S.camp.out = c.out; S.camp.ch++; bpAdd(100);
   addLog(`Глава «${c.n}» завершена.`, 'good'); toast('Глава завершена: ' + c.n);
 }
+
+/* ============ Боевой пропуск: сезон 4 недели, 30 уровней ============ */
+const BP_EPOCH = Date.UTC(2026, 10, 16), BP_DAYS = 28, BP_LV = 30, BP_PTS = 100, BP_PRICE = 400;
+const bpSeason = t => Math.floor((t - BP_EPOCH) / (BP_DAYS * 86400000));
+const bpEnd = t => BP_EPOCH + (bpSeason(t) + 1) * BP_DAYS * 86400000;
+function bpInit(st) {
+  const sid = bpSeason(nowMs());
+  if (!st.bp || st.bp.s !== sid) st.bp = { s: sid, pts: 0, f: [], p: [], pro: false };
+  return st.bp;
+}
+const bpLevel = st => Math.min(BP_LV, Math.floor(bpInit(st).pts / BP_PTS));
+function bpAddTo(st, n) { const b = bpInit(st); b.pts = Math.min(BP_LV * BP_PTS, b.pts + Math.max(0, Math.round(n))); }
+const bpAdd = n => bpAddTo(S, n);
+const BP_REC = ['weapon:2', 'armor:2', 'helm:2', 'amulet:2', 'ring:2', 'cloak:2', 'gloves:2', 'pants:2'];
+function bpRw(L, pro) {
+  if (!pro) {
+    if (L % 10 === 0) return { gems: 15, scr: { s: 1 } };
+    if (L % 5 === 0) return { gems: 8, haste: 2 };
+    return L % 2 ? { silver: 150 + L * 40 } : { wood: L * 100, food: L * 100 };
+  }
+  if (L === 30) return { heroD: 7, gems: 50, scr: { g: 1 }, rec: ['weapon:3'] };
+  if (L === 20) return { gems: 30, scr: { s: 3 }, rec: ['amulet:3'] };
+  if (L === 10) return { heroD: 2, gems: 25, scr: { s: 2 } };
+  if (L % 5 === 0) return { gems: 10, rec: [BP_REC[(L / 5) % BP_REC.length]] };
+  return L % 2 ? { gems: 4, haste: 2 } : { silver: 300 + L * 80, scr: { n: 2 } };
+}
+function bpClaim(arg) {
+  const q = String(arg || '').split(':'), L = Math.floor(Number(q[0])), pro = q[1] === 'p', b = bpInit(S);
+  if (!(L >= 1 && L <= BP_LV) || L > bpLevel(S)) return false;
+  if (pro && !b.pro) { toast('Нужна платная линия'); return false; }
+  const arr = pro ? b.p : b.f; if (arr.includes(L)) return false;
+  arr.push(L); giveRw(bpRw(L, pro)); return true;
+}
+function bpClaimAll() { let n = 0; for (let L = 1; L <= bpLevel(S); L++) { if (bpClaim(L + ':f')) n++; if (bpInit(S).pro && bpClaim(L + ':p')) n++; } if (n) toast('Награды пропуска получены'); }
+
 function claim(id) {
   const q = QUESTS.find(x => x.id === id);
   if (!q || S.claimed[id] || q.cur() < q.max) return;
-  S.claimed[id] = true;
+  S.claimed[id] = true; bpAdd(25);
   for (const k in q.rw) { if (k === 'haste') S.haste += q.rw[k]; else if (k === 'gems') S.gems += q.rw[k]; else addCapped(k, q.rw[k]); }
   addLog(`Награда за дело «${q.t}».`, 'good'); toast('Награда получена');
 }
@@ -1016,6 +1052,7 @@ const SHOP = [
   { id: 'res24',    g: 'res',    t: 'Сундук припасов', d: 'Сутки добычи всех ресурсов сразу (не больше места на складе).', gems: 120, resH: 24 },
   { id: 'vip7',     g: 'vip',    t: 'VIP на 7 дней',   d: 'Добыча +15%, склад +20%, помощник строителя (вторая очередь стройки), ежедневный дар больше, метка VIP в чате.',   gems: 80,  vipD: 7 },
   { id: 'vip30',    g: 'vip',    t: 'VIP на 30 дней',  d: 'То же самое на месяц. Выгоднее на 25%.',                     gems: 250, vipD: 30 },
+  { id: 'bp', g: 'pass', t: 'Боевой пропуск: платная линия', d: 'На весь сезон (4 недели): ещё 30 наград, среди них рунные камни, свитки, рецепты и Hero на 9 дней. Очки идут за обычную игру.', gems: 400, bp: 1 },
   { id: 'hero_a',   g: 'hero',   t: 'Hero · Золото и руны', d: '30 дней. Золотой переливающийся ник и особый цвет сообщений в чате, значок HERO, рамка на арене, анонс входа в игру, все бонусы VIP, +1 бой на арене в день, +5 ячеек сумки.', gems: 400, heroS: 'a', heroD: 30 },
   { id: 'hero_b',   g: 'hero',   t: 'Hero · Огонь',         d: '30 дней. Пылающий ник и тёплый цвет сообщений в чате, значок HERO, рамка на арене, анонс входа в игру, все бонусы VIP, +1 бой на арене в день, +5 ячеек сумки.', gems: 400, heroS: 'b', heroD: 30 }
 ];
@@ -1024,7 +1061,7 @@ function dailyLeft() { return Math.max(0, (S.daily || 0) + DAILY_MS - nowMs()); 
 function claimDaily() {
   if (dailyLeft() > 0) return false;
   const v = isVip();
-  S.daily = nowMs(); S.haste += v ? 3 : 1; S.gems += v ? 8 : 3;
+  bpAdd(20); S.daily = nowMs(); S.haste += v ? 3 : 1; S.gems += v ? 8 : 3;
   addLog(`Ежедневный дар: ${v ? 3 : 1} ускор., ${v ? 8 : 3} рунных камн.`, 'good'); toast('Ежедневный дар получен');
   return true;
 }
@@ -1131,7 +1168,7 @@ function claimStreak() {
   if (i.claimed) return false;
   const rw = STREAK[i.n - 1], parts = [];
   const cont = (S.streak && S.streak.day === d - 1) ? S.streak.n : 0;
-  S.streak = { n: cont + 1, day: d };
+  S.streak = { n: cont + 1, day: d }; bpAdd(20);
   if (rw.gems) { S.gems += rw.gems; parts.push(rw.gems + ' рунных камней'); }
   if (rw.haste) { S.haste += rw.haste; parts.push(rw.haste + ' ускорений'); }
   if (rw.res) { const c = cap(); for (const r of RES) { S.res[r.id] = Math.min(Math.max(c, S.res[r.id]), S.res[r.id] + rate(r.id) * rw.res); } parts.push(rw.res + ' ч добычи'); }
@@ -1142,6 +1179,7 @@ function buy(id) {
   const it = SHOP.find(x => x.id === id);
   if (!it) return false;
   if (it.once && S.bought[id]) { toast('Уже куплено'); return false; }
+  if (it.bp && bpInit(S).pro) { toast('Платная линия уже куплена'); return false; }
   if (S.gems < it.gems) { toast('Не хватает рунных камней'); return false; }
   const t = nowMs();
   S.gems -= it.gems;
@@ -1149,6 +1187,7 @@ function buy(id) {
   if (it.shieldH) S.shield = Math.max(S.shield, t) + it.shieldH * 3600000;
   if (it.resH) { const c = cap(); for (const r of RES) { const id2 = r.id; S.res[id2] = Math.min(Math.max(c, S.res[id2]), S.res[id2] + rate(id2) * it.resH); } }
   if (it.helper) S.helper = true;
+  if (it.bp) bpInit(S).pro = true;
   if (it.vipD) S.vip = Math.max(S.vip || 0, t) + it.vipD * 86400000;
   if (it.heroS) S.hst = { s: it.heroS, until: Math.max((S.hst && S.hst.until) || 0, t) + it.heroD * 86400000 };
   S.bought[id] = (S.bought[id] || 0) + 1;
@@ -1213,6 +1252,8 @@ function act(a, arg) {
     case 'march': if (arg && typeof arg === 'object') sendMarch(String(arg.id), arg.send); break;
     case 'claim': if (typeof arg === 'string') claim(arg); break;
     case 'campgo': campClaim(); break;
+    case 'bpc': if (bpClaim(arg)) toast('Награда получена'); break;
+    case 'bpall': bpClaimAll(); break;
     case 'intro': S.introDone = true; break;
     case 'bag': buyBag(); break;
     case 'heal': startHeal(); break;
@@ -1266,7 +1307,7 @@ function fmtT(sec) {
 const API = {
   armyAtk, newItem, giveItem, SLOTS, SLOTK, LOOKS, EQS, slotType, EQ_IL, RARN, EQMAX, BAG_COST, BAG_STEP, eqCap, itemPct, itemName, forgeCost, forgeLvl, scrapOf, eqB, jarlStats, jarlPower, setBonus, jMain, affVal, plusOf, itemPower, AFN, MAXPLUS, TM, SETB,
   heroOn, REC_PRICE, SCROLLS, ENH_P, epicReq, hutCap, wnote, healCost, healSecs, MATS, MATK, STACK, bagUsed, giveMat, MOBS, MINEC, MINE_MIN, MINE_IDS, mineTarget, mineBusy, mineDur,
-  RES, RI, B, BORDER, U, WEAK, TECH, QUESTS, MAXL, TMAX, CFG, HOOK, NODE, TIERN, TIER_NEED, MAXT, CAMP, campReady, campDone, HSK, HBR, MAXHL, MAXSK, skillPts, jarlTitle, respecCost,
+  RES, RI, B, BORDER, U, WEAK, TECH, QUESTS, MAXL, TMAX, CFG, HOOK, NODE, TIERN, TIER_NEED, MAXT, BP_LV, BP_PTS, BP_PRICE, bpInit, bpLevel, bpEnd, bpRw, bpAddTo, CAMP, campReady, campDone, HSK, HBR, MAXHL, MAXSK, skillPts, jarlTitle, respecCost,
   get S() { return S; },
   use, ensure, newState, update, produce, settle, battle, act, score, verdict,
   lvl, slots, cap, capAt, rate, prodAt, upCost, upSecs, canUp, canAfford, trainRate, maxBatch, trainSecs, techCost, techSecs, gatherSecs, marchSecs,
