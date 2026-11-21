@@ -390,7 +390,7 @@ setInterval(flushArena, 2000).unref();
 })();
 const heroStyle = pid => { const u = users.get(pid); return u && u.state.hst && u.state.hst.until > Date.now() ? u.state.hst.s : ''; };
 function heroAnnounce(u) {
-  const s = heroStyle(u.id); if (!s || (u.hann || 0) > Date.now() - 6 * 3600000) return;
+  return; const s = heroStyle(u.id); if (!s || (u.hann || 0) > Date.now() - 6 * 3600000) return;
   u.hann = Date.now(); try { Social.admin.say(sstore, sctx, `Hero ${u.name} вошёл в игру`); } catch (e) {}
 }
 const ARENA_FREE = 5, ARENA_BUY = 10, ARENA_MAXX = 20;

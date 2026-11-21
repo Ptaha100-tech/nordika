@@ -504,6 +504,29 @@ canvas.pic[data-b]{transform-origin:50% 100%;animation:bldLife 5.5s ease-in-out 
 canvas.pic[data-b="hall"],canvas.pic[data-b="barracks"],canvas.pic[data-b="ironmine"],canvas.pic[data-b="silvermine"],canvas.pic[data-b="vault"]{animation:bldFire 2.1s ease-in-out infinite}
 canvas.pic[data-b="farm"],canvas.pic[data-b="sawmill"]{animation:bldSway 6s ease-in-out infinite}
 @media (prefers-reduced-motion:reduce){.bossart img,.bossart::before,canvas.pic[data-b]{animation:none!important}}
+
+#mg{position:fixed;inset:0;z-index:30;background:radial-gradient(ellipse at 50% 20%,#2a1740,#0b0710 70%)}
+.mgw{height:100%;max-width:520px;margin:0 auto;display:flex;flex-direction:column;padding:env(safe-area-inset-top,0) 8px env(safe-area-inset-bottom,0);gap:6px;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+.mgtop{display:flex;align-items:center;gap:8px;padding-top:6px}.mgtt{flex:1;text-align:center;font:700 16px Georgia,serif;color:#e8c36b;letter-spacing:.04em}.mgsl{font-size:14px;color:#d9b8ff;white-space:nowrap}
+.mgstage{position:relative;flex:1;min-height:0;max-height:47dvh;aspect-ratio:900/1123;align-self:center;max-width:100%;touch-action:none;cursor:pointer}
+.mgin{position:absolute;left:21%;right:19%;top:23%;bottom:27%;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 60%,#3b2255,#120a1c 75%);overflow:hidden}
+.mgmon{max-width:100%;max-height:92%;object-fit:contain;filter:drop-shadow(0 6px 10px #000a);pointer-events:none;transform-origin:50% 90%}.mgmon.bossm{max-height:100%}.mgb .btn{min-width:54px;color:#fff}.mgb .btn.off{opacity:.6}
+.mgmon.hit{animation:mgh .12s}@keyframes mgh{40%{transform:scale(.94) rotate(-1.5deg)}}
+#mgfx{position:absolute;inset:0;pointer-events:none}.mgf{position:absolute;font:700 18px Georgia,serif;color:#fff1b0;text-shadow:0 0 4px #000,0 1px 2px #000;animation:mgup .7s ease-out forwards;white-space:nowrap}.mgf.big{font-size:22px;color:#ffb347}@keyframes mgup{to{transform:translateY(-46px);opacity:0}}
+.mginfo{display:flex;flex-direction:column;gap:4px;padding:0 6px}.mgnm{text-align:center;font-size:12px;color:#f1e6cc;text-shadow:0 1px 2px #000}
+.mghp{position:relative;height:18px;border-radius:8px;background:#000a;border:1px solid #6a3d8a;overflow:hidden}.mghp i{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(#e0504a,#7a1b18);transition:width .08s}.mghp span{position:absolute;inset:0;text-align:center;font-size:12px;line-height:18px;color:#fff;text-shadow:0 1px 2px #000}
+.mgbt{position:relative;height:8px;border-radius:5px;background:#000a;overflow:hidden}.mgbt i{display:block;height:100%;background:linear-gradient(#ffd36b,#c27a1a)}
+.mgfr{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.mgbadge{position:absolute;left:50%;top:-1%;transform:translateX(-50%);background:#15101cdd;border:1px solid #b58a3c;border-radius:12px;padding:1px 12px;text-align:center;line-height:1.1;color:#f1e6cc}.mgbadge span{font-size:9px;display:block;text-transform:uppercase;letter-spacing:.1em}.mgbadge b{font:700 18px Georgia,serif;color:#e8c36b}
+.mgfarm{position:absolute;right:4%;bottom:4%;z-index:3;padding:5px 9px;font-size:12px;border-radius:10px;border:1px solid #b58a3c;background:#15101cdd;color:#f1e6cc}.mgfarm.on{background:#5a3a10}
+.mgsk{display:flex;gap:10px;justify-content:center}
+.mgs{position:relative;width:68px;height:68px;padding:0;border:0;background:none;border-radius:50%}.mgs img{width:100%;height:100%;display:block}.mgs.cd img{filter:grayscale(.85) brightness(.55)}
+.mgs b{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:700 22px Georgia,serif;color:#fff;text-shadow:0 0 5px #000}.mgs em{position:absolute;right:-2px;bottom:-2px;min-width:20px;padding:0 4px;border-radius:10px;background:#15101c;border:1px solid #b58a3c;font:700 11px/18px sans-serif;color:#f1e6cc;text-align:center}
+.mgtabs{display:flex;gap:5px}.mgtabs button{flex:1;padding:8px 2px;border-radius:8px;border:1px solid #4a3a66;background:#1a1226;color:#cdbfe0;font-size:13px}.mgtabs button.on{background:#4a2c70;color:#fff;border-color:#b58a3c}
+.mgpanel{flex:0 0 auto;height:min(30dvh,240px);overflow-y:auto;overscroll-behavior:contain;background:#120c1b;border:1px solid #3a2c52;border-radius:10px;padding:6px 8px}
+.mgh{font-size:12px;color:#cdbfe0;margin:2px 0 6px}.mgr{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:7px 0;border-top:1px solid #2a2040}.mgr.col{flex-direction:column;align-items:stretch}.mgrt p{margin:2px 0 0;font-size:12px;color:#b9abd0}.mgrt b{font-size:14px;color:#f1e6cc}.mgl{font-size:12px;color:#e8c36b}.mgb{display:flex;gap:5px;flex-shrink:0}
+#ad{position:fixed;inset:0;z-index:40;background:#000c;display:flex;align-items:center;justify-content:center;padding:12px}.adw{position:relative;width:min(94vw,86dvh,520px)}.adw img[data-act]{width:100%;display:block;border-radius:12px;cursor:pointer;box-shadow:0 0 40px #8a3bd9aa;animation:adp 1.8s ease-in-out infinite}@keyframes adp{50%{transform:scale(1.015)}}.adx{position:absolute;right:2%;top:2%;width:34px;height:34px;border-radius:50%;border:1px solid #b58a3c;background:#15101cdd;color:#f1e6cc;font-size:16px}
+.mgcard{display:flex;gap:10px;align-items:center;padding:10px;margin:8px 0;border:1px solid var(--line);border-radius:10px;background:var(--surface2);cursor:pointer}.mgcard img{width:74px;height:74px;object-fit:cover;border-radius:8px}.mgemo{font-size:40px;width:74px;text-align:center}.mgcard p{margin:2px 0 6px}
 </style>
 </head>
 <body>
@@ -536,6 +559,7 @@ canvas.pic[data-b="farm"],canvas.pic[data-b="sawmill"]{animation:bldSway 6s ease
 </div>
 <input type="file" id="pf" accept="image/*" hidden>
 <div id="modal" hidden></div>
+<div id="mg" hidden></div>
 <div id="toast" hidden></div>
 
 <script src="/core.js"></script>
@@ -700,7 +724,7 @@ function viewCity(){
   if(!S.introDone)h+=`<section class="card"><h3>Добро пожаловать, ярл</h3>
     <p class="sm" style="margin:6px 0 10px">Стройте и улучшайте здания, пока копится добыча. Копите дружину в Казарме и ходите в походы: на разбойников, на ресурсные точки и на города других игроков. Таймеры идут и при закрытой игре. Пока вас нет, на город могут напасть, поэтому держите дома войско и стройте Хранилище.</p>
     <button class="btn" data-act="intro">Понятно</button></section>`;
-  h+=`<div class="shortc"><button class="btn" data-act="fgopen" type="button"><img class="uic s" src="/img/ui-forge.webp?v=1" alt=""> Кузница</button><button class="btn" data-act="oracle" type="button"><img class="uic s" src="/img/ui-oracle.webp?v=1" alt=""> Оракул</button><button class="btn" data-act="tavern" type="button"><span class="uic s emo">🎲</span> Таверна</button></div><div class="shortc"><button class="btn" data-act="tab" data-arg="shop" type="button"><img class="uic s" src="/img/ui-gem.webp?v=1" alt=""> Магазин</button><button class="btn" data-act="top" type="button"><img class="uic s" src="/img/ui-top.webp?v=1" alt=""> Топ</button><button class="btn" id="lg" data-act="tab" data-arg="log" type="button"><span class="uic s emo">📜</span> Хроника</button></div>`;
+  h+=`<div class="shortc"><button class="btn" data-act="fgopen" type="button"><img class="uic s" src="/img/ui-forge.webp?v=1" alt=""> Кузница</button><button class="btn" data-act="oracle" type="button"><img class="uic s" src="/img/ui-oracle.webp?v=1" alt=""> Оракул</button><button class="btn" data-act="tavern" type="button"><span class="uic s emo">🎲</span> Таверна</button></div><div class="shortc"><button class="btn" data-act="tab" data-arg="shop" type="button"><img class="uic s" src="/img/ui-gem.webp?v=1" alt=""> Магазин</button><button class="btn" data-act="top" type="button"><img class="uic s" src="/img/ui-top.webp?v=1" alt=""> Топ</button><button class="btn" id="lg" data-act="tab" data-arg="log" type="button"><span class="uic s emo">📜</span> Хроника</button></div><div class="shortc"><button class="btn" data-act="mgs" type="button"><span class="uic s emo">⚔</span> Мини игры</button></div>`;
   h+=jobsHTML('city');
   BORDER.forEach(id=>{
     const b=B[id],L=lvl(id),block=canUp(id),busyB=(S.q&&S.q.id===id)||(S.q2&&S.q2.id===id),freeQ=!S.q||((S.helper||Core.isVip())&&!S.q2);
@@ -2112,6 +2136,10 @@ function onAct(act,arg){
     case 'oracle':oracleSheet();return;
     case 'peek':{const p=ui.soc.prof;if(p)peekSheet(p);return;}
     case 'fgopen':ui.eqSel=null;forgeSheet();return;
+    case 'mgs':mgSheet();return;
+    case 'mg':mgOpen();return;
+    case 'adgo':adClose();mgOpen();return;
+    case 'adx':adClose();return;
     case 'eqsort':ui.eqSort=arg;if(ui.fgOpen)forgeSheet();else eqSheet();return;
     case 'tavern':ui.tvTab=ui.tvTab||'wheel';ui.mseen=(Core.miniDay().last||{}).n||0;tavernSheet();return;
     case 'tvtab':if(ui.tvSpin)return;ui.tvTab=arg;tavernSheet();return;
@@ -2202,6 +2230,145 @@ function onAct(act,arg){
 }
 function act2(a,arg){return act(a,arg);}
 document.addEventListener('change',e=>{const t=e.target;if(t&&t.dataset&&t.dataset.tn){const k=t.dataset.tn;ui.tn[k]=Math.max(1,Math.min(maxBatch()||1,parseInt(t.value,10)||1));render();}});
+/* ---------- мини-игра «Нашествие нечести» ---------- */
+const MGN=['Скелет-страж','Проклятый клинок','Щитоносец','Жрец тьмы','Костяной берсерк','Рыцарь бездны','Рогатый палач','Костяной колосс','Королева нечисти','Владыка нечести'];
+const MGSK={d:['sk-d','Двойной удар','Следующие тапы бьют вдвое сильнее'],a:['sk-a','Автобой','Герой сам бьёт врага без остановки'],f:['sk-f','Огненный шар','Мощный разовый удар огнём'],s:['sk-s','Удар щитом','Сильный удар, оглушает босса: +10 секунд']};
+const mg={open:false,loc:null,pend:null,inflight:false,tab:'up',bt:0,btMax:30,btKey:'',autoQ:0,lastFlush:0,lastBk:0,fx:[],tm:null,fl:0};
+function K(n){n=Math.floor(n);if(n<1e4)return String(n);const u=['','K','M','B','T','Qa','Qi','Sx','Sp','Oc'];let i=0,x=n;while(x>=1000&&i<u.length-1){x/=1000;i++;}return (x<10?x.toFixed(2):x<100?x.toFixed(1):Math.floor(x))+u[i];}
+const mgBlank=()=>({taps:0,d:0,a:0,f:0,s:0,fl:0});
+function mgImg(c){const boss=Core.ckBoss(c);if(boss){const bi=c.st/10-1;return {src:6+(bi%5),boss:1,hue:Math.floor(bi/5)*70,name:MGN[5+(bi%5)]};}const i=(c.st*3+c.k)%5;return {src:i+1,boss:0,hue:Math.floor((c.st-1)/10)*28,name:MGN[i]};}
+function mgOpen(){
+  if(!S)return;closeModal();mg.open=true;ui.mgOpen=true;mg.loc=JSON.parse(JSON.stringify(S.clk));mg.pend=mgBlank();mg.autoQ=0;mg.btKey='';mg.lastBk=S.clk.bk;
+  const m=$('mg');m.hidden=false;
+  m.innerHTML=`<div class="mgw"><div class="mgtop"><button class="btn small ghost" data-m="x" type="button">‹ Выйти</button><div class="mgtt">Нашествие нечести</div><div class="mgsl" id="mgsl"></div></div>
+  <div class="mgstage" id="mgstage"><div class="mgin"><img id="mgmon" class="mgmon" alt=""><div id="mgfx"></div></div><img class="mgfr" src="/img/ck-frame.webp?v=1" alt=""><div class="mgbadge" id="mgbadge"></div><button class="mgfarm" id="mgfarm" data-m="farm" type="button"></button></div>
+  <div class="mginfo"><div class="mgnm" id="mgnm"></div><div class="mgbt" id="mgbt" hidden><i id="mgbtf"></i></div><div class="mghp"><i id="mghpf"></i><span id="mghpt"></span></div></div>
+  <div class="mgsk" id="mgsk"></div>
+  <div class="mgtabs"><button data-m="tab" data-v="up" type="button">Улучшения</button><button data-m="tab" data-v="sk" type="button">Навыки</button><button data-m="tab" data-v="rb" type="button">Возрождение</button></div>
+  <div class="mgpanel" id="mgpanel"></div></div>`;
+  mgSkills();mgPanel();mgDraw(true);
+  clearInterval(mg.tm);mg.tm=setInterval(mgTick,100);
+}
+async function mgClose(){clearInterval(mg.tm);mg.open=false;ui.mgOpen=false;$('mg').hidden=true;$('mg').innerHTML='';try{await mgFlush(true);}catch(e){}render();}
+async function mgFlush(force){
+  if(mg.inflight)return;const p=mg.pend;if(!(p.taps||p.d||p.a||p.f||p.s||p.fl))return;
+  mg.pend=mgBlank();mg.inflight=true;mg.lastFlush=Date.now();
+  const send=Object.assign({},p);send.taps=Math.min(500,p.taps);
+  try{const j=await call('POST','/api/act',{a:'ckb',arg:send});apply(j);mgResync();}
+  catch(e){const q=mg.pend;q.taps+=p.taps;q.fl=q.fl||p.fl;if(e&&e.status===401)logout(true);}
+  finally{mg.inflight=false;}
+}
+function mgResync(){mg.loc=JSON.parse(JSON.stringify(S.clk));const p=mg.pend;if(p.taps||p.fl||p.d||p.a||p.f||p.s)Core.ckStep(mg.loc,Object.assign({},p,{a:0}),Core.now(),true);mg.autoQ=0;if(mg.open){mgSkills();mgPanel();}}
+async function mgAct(a,arg){
+  await mgFlush(true);while(mg.inflight)await new Promise(r=>setTimeout(r,60));
+  try{const j=await call('POST','/api/act',{a,arg});apply(j);mgResync();}catch(e){toast(e.message||'Не получилось');}
+}
+function mgHit(x,y){
+  const c=mg.loc,now=Core.now();
+  const before=c.hp;const nb=c.n;const dbl=c.dbl>0;
+  Core.ckStep(c,{taps:1},now,true);mg.pend.taps++;
+  const crit=false;
+  mgFloat(x,y,'',0);
+  const m=$('mgmon');if(m){m.classList.remove('hit');void m.offsetWidth;m.classList.add('hit');}
+}
+function mgFloat(x,y,txt,big){
+  const fx=$('mgfx');if(!fx)return;const c=mg.loc;
+  const d=document.createElement('span');d.className='mgf'+(big?' big':'');
+  const t=txt||('-'+K(Core.ckTap(c)));d.textContent=t;
+  const r=fx.getBoundingClientRect();d.style.left=Math.max(6,Math.min(r.width-40,x-r.left-14+(Math.random()*30-15)))+'px';d.style.top=Math.max(10,Math.min(r.height-30,y-r.top-26))+'px';
+  fx.appendChild(d);setTimeout(()=>d.remove(),700);while(fx.childElementCount>14)fx.firstChild.remove();
+}
+function mgUse(x){
+  const c=mg.loc,now=Core.now();if((c.cd[x]||0)>now)return;
+  const sk=Core.CK_SK[x];
+  if(x==='a'){mg.autoQ=30+5*c.sk.a;c.cd.a=now+sk.cd;mg.pend.a++;toast('Автобой!');}
+  else{Core.ckStep(c,{[x]:1},now,true);mg.pend[x]++;}
+  if(x==='s'){mg.bt=Math.min(mg.bt+10,mg.btMax+10);}
+  if(x==='f'){mgFloat(window.innerWidth/2,window.innerHeight*0.35,'🔥 −'+K(Math.round(Core.ckTap(c)*(20+3*c.sk.f))),1);}
+  if(x==='s'){mgFloat(window.innerWidth/2,window.innerHeight*0.35,'🛡 −'+K(Math.round(Core.ckTap(c)*(8+2*c.sk.s))),1);}
+  if(x==='d')mgFloat(window.innerWidth/2,window.innerHeight*0.35,'×2 ×'+(10+2*c.sk.d),1);
+  mgSkills();mgDraw();
+}
+function mgSkills(){
+  const el=$('mgsk');if(!el)return;const c=mg.loc,now=Core.now();
+  el.innerHTML=['d','a','f','s'].map(x=>{const left=Math.max(0,((c.cd[x]||0)-now)/1000);return `<button class="mgs${left>0?' cd':''}" data-m="use" data-v="${x}" type="button"><img src="/img/${MGSK[x][0]}.webp?v=1" alt=""><b>${left>0?Math.ceil(left):''}</b><em>${c.sk[x]}</em></button>`;}).join('');
+}
+function mgTick(){
+  if(!mg.open||!mg.loc)return;const c=mg.loc,now=Core.now();
+  if(mg.autoQ>0){const n=Math.min(mg.autoQ,4);mg.autoQ-=n;Core.ckStep(c,{taps:n},now,true);const fx=$('mgstage');if(fx&&Math.random()<.5){const r=fx.getBoundingClientRect();mgFloat(r.left+r.width*(.3+Math.random()*.4),r.top+r.height*.5,'',0);}const m=$('mgmon');if(m){m.classList.remove('hit');void m.offsetWidth;m.classList.add('hit');}}
+  const key=c.st+':'+(Core.ckBoss(c)&&!c.farm?1:0);
+  if(key!==mg.btKey){mg.btKey=key;mg.bt=Core.ckBoss(c)&&!c.farm?mg.btMax:0;}
+  if(Core.ckBoss(c)&&!c.farm){mg.bt-=0.1;if(mg.bt<=0){mg.pend.fl=1;Core.ckStep(c,{fl:1},now,true);toast('Босс оказался сильнее. Отступаем и копим силы');mg.btKey='';mgFlush();mgPanel();}}
+  if(c.bk>mg.lastBk){mg.lastBk=c.bk;mgFloat(window.innerWidth/2,window.innerHeight*.3,'БОСС ПОВЕРЖЕН!',1);mgFlush();}
+  if(Date.now()-mg.lastFlush>3000&&(mg.pend.taps||mg.pend.d||mg.pend.a||mg.pend.f||mg.pend.s||mg.pend.fl))mgFlush();
+  mgDraw();
+  if((mg.tick=(mg.tick||0)+1)%5===0)mgSkills();
+  if(mg.tick%10===0)mgPanel(true);
+}
+function mgDraw(force){
+  const c=mg.loc;if(!c)return;const boss=Core.ckBoss(c),im=mgImg(c);
+  const hpMax=Core.ckHpOf(c.st,boss),hp=Math.max(0,c.hp==null?hpMax:c.hp);
+  const sl=$('mgsl');if(sl)sl.innerHTML='Души: <b>'+K(c.souls)+'</b>';
+  const m=$('mgmon');if(m){const s='/img/ck-m'+im.src+'.webp?v=1';if(m.getAttribute('data-s')!==s){m.setAttribute('data-s',s);m.src=s;}m.style.filter=im.hue?`hue-rotate(${im.hue}deg)`:'';m.classList.toggle('bossm',!!boss);}
+  const nm=$('mgnm');if(nm)nm.textContent=(boss?'БОСС: ':'')+im.name+(c.k||!boss?` · ${boss?'':(c.k+1)+'/'+Core.CK_PER}`:'');
+  const f=$('mghpf');if(f)f.style.width=Math.max(0,Math.min(100,hp/hpMax*100))+'%';const t=$('mghpt');if(t)t.textContent=K(hp)+' / '+K(hpMax);
+  const bb=$('mgbt');if(bb){const on=boss&&!c.farm;bb.hidden=!on;if(on){$('mgbtf').style.width=Math.max(0,Math.min(100,mg.bt/mg.btMax*100))+'%';}}
+  const bd=$('mgbadge');if(bd)bd.innerHTML='<span>Этап</span><b>'+c.st+'</b>';
+  const fb=$('mgfarm');if(fb){fb.textContent=c.farm?'Фарм ⏸':'Вперёд ▶';fb.classList.toggle('on',!!c.farm);}
+}
+function mgPanel(soft){
+  const el=$('mgpanel');if(!el)return;const c=mg.loc;
+  document.querySelectorAll('.mgtabs button').forEach(b=>b.classList.toggle('on',b.dataset.v===mg.tab));
+  if(soft&&document.activeElement&&el.contains(document.activeElement)){}
+  const sc=el.scrollTop;let h='';
+  const row=(kind,k,t,d,lv,max)=>{const cost=Core.ckCost(kind,k,lv),can=c.souls>=cost,mx=lv>=max;return `<div class="mgr"><div class="mgrt"><b>${t}</b> <span class="mgl">ур. ${lv}</span><p>${d}</p></div>${mx?'<span class="mgl">Максимум</span>':`<div class="mgb"><button class="btn small${can?'':' off'}" data-m="buy" data-t="${kind}" data-k="${k}" data-n="1" type="button">${K(cost)}</button><button class="btn small ghost" data-m="buy" data-t="${kind}" data-k="${k}" data-n="max" type="button">Макс.</button></div>`}</div>`;};
+  if(mg.tab==='up'){
+    h+=`<p class="mgh">Удар: <b>${K(Core.ckTap(c))}</b> · Крит: <b>${Math.round(Core.ckCritCh(c)*100)}%</b> ×${Core.ckCritMul(c).toFixed(1)}</p>`;
+    h+=row('u','p','Сила удара','Больше урона за каждый тап',c.up.p,9999);
+    h+=row('u','c','Меткость',`Шанс крита ${Math.round(Core.ckCritCh(c)*100)}% (до 75%)`,c.up.c,Core.CK_UP.c.max);
+    h+=row('u','m','Ярость',`Крит бьёт ×${Core.ckCritMul(c).toFixed(1)}`,c.up.m,Core.CK_UP.m.max);
+    h+=row('u','g','Жажда душ','Больше душ за каждого врага',c.up.g,Core.CK_UP.g.max);
+  }else if(mg.tab==='sk'){
+    const info={d:`Следующие ${10+2*c.sk.d} тапов бьют ×2. Перезарядка 25 с`,a:`${30+5*c.sk.a} ударов сами. Перезарядка 45 с`,f:`Удар в ${20+3*c.sk.f} раз сильнее тапа. Перезарядка 30 с`,s:`Удар в ${8+2*c.sk.s} раз сильнее тапа и +10 с на босса. Перезарядка 35 с`};
+    ['d','a','f','s'].forEach(x=>{h+=row('s',x,Core.CK_SK[x].t,info[x],c.sk[x],Core.CK_SK[x].max);});
+  }else{
+    const g=Math.max(0,Math.floor((c.mx-15)/10));
+    h+=`<div class="mgr col"><div class="mgrt"><b>Возрождение</b><p>Начните путь заново, но станьте сильнее. Души, улучшения и навыки сбрасываются. Вы получаете <b>Печати тьмы</b>: каждая даёт +15% к урону и +10% к душам навсегда.</p><p>Сейчас печатей: <b>${c.seal}</b> · перерождений: ${c.rb}<br>Лучший этап в этом забеге: <b>${c.mx}</b><br>Печатей за возрождение: <b>${c.mx>=Core.CK_REB_MIN?g:0}</b> (нужен этап ${Core.CK_REB_MIN}+, каждые 10 этапов после 15-го дают печать)</p></div><button class="btn${c.mx>=Core.CK_REB_MIN&&g>0?'':' off'}" data-m="rb" type="button">Возродиться</button></div>`;
+    h+=`<p class="mgh">Награды за боссов идут в вашу игру: серебро, материалы, ускорения и рунные камни за рубежи этапов (10, 20, 30, 50, 75, 100…).</p>`;
+  }
+  if(soft&&el.dataset.h===h)return;el.dataset.h=h;el.innerHTML=h;el.scrollTop=sc;
+}
+document.addEventListener('pointerdown',e=>{
+  if(!mg.open)return;const st=e.target.closest&&e.target.closest('#mgstage');
+  if(st&&!e.target.closest('[data-m]')){e.preventDefault();mgHit(e.clientX,e.clientY);}
+},{passive:false});
+document.addEventListener('click',async e=>{
+  const b=e.target.closest&&e.target.closest('#mg [data-m]');if(!b)return;const a=b.dataset.m;
+  if(a==='x')mgClose();
+  else if(a==='use')mgUse(b.dataset.v);
+  else if(a==='tab'){mg.tab=b.dataset.v;mgPanel();}
+  else if(a==='buy'){await mgAct('ckbuy',{t:b.dataset.t,k:b.dataset.k,n:b.dataset.n==='max'?'max':1});}
+  else if(a==='farm'){await mgAct('ckfarm');}
+  else if(a==='rb'){if(confirm('Возродиться? Души, улучшения и навыки сбросятся, печати тьмы останутся.'))await mgAct('ckrb');}
+},true);
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&mg.open)mgFlush(true);});
+function mgSheet(){
+  const c=S.clk;
+  $('modal').innerHTML=`<div class="sheet"><h3>Мини игры</h3>
+  <div class="mgcard" data-act="mg"><img src="/img/ck-ad.webp?v=1" alt=""><div><b>Нашествие нечести</b><p class="sm muted">Тапайте и бейте нечисть, пока строятся здания и идут бои. Босс каждые 10 этапов, навыки и возрождение. Рекорд: этап ${c.best}.</p><span class="btn small">Играть</span></div></div>
+  <div class="mgcard" data-act="tavern"><span class="mgemo">🎲</span><div><b>Таверна</b><p class="sm muted">Кости и игры за столом.</p><span class="btn small">Открыть</span></div></div></div>`;
+  ui.modal='mgs';$('modal').hidden=false;
+}
+function adShow(){
+  if($('ad'))return;const a=document.createElement('div');a.id='ad';
+  a.innerHTML=`<div class="adw"><img src="/img/ck-ad.webp?v=1" alt="Нападение нечести" data-act="adgo"><button class="adx" data-act="adx" type="button" aria-label="Закрыть">✕</button></div>`;
+  document.body.appendChild(a);
+}
+function adClose(){const a=$('ad');if(a)a.remove();}
+(function(){let shown=false;try{shown=sessionStorage.getItem('adShown')==='1';}catch(e){}
+ const t=setInterval(()=>{if(!S||!S.introDone||$('app').hidden||shown)return;if(ui.modal||(document.querySelector('#modal')&&!$('modal').hidden))return;
+  clearInterval(t);shown=true;try{sessionStorage.setItem('adShown','1');}catch(e){}setTimeout(adShow,800);},1500);})();
+
 function boot(){
   document.querySelectorAll('img[data-l]').forEach(i=>{i.src=(window.LOGO&&LOGO[i.dataset.l])||('/img/'+i.dataset.l+'.webp?v=2');});
   buildStatic();
@@ -2242,7 +2409,7 @@ document.addEventListener('click',e=>{
     live();
     if(Date.now()-lastSync>2500&&dueSoon())sync();
   },1000);
-  setInterval(()=>{if(S&&!document.hidden&&!ui.modal)sync();},15000);
+  setInterval(()=>{if(S&&!document.hidden&&!ui.modal&&!ui.mgOpen)sync();},15000);
   setInterval(()=>{if(S)incDraw();},1000);
   const avT=setInterval(()=>{if(S&&!$('app').hidden){clearInterval(avT);loadAvatar();}},1500);
   const clT=setInterval(()=>{if(S&&S.introDone&&!$('app').hidden){clearInterval(clT);loadChangelog(true);}},3000);

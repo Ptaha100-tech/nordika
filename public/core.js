@@ -298,6 +298,7 @@ function newState(name, pid) {
 function use(st) { S = st; }
 /* Старые сохранения без героя и ступеней получают их при первом обновлении. */
 function ensure(st) {
+  st.clk = clkFix(st.clk || {});
   if (st.tech) { if (st.tech.bld === undefined) st.tech.bld = 0; if (st.tech.fast === undefined) st.tech.fast = 0; if (st.tech.drill === undefined) st.tech.drill = 0; }
   if (st.tech) ['jstr', 'jvit', 'jarm', 'jcrt'].forEach(k => { if (st.tech[k] === undefined) st.tech[k] = 0; });
   if (!st.eq) st.eq = { s: { weapon: null, armor: null, helm: null, amulet: null }, inv: [] };
@@ -1262,6 +1263,10 @@ function act(a, arg) {
     case 'march': if (arg && typeof arg === 'object') sendMarch(String(arg.id), arg.send); break;
     case 'claim': if (typeof arg === 'string') claim(arg); break;
     case 'campgo': campClaim(); break;
+    case 'ckb': ckBatch(arg); break;
+    case 'ckbuy': ckBuy(arg); break;
+    case 'ckrb': ckRebirth(); break;
+    case 'ckfarm': S.clk.farm = S.clk.farm ? 0 : 1; if (!S.clk.farm) { S.clk.k = 0; } break;
     case 'bpc': if (bpClaim(arg)) toast('Награда получена'); break;
     case 'bpall': bpClaimAll(); break;
     case 'intro': S.introDone = true; break;
@@ -1314,7 +1319,100 @@ function fmtT(sec) {
   return `${sec}с`;
 }
 
+/* ---------- кликер «Нашествие нечести» ---------- */
+const CK_UP = { p: { t: 'Сила удара', b: 15, g: 1.17 }, c: { t: 'Меткость', b: 40, g: 1.32, max: 70 }, m: { t: 'Ярость', b: 60, g: 1.3, max: 80 }, g: { t: 'Жажда душ', b: 50, g: 1.27, max: 80 } };
+const CK_SK = { d: { t: 'Двойной удар', b: 150, g: 1.5, cd: 25000, max: 30 }, a: { t: 'Автобой', b: 200, g: 1.5, cd: 45000, max: 30 }, f: { t: 'Огненный шар', b: 180, g: 1.5, cd: 30000, max: 30 }, s: { t: 'Удар щитом', b: 220, g: 1.5, cd: 35000, max: 30 } };
+const CK_PER = 5, CK_BOSS_EVERY = 10, CK_REB_MIN = 25;
+function clkNew() { return { st: 1, mx: 1, k: 0, hp: null, n: 0, dbl: 0, souls: 0, up: { p: 0, c: 0, m: 0, g: 0 }, sk: { d: 1, a: 1, f: 1, s: 1 }, cd: { d: 0, a: 0, f: 0, s: 0 }, seal: 0, rb: 0, t: 0, farm: 0, kills: 0, bk: 0, best: 1, ms: {}, day: '', dsil: 0, dmat: 0, dbp: 0, dh: 0 }; }
+function clkFix(c) {
+  const n = clkNew(); for (const k in n) if (c[k] === undefined) c[k] = n[k];
+  for (const k in n.up) if (!(c.up[k] >= 0)) c.up[k] = 0;
+  for (const k in n.sk) if (!(c.sk[k] >= 1)) c.sk[k] = 1;
+  for (const k in n.cd) if (!(c.cd[k] >= 0)) c.cd[k] = 0;
+  return c;
+}
+const ckBoss = c => c.st % CK_BOSS_EVERY === 0;
+const ckHpOf = (st, boss) => Math.max(5, Math.round(30 * Math.pow(1.36, st - 1) * (boss ? 8 : 1)));
+const ckPow = c => 1 + 0.15 * (c.seal || 0);
+const ckTap = c => Math.max(1, Math.round((3 + 2.2 * c.up.p) * Math.pow(1.04, c.up.p) * ckPow(c)));
+const ckCritCh = c => Math.min(0.75, 0.05 + 0.01 * c.up.c);
+const ckCritMul = c => 2 + 0.08 * c.up.m;
+const ckSouls = (c, st, boss) => Math.max(1, Math.round(ckHpOf(st, boss) * 0.07 * (boss ? 1.2 : 1) * (1 + 0.08 * c.up.g) * (1 + 0.1 * (c.seal || 0))));
+function ckRng(n) { let x = (n * 2654435761) >>> 0; x ^= x >>> 15; x = Math.imul(x, 2246822519) >>> 0; x ^= x >>> 13; return (x >>> 0) / 4294967296; }
+function ckCost(kind, k, lv) { const d = (kind === 's' ? CK_SK : CK_UP)[k]; return Math.round(d.b * Math.pow(d.g, lv - (kind === 's' ? 1 : 0))); }
+function ckMax(kind, k) { return (kind === 's' ? CK_SK : CK_UP)[k].max || 9999; }
+// Один шаг боя. loc=true — предсказание на телефоне (без проверок), иначе проверяет сервер.
+function ckStep(c, b, now, loc) {
+  const res = { kills: 0, boss: [] };
+  const span = loc ? 0 : Math.max(0, Math.min(30000, now - (c.t || now - 5000)));
+  let taps = Math.max(0, Math.min(500, b.taps | 0));
+  if (!loc) taps = Math.min(taps, Math.ceil(13 * span / 1000) + 8);
+  const use = {};
+  for (const x in CK_SK) {
+    const u = Math.max(0, Math.min(3, b[x] | 0)); if (!u) continue;
+    const cdm = CK_SK[x].cd;
+    if (loc) { use[x] = u; c.cd[x] = Math.max(c.cd[x] || 0, now) + cdm * u; continue; }
+    const start = Math.max(c.cd[x] || 0, now - span); let ok = 0;
+    while (ok < u && start + ok * cdm <= now + 1500) ok++;
+    if (ok) c.cd[x] = start + ok * cdm; use[x] = ok;
+  }
+  c.t = now;
+  if (b.fl && ckBoss(c) && !c.farm) { c.st = Math.max(1, c.st - 1); c.farm = 1; c.k = 0; c.hp = null; }
+  const kill = () => {
+    const boss = ckBoss(c);
+    c.souls += ckSouls(c, c.st, boss); c.kills++; res.kills++;
+    if (boss) { c.bk++; res.boss.push(c.st); c.st++; c.k = 0; c.farm = 0; if (c.st > c.mx) c.mx = c.st; }
+    else { c.k++; if (c.k >= CK_PER) { c.k = 0; if (!c.farm) { c.st++; if (c.st > c.mx) c.mx = c.st; } } }
+    if (c.st > c.best) c.best = c.st;
+  };
+  const hit = d => {
+    if (c.hp == null) c.hp = ckHpOf(c.st, ckBoss(c));
+    c.hp -= d;
+    let g = 0;
+    while (c.hp <= 0 && g++ < 400) { const left = c.hp; kill(); c.hp = ckHpOf(c.st, ckBoss(c)) + left; }
+  };
+  const base = ckTap(c), cc = ckCritCh(c), cm = ckCritMul(c);
+  const tapHit = () => { let d = base; if (c.dbl > 0) { c.dbl--; d *= 2; } if (ckRng(c.n++) < cc) d *= cm; hit(Math.round(d)); };
+  if (use.d) c.dbl += (10 + 2 * c.sk.d) * use.d;
+  for (let i = 0; i < taps; i++) tapHit();
+  if (use.a) { const au = use.a * (30 + 5 * c.sk.a); for (let i = 0; i < au; i++) tapHit(); }
+  if (use.f) hit(Math.round(base * (20 + 3 * c.sk.f) * use.f));
+  if (use.s) hit(Math.round(base * (8 + 2 * c.sk.s) * use.s));
+  return res;
+}
+const CK_MS = { 10: 3, 20: 5, 30: 8, 50: 12, 75: 15, 100: 20, 150: 30, 200: 40 };
+function ckBatch(arg) {
+  const c = S.clk, b = arg && typeof arg === 'object' ? arg : {}, now = nowMs();
+  const day = new Date(now).toISOString().slice(0, 10);
+  if (c.day !== day) { c.day = day; c.dsil = 0; c.dmat = 0; c.dbp = 0; c.dh = 0; }
+  const r = ckStep(c, b, now, false);
+  const keys = Object.keys(MATS);
+  r.boss.forEach(st => {
+    const z = Math.floor(st / CK_BOSS_EVERY);
+    const sil = Math.min(Math.round(250 * Math.pow(z, 1.3)), Math.max(0, 40000 - c.dsil)); if (sil > 0) { S.res.silver += sil; c.dsil += sil; }
+    if (c.dmat < 8) { const pool = st >= 80 ? keys : keys.filter(k => k !== 'heart'); const mk = pool[(z - 1) % pool.length]; if (!S.mats) S.mats = {}; S.mats[mk] = (S.mats[mk] || 0) + 1; c.dmat++; }
+    if (c.dbp < 10) { bpAdd(5); c.dbp++; }
+    if (c.bk % 5 === 0 && c.dh < 3) { S.haste += 1; c.dh++; }
+    gainXp(4 * z);
+    for (const m in CK_MS) if (st >= +m && !c.ms[m]) { c.ms[m] = 1; S.gems += CK_MS[m]; }
+  });
+  if (S.stat) S.stat.clk = Math.max(S.stat.clk || 0, c.best);
+}
+function ckBuy(arg) {
+  if (!arg || typeof arg !== 'object') return; const c = S.clk, kind = arg.t === 's' ? 's' : 'u', k = String(arg.k);
+  const tbl = kind === 's' ? CK_SK : CK_UP; if (!tbl[k]) return;
+  const store = kind === 's' ? c.sk : c.up; let want = arg.n === 'max' ? 999 : Math.max(1, Math.min(100, arg.n | 0)), got = 0;
+  while (got < want && store[k] < ckMax(kind, k)) { const cost = ckCost(kind, k, store[k]); if (c.souls < cost) break; c.souls -= cost; store[k]++; got++; }
+  if (!got) toast('Не хватает душ');
+}
+function ckRebirth() {
+  const c = S.clk; if (c.mx < CK_REB_MIN) { toast('Нужно дойти хотя бы до ' + CK_REB_MIN + ' этапа'); return; }
+  const g = Math.floor((c.mx - 15) / 10); if (g < 1) return;
+  const keep = { seal: c.seal + g, rb: c.rb + 1, bk: c.bk, kills: c.kills, best: c.best, ms: c.ms, day: c.day, dsil: c.dsil, dmat: c.dmat, dbp: c.dbp, dh: c.dh, n: c.n };
+  S.clk = Object.assign(clkNew(), keep); toast('Возрождение! Печатей тьмы: +' + g);
+}
 const API = {
+  CK_UP, CK_SK, CK_PER, CK_BOSS_EVERY, CK_REB_MIN, CK_MS, clkNew, ckStep, ckBoss, ckHpOf, ckTap, ckCritCh, ckCritMul, ckSouls, ckCost, ckMax,
   armyAtk, newItem, giveItem, SLOTS, SLOTK, LOOKS, EQS, slotType, EQ_IL, RARN, EQMAX, BAG_COST, BAG_STEP, eqCap, itemPct, itemName, forgeCost, forgeLvl, scrapOf, eqB, jarlStats, jarlPower, setBonus, jMain, affVal, plusOf, itemPower, AFN, MAXPLUS, TM, SETB,
   heroOn, REC_PRICE, SCROLLS, ENH_P, epicReq, hutCap, wnote, healCost, healSecs, MATS, MATK, STACK, bagUsed, giveMat, MOBS, MINEC, MINE_MIN, MINE_IDS, mineTarget, mineBusy, mineDur,
   RES, RI, B, BORDER, U, WEAK, TECH, QUESTS, MAXL, TMAX, CFG, HOOK, NODE, TIERN, TIER_NEED, MAXT, BP_LV, BP_PTS, BP_PRICE, bpInit, bpLevel, bpEnd, bpRw, bpAddTo, CAMP, campReady, campDone, HSK, HBR, MAXHL, MAXSK, skillPts, jarlTitle, respecCost,
