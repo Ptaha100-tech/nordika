@@ -2232,13 +2232,13 @@ function act2(a,arg){return act(a,arg);}
 document.addEventListener('change',e=>{const t=e.target;if(t&&t.dataset&&t.dataset.tn){const k=t.dataset.tn;ui.tn[k]=Math.max(1,Math.min(maxBatch()||1,parseInt(t.value,10)||1));render();}});
 /* ---------- мини-игра «Нашествие нечести» ---------- */
 const MGN=['Скелет-страж','Проклятый клинок','Щитоносец','Жрец тьмы','Костяной берсерк','Рыцарь бездны','Рогатый палач','Костяной колосс','Королева нечисти','Владыка нечести'];
-const MGSK={d:['sk-d','Двойной удар','Следующие тапы бьют вдвое сильнее'],a:['sk-a','Автобой','Герой сам бьёт врага несколько секунд'],f:['sk-f','Огненный шар','Мощный разовый удар огнём'],s:['sk-s','Удар щитом','Сильный удар, оглушает босса: +10 секунд']};
+const MGSK={d:['sk-d','Двойной удар','Тапы бьют вдвое сильнее несколько секунд'],a:['sk-a','Автобой','Герой сам бьёт врага несколько секунд'],f:['sk-f','Огненный шар','Мощный разовый удар огнём'],s:['sk-s','Удар щитом','Сильный удар, оглушает босса: +10 секунд']};
 const mg={poseT:0,pose:'',lastBg:'',open:false,loc:null,pend:null,inflight:false,tab:'up',bt:0,btMax:30,btKey:'',autoQ:0,lastFlush:0,lastBk:0,fx:[],tm:null,fl:0};
 function K(n){n=Math.floor(n);if(n<1e4)return String(n);const u=['','K','M','B','T','Qa','Qi','Sx','Sp','Oc'];let i=0,x=n;while(x>=1000&&i<u.length-1){x/=1000;i++;}return (x<10?x.toFixed(2):x<100?x.toFixed(1):Math.floor(x))+u[i];}
-const mgBlank=()=>({taps:0,d:0,a:0,f:0,s:0,fl:0,ah:0});
+const mgBlank=()=>({taps:0,d:0,a:0,f:0,s:0,fl:0,ah:0,td:0});
 function mgImg(c){const boss=Core.ckBoss(c);if(boss){const bi=c.st/10-1;return {src:6+(bi%5),boss:1,hue:Math.floor(bi/5)*70,name:MGN[5+(bi%5)]};}const i=(c.st*3+c.k)%5;return {src:i+1,boss:0,hue:Math.floor((c.st-1)/10)*28,name:MGN[i]};}
 function mgOpen(){
-  if(!S)return;closeModal();mg.open=true;ui.mgOpen=true;mg.loc=JSON.parse(JSON.stringify(S.clk));mg.pend=mgBlank();mg.autoQ=0;mg.btKey='';mg.lastBk=S.clk.bk;
+  if(!S)return;closeModal();mg.open=true;ui.mgOpen=true;mg.loc=JSON.parse(JSON.stringify(S.clk));mg.pend=mgBlank();mg.autoQ=0;mg.dEnd=0;mg.btKey='';mg.lastBk=S.clk.bk;
   const m=$('mg');m.hidden=false;
   m.innerHTML=`<div class="mgw"><img class="mgfr" src="/img/ck-frame3.webp?v=1" alt=""><div class="mgbody"><div class="mgstage" id="mgstage"><div class="mgin" id="mgin"><img id="mgmon" class="mgmon" alt=""><div id="mgfx"></div></div><div class="mgbadge" id="mgbadge"></div><button class="btn small ghost mgx" data-m="x" type="button">‹ Выйти</button><div class="mgsl" id="mgsl"></div><button class="mgfarm" id="mgfarm" data-m="farm" type="button"></button></div>
   <div class="mginfo"><div class="mgnm" id="mgnm"></div><div class="mgbt" id="mgbt" hidden><i id="mgbtf"></i></div><div class="mghp"><i id="mghpf"></i><span id="mghpt"></span></div></div>
@@ -2250,14 +2250,14 @@ function mgOpen(){
 }
 async function mgClose(){clearInterval(mg.tm);mg.open=false;ui.mgOpen=false;$('mg').hidden=true;$('mg').innerHTML='';try{await mgFlush(true);}catch(e){}render();}
 async function mgFlush(force){
-  if(mg.inflight)return;const p=mg.pend;if(!(p.taps||p.d||p.a||p.f||p.s||p.fl||p.ah))return;
+  if(mg.inflight)return;const p=mg.pend;if(!(p.taps||p.d||p.a||p.f||p.s||p.fl||p.ah||p.td))return;
   mg.pend=mgBlank();mg.inflight=true;mg.lastFlush=Date.now();
   const send=Object.assign({},p);send.taps=Math.min(500,p.taps);
   try{const j=await call('POST','/api/act',{a:'ckb',arg:send});apply(j);mgResync();}
-  catch(e){const q=mg.pend;q.taps+=p.taps;q.ah+=p.ah;q.a+=p.a;q.d+=p.d;q.f+=p.f;q.s+=p.s;q.fl=q.fl||p.fl;if(e&&e.status===401)logout(true);}
+  catch(e){const q=mg.pend;q.taps+=p.taps;q.ah+=p.ah;q.td+=p.td;q.a+=p.a;q.d+=p.d;q.f+=p.f;q.s+=p.s;q.fl=q.fl||p.fl;if(e&&e.status===401)logout(true);}
   finally{mg.inflight=false;}
 }
-function mgResync(){mg.loc=JSON.parse(JSON.stringify(S.clk));const p=mg.pend;if(p.taps||p.fl||p.d||p.a||p.f||p.s||p.ah)Core.ckStep(mg.loc,Object.assign({},p),Core.now(),true);if(mg.open){mgSkills();mgPanel();}}
+function mgResync(){mg.loc=JSON.parse(JSON.stringify(S.clk));const p=mg.pend;if(p.taps||p.fl||p.d||p.a||p.f||p.s||p.ah||p.td)Core.ckStep(mg.loc,Object.assign({},p),Core.now(),true);if(mg.open){mgSkills();mgPanel();}}
 async function mgAct(a,arg){
   await mgFlush(true);while(mg.inflight)await new Promise(r=>setTimeout(r,60));
   try{const j=await call('POST','/api/act',{a,arg});apply(j);mgResync();}catch(e){toast(e.message||'Не получилось');}
@@ -2272,7 +2272,7 @@ function mgBgOf(c){if(Core.ckBoss(c)&&!c.farm){const bn=c.st/10-1;return [6,7,10
 function mgHit(x,y){
   const c=mg.loc,now=Core.now();
   const before=c.hp;const nb=c.n;const dbl=c.dbl>0;
-  Core.ckStep(c,{taps:1},now,true);mg.pend.taps++;
+  const dact=now<(mg.dEnd||0)&&(c.dbl||0)>0;Core.ckStep(c,{taps:1,td:dact?1:0},now,true);mg.pend.taps++;if(dact)mg.pend.td++;
   const crit=false;
   mgFloat(x,y,'',0);mgPose();mgFlash(x,y);
   const m=$('mgmon');if(m){m.classList.remove('hit');void m.offsetWidth;m.classList.add('hit');}
@@ -2287,17 +2287,18 @@ function mgFloat(x,y,txt,big){
 function mgUse(x){
   const c=mg.loc,now=Core.now();if((c.cd[x]||0)>now)return;
   const sk=Core.CK_SK[x];
-  if(x==='a'){Core.ckStep(c,{a:1},now,true);mg.pend.a++;toast('Автобой! Герой бьёт сам');}
+  if(x==='d'){Core.ckStep(c,{d:1},now,true);mg.pend.d++;mg.dEnd=now+(6+0.3*c.sk.d)*1000;toast('Двойной удар на '+(6+0.3*c.sk.d).toFixed(1).replace('.0','')+' с!');}
+  else if(x==='a'){Core.ckStep(c,{a:1},now,true);mg.pend.a++;toast('Автобой! Герой бьёт сам');}
   else{Core.ckStep(c,{[x]:1},now,true);mg.pend[x]++;}
   if(x==='s'){mg.bt=Math.min(mg.bt+10,mg.btMax+10);}
   if(x==='f'){mgFloat(window.innerWidth/2,window.innerHeight*0.35,'🔥 −'+K(Math.round(Core.ckTap(c)*(20+3*c.sk.f))),1);}
   if(x==='s'){mgFloat(window.innerWidth/2,window.innerHeight*0.35,'🛡 −'+K(Math.round(Core.ckTap(c)*(8+2*c.sk.s))),1);}
-  if(x==='d')mgFloat(window.innerWidth/2,window.innerHeight*0.35,'×2 ×'+(10+2*c.sk.d),1);
+  if(x==='d')mgFloat(window.innerWidth/2,window.innerHeight*0.35,'×2',1);
   mgSkills();mgDraw();
 }
 function mgSkills(){
   const el=$('mgsk');if(!el)return;const c=mg.loc,now=Core.now();
-  el.innerHTML=['d','a','f','s'].map(x=>{const left=Math.max(0,((c.cd[x]||0)-now)/1000);const on=x==='a'&&(c.auto||0)>0;return `<button class="mgs${left>0?' cd':''}${on?' on':''}" data-m="use" data-v="${x}" type="button"><img src="/img/${MGSK[x][0]}.webp?v=1" alt=""><b>${on?Math.ceil(c.auto/Core.CK_AUTO_RATE)+'с':left>0?Math.ceil(left):''}</b><em>${c.sk[x]}</em></button>`;}).join('');
+  el.innerHTML=['d','a','f','s'].map(x=>{const left=Math.max(0,((c.cd[x]||0)-now)/1000);const dOn=x==='d'&&now<(mg.dEnd||0)&&(c.dbl||0)>0;const on=(x==='a'&&(c.auto||0)>0)||dOn;return `<button class="mgs${left>0?' cd':''}${on?' on':''}" data-m="use" data-v="${x}" type="button"><img src="/img/${MGSK[x][0]}.webp?v=1" alt=""><b>${dOn?Math.ceil((mg.dEnd-now)/1000)+'с':on?Math.ceil(c.auto/Core.CK_AUTO_RATE)+'с':left>0?Math.ceil(left):''}</b><em>${c.sk[x]}</em></button>`;}).join('');
 }
 function mgTick(){
   if(!mg.open||!mg.loc)return;const c=mg.loc,now=Core.now();
@@ -2306,7 +2307,7 @@ function mgTick(){
   if(key!==mg.btKey){mg.btKey=key;mg.bt=Core.ckBoss(c)?mg.btMax:0;}
   if(Core.ckBoss(c)){mg.bt-=0.1;if(mg.bt<=0){mg.pend.fl=1;Core.ckStep(c,{fl:1},now,true);toast('Босс оказался сильнее. Отступаем и копим силы');mg.btKey='';mgFlush();mgPanel();}}
   if(c.bk>mg.lastBk){mg.lastBk=c.bk;mgFloat(window.innerWidth/2,window.innerHeight*.3,'БОСС ПОВЕРЖЕН!',1);mgFlush();}
-  if(Date.now()-mg.lastFlush>3000&&(mg.pend.taps||mg.pend.d||mg.pend.a||mg.pend.f||mg.pend.s||mg.pend.fl||mg.pend.ah))mgFlush();
+  if(Date.now()-mg.lastFlush>3000&&(mg.pend.taps||mg.pend.d||mg.pend.a||mg.pend.f||mg.pend.s||mg.pend.fl||mg.pend.ah||mg.pend.td))mgFlush();
   mgDraw();
   if((mg.tick=(mg.tick||0)+1)%5===0)mgSkills();
   if(mg.tick%10===0)mgPanel(true);
@@ -2336,7 +2337,7 @@ function mgPanel(soft){
     h+=row('u','m','Ярость',`Крит бьёт ×${Core.ckCritMul(c).toFixed(1)}`,c.up.m,Core.CK_UP.m.max);
     h+=row('u','g','Жажда душ','Больше душ за каждого врага',c.up.g,Core.CK_UP.g.max);
   }else if(mg.tab==='sk'){
-    const info={d:`Следующие ${10+2*c.sk.d} тапов бьют ×2. Перезарядка 25 с`,a:`Герой сам бьёт ${(10+0.5*c.sk.a).toFixed(1).replace('.0','')} с, ${Core.CK_AUTO_RATE} ударов в секунду, каждый в ${(1+0.05*c.sk.a).toFixed(2).replace(/0$/,'')} раза сильнее тапа. Перезарядка 45 с`,f:`Удар в ${20+3*c.sk.f} раз сильнее тапа. Перезарядка 30 с`,s:`Удар в ${8+2*c.sk.s} раз сильнее тапа и +10 с на босса. Перезарядка 35 с`};
+    const info={d:`Все ваши тапы бьют ×2 в течение ${(6+0.3*c.sk.d).toFixed(1).replace('.0','')} с. Перезарядка 25 с`,a:`Герой сам бьёт ${(10+0.5*c.sk.a).toFixed(1).replace('.0','')} с, ${Core.CK_AUTO_RATE} ударов в секунду, каждый в ${(1+0.05*c.sk.a).toFixed(2).replace(/0$/,'')} раза сильнее тапа. Перезарядка 45 с`,f:`Удар в ${20+3*c.sk.f} раз сильнее тапа. Перезарядка 30 с`,s:`Удар в ${8+2*c.sk.s} раз сильнее тапа и +10 с на босса. Перезарядка 35 с`};
     ['d','a','f','s'].forEach(x=>{h+=row('s',x,Core.CK_SK[x].t,info[x],c.sk[x],Core.CK_SK[x].max);});
   }else{
     const g=Math.max(0,Math.floor((c.mx-15)/10));

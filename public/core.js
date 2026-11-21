@@ -1373,9 +1373,11 @@ function ckStep(c, b, now, loc) {
     while (c.hp <= 0 && g++ < 400) { const left = c.hp; kill(); c.hp = ckHpOf(c.st, ckBoss(c)) + left; }
   };
   const base = ckTap(c), cc = ckCritCh(c), cm = ckCritMul(c);
-  const tapHit = (mult) => { let d = base * (mult || 1); if (c.dbl > 0) { c.dbl--; d *= 2; } if (ckRng(c.n++) < cc) d *= cm; hit(Math.round(d)); };
-  if (use.d) c.dbl += (10 + 2 * c.sk.d) * use.d;
-  for (let i = 0; i < taps; i++) tapHit();
+  const tapHit = (mult) => { let d = base * (mult || 1); if (ckRng(c.n++) < cc) d *= cm; hit(Math.round(d)); };
+  if (use.d) c.dbl = Math.min(600, (c.dbl || 0) + use.d * Math.round(13 * (6 + 0.3 * c.sk.d)));
+  const td = Math.max(0, Math.min(taps, b.td | 0, c.dbl || 0));
+  for (let i = 0; i < taps; i++) tapHit(i < td ? 2 : 1);
+  c.dbl = Math.max(0, (c.dbl || 0) - td);
   if (use.a) c.auto = Math.min(900, (c.auto || 0) + use.a * Math.round(CK_AUTO_RATE * (10 + 0.5 * c.sk.a)));
   { let ah = Math.max(0, Math.min(400, b.ah | 0)); ah = Math.min(ah, c.auto || 0); if (!loc) ah = Math.min(ah, Math.ceil((CK_AUTO_RATE + 1) * span / 1000) + 6);
     const am = 1 + 0.05 * c.sk.a; for (let i = 0; i < ah; i++) tapHit(am); c.auto = Math.max(0, (c.auto || 0) - ah); }
