@@ -505,25 +505,25 @@ canvas.pic[data-b="hall"],canvas.pic[data-b="barracks"],canvas.pic[data-b="ironm
 canvas.pic[data-b="farm"],canvas.pic[data-b="sawmill"]{animation:bldSway 6s ease-in-out infinite}
 @media (prefers-reduced-motion:reduce){.bossart img,.bossart::before,canvas.pic[data-b]{animation:none!important}}
 
-#mg{position:fixed;inset:0;z-index:30;background:radial-gradient(ellipse at 50% 20%,#2a1740,#0b0710 70%)}
-.mgw{position:relative;height:100%;max-width:520px;margin:0 auto;overflow:hidden;user-select:none;-webkit-user-select:none;touch-action:manipulation}.mgbody{position:absolute;left:17.5%;right:17.5%;top:15.5%;bottom:18%;display:flex;flex-direction:column;gap:5px;z-index:1;min-height:0}
-.mgtop{display:flex;align-items:center;justify-content:space-between;gap:6px}.mgtop .btn{padding:5px 6px;font-size:11px}.mgsl{font-size:11px;color:#d9b8ff;white-space:nowrap;margin-right:6px}
+#mg{position:fixed;inset:0;z-index:30;background:radial-gradient(ellipse at 50% 20%,#2a1740,#0b0710 70%);display:flex;align-items:center;justify-content:center}
+.mgw{position:relative;width:min(100vw,calc(100dvh*.5178));aspect-ratio:900/1738;margin:0 auto;overflow:hidden;user-select:none;-webkit-user-select:none;touch-action:manipulation}.mgbody{position:absolute;left:17.5%;right:17%;top:26.5%;bottom:7.5%;display:flex;flex-direction:column;gap:5px;z-index:1;min-height:0}
+.mgtop{display:flex;align-items:center;justify-content:center}.mgtop .btn{padding:5px 6px;font-size:11px}.mgsl{position:absolute;right:6px;top:6px;z-index:3;background:#15101ccc;border-radius:8px;padding:4px 8px;font-size:12px;color:#d9b8ff;white-space:nowrap}.mgx{position:absolute;left:6px;top:6px;z-index:3;background:#15101ccc;padding:4px 8px;font-size:12px}
 .mgstage{position:relative;flex:1;min-height:0;touch-action:none;cursor:pointer}
-.mgin{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 60%,#3b2255,#120a1c 75%);overflow:hidden;border-radius:10px}
-.mgmon{max-width:100%;max-height:92%;object-fit:contain;filter:drop-shadow(0 6px 10px #000a);pointer-events:none;transform-origin:50% 90%}.mgmon.bossm{max-height:100%}.mgb .btn{min-width:46px;padding:6px 6px;color:#fff}.mgb .btn.off{opacity:.6}
-.mgmon.hit{animation:mgh .12s}@keyframes mgh{40%{transform:scale(.94) rotate(-1.5deg)}}
+.mgin{position:absolute;inset:0;display:flex;align-items:flex-end;justify-content:center;background:#120a1c center/cover no-repeat;overflow:hidden;border-radius:10px}
+.mgfl{position:absolute;width:84px;height:84px;margin:-42px 0 0 -42px;border-radius:50%;background:radial-gradient(circle,#fffbe0 0,#ffd36b 28%,#ff8a2a66 55%,transparent 72%);pointer-events:none;animation:mgfl .26s ease-out forwards}@keyframes mgfl{0%{transform:scale(.3);opacity:1}100%{transform:scale(1.5);opacity:0}}.mgmon{max-width:100%;max-height:96%;object-fit:contain;filter:drop-shadow(0 6px 10px #000a);pointer-events:none;transform-origin:50% 90%}.mgmon.bossm{max-height:100%}.mgb .btn{min-width:46px;padding:6px 6px;color:#fff}.mgb .btn.off{opacity:.6}
+.mgmon.hit{animation:mgh .12s}@keyframes mgh{30%{transform:translateX(5px) scale(.95) rotate(1.5deg)}70%{transform:translateX(-3px) scale(.98)}}
 #mgfx{position:absolute;inset:0;pointer-events:none}.mgf{position:absolute;font:700 18px Georgia,serif;color:#fff1b0;text-shadow:0 0 4px #000,0 1px 2px #000;animation:mgup .7s ease-out forwards;white-space:nowrap}.mgf.big{font-size:22px;color:#ffb347}@keyframes mgup{to{transform:translateY(-46px);opacity:0}}
 .mginfo{display:flex;flex-direction:column;gap:4px;padding:0 6px}.mgnm{text-align:center;font-size:12px;color:#f1e6cc;text-shadow:0 1px 2px #000}
 .mghp{position:relative;height:18px;border-radius:8px;background:#000a;border:1px solid #6a3d8a;overflow:hidden}.mghp i{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(#e0504a,#7a1b18);transition:width .08s}.mghp span{position:absolute;inset:0;text-align:center;font-size:12px;line-height:18px;color:#fff;text-shadow:0 1px 2px #000}
 .mgbt{position:relative;height:8px;border-radius:5px;background:#000a;overflow:hidden}.mgbt i{display:block;height:100%;background:linear-gradient(#ffd36b,#c27a1a)}
-.mgfr{position:absolute;top:0;left:-7%;width:114%;height:100%;pointer-events:none;z-index:2}
+.mgfr{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:2}
 .mgbadge{background:#15101cdd;border:1px solid #b58a3c;border-radius:12px;padding:1px 12px;text-align:center;line-height:1.1;color:#f1e6cc}.mgbadge span{font-size:9px;display:block;text-transform:uppercase;letter-spacing:.1em}.mgbadge b{font:700 18px Georgia,serif;color:#e8c36b}
 .mgfarm{position:absolute;right:6px;bottom:6px;z-index:3;padding:5px 9px;font-size:12px;border-radius:10px;border:1px solid #b58a3c;background:#15101cdd;color:#f1e6cc}.mgfarm.on{background:#5a3a10}
 .mgsk{display:flex;gap:8px;justify-content:center}
-.mgs{position:relative;width:56px;height:56px;padding:0;border:0;background:none;border-radius:50%}.mgs img{width:100%;height:100%;display:block}.mgs.cd img{filter:grayscale(.85) brightness(.55)}
+.mgs{position:relative;width:52px;height:52px;padding:0;border:0;background:none;border-radius:50%}.mgs img{width:100%;height:100%;display:block}.mgs.cd img{filter:grayscale(.85) brightness(.55)}
 .mgs b{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:700 22px Georgia,serif;color:#fff;text-shadow:0 0 5px #000}.mgs em{position:absolute;right:-2px;bottom:-2px;min-width:20px;padding:0 4px;border-radius:10px;background:#15101c;border:1px solid #b58a3c;font:700 11px/18px sans-serif;color:#f1e6cc;text-align:center}
-.mgtabs{display:flex;gap:5px}.mgtabs button{flex:1;padding:6px 1px;border-radius:8px;border:1px solid #4a3a66;background:#1a1226;color:#cdbfe0;font-size:11px}.mgtabs button.on{background:#4a2c70;color:#fff;border-color:#b58a3c}
-.mgpanel{flex:0 0 auto;height:min(20dvh,160px);overflow-y:auto;overscroll-behavior:contain;background:#120c1b;border:1px solid #3a2c52;border-radius:10px;padding:6px 8px}
+.mgtabs{display:flex;gap:5px}.mgtabs button{flex:1;min-width:0;padding:6px 0;white-space:nowrap;border-radius:8px;border:1px solid #4a3a66;background:#1a1226;color:#cdbfe0;font-size:10.5px}.mgtabs button.on{background:#4a2c70;color:#fff;border-color:#b58a3c}
+.mgpanel{flex:0 0 auto;height:min(16dvh,125px);overflow-y:auto;overscroll-behavior:contain;background:#120c1b;border:1px solid #3a2c52;border-radius:10px;padding:6px 8px}
 .mgh{font-size:12px;color:#cdbfe0;margin:2px 0 6px}.mgr{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:7px 0;border-top:1px solid #2a2040}.mgr.col{flex-direction:column;align-items:stretch}.mgrt p{margin:2px 0 0;font-size:12px;color:#b9abd0}.mgrt b{font-size:14px;color:#f1e6cc}.mgl{font-size:12px;color:#e8c36b}.mgb{display:flex;gap:5px;flex-shrink:0}
 #ad{position:fixed;inset:0;z-index:40;background:#000c;display:flex;align-items:center;justify-content:center;padding:12px}.adw{position:relative;width:min(94vw,86dvh,520px)}.adw img[data-act]{width:100%;display:block;border-radius:12px;cursor:pointer;box-shadow:0 0 40px #8a3bd9aa;animation:adp 1.8s ease-in-out infinite}@keyframes adp{50%{transform:scale(1.015)}}.adx{position:absolute;right:2%;top:2%;width:34px;height:34px;border-radius:50%;border:1px solid #b58a3c;background:#15101cdd;color:#f1e6cc;font-size:16px}
 .mgcard{display:flex;gap:10px;align-items:center;padding:10px;margin:8px 0;border:1px solid var(--line);border-radius:10px;background:var(--surface2);cursor:pointer}.mgcard img{width:74px;height:74px;object-fit:cover;border-radius:8px}.mgemo{font-size:40px;width:74px;text-align:center}.mgcard p{margin:2px 0 6px}
@@ -2233,15 +2233,15 @@ document.addEventListener('change',e=>{const t=e.target;if(t&&t.dataset&&t.datas
 /* ---------- мини-игра «Нашествие нечести» ---------- */
 const MGN=['Скелет-страж','Проклятый клинок','Щитоносец','Жрец тьмы','Костяной берсерк','Рыцарь бездны','Рогатый палач','Костяной колосс','Королева нечисти','Владыка нечести'];
 const MGSK={d:['sk-d','Двойной удар','Следующие тапы бьют вдвое сильнее'],a:['sk-a','Автобой','Герой сам бьёт врага без остановки'],f:['sk-f','Огненный шар','Мощный разовый удар огнём'],s:['sk-s','Удар щитом','Сильный удар, оглушает босса: +10 секунд']};
-const mg={open:false,loc:null,pend:null,inflight:false,tab:'up',bt:0,btMax:30,btKey:'',autoQ:0,lastFlush:0,lastBk:0,fx:[],tm:null,fl:0};
+const mg={poseT:0,pose:'',lastBg:'',open:false,loc:null,pend:null,inflight:false,tab:'up',bt:0,btMax:30,btKey:'',autoQ:0,lastFlush:0,lastBk:0,fx:[],tm:null,fl:0};
 function K(n){n=Math.floor(n);if(n<1e4)return String(n);const u=['','K','M','B','T','Qa','Qi','Sx','Sp','Oc'];let i=0,x=n;while(x>=1000&&i<u.length-1){x/=1000;i++;}return (x<10?x.toFixed(2):x<100?x.toFixed(1):Math.floor(x))+u[i];}
 const mgBlank=()=>({taps:0,d:0,a:0,f:0,s:0,fl:0});
 function mgImg(c){const boss=Core.ckBoss(c);if(boss){const bi=c.st/10-1;return {src:6+(bi%5),boss:1,hue:Math.floor(bi/5)*70,name:MGN[5+(bi%5)]};}const i=(c.st*3+c.k)%5;return {src:i+1,boss:0,hue:Math.floor((c.st-1)/10)*28,name:MGN[i]};}
 function mgOpen(){
   if(!S)return;closeModal();mg.open=true;ui.mgOpen=true;mg.loc=JSON.parse(JSON.stringify(S.clk));mg.pend=mgBlank();mg.autoQ=0;mg.btKey='';mg.lastBk=S.clk.bk;
   const m=$('mg');m.hidden=false;
-  m.innerHTML=`<div class="mgw"><img class="mgfr" src="/img/ck-frame-full.webp?v=1" alt=""><div class="mgbody"><div class="mgtop"><button class="btn small ghost" data-m="x" type="button">‹ Выйти</button><div class="mgbadge" id="mgbadge"></div><div class="mgsl" id="mgsl"></div></div>
-  <div class="mgstage" id="mgstage"><div class="mgin"><img id="mgmon" class="mgmon" alt=""><div id="mgfx"></div></div><button class="mgfarm" id="mgfarm" data-m="farm" type="button"></button></div>
+  m.innerHTML=`<div class="mgw"><img class="mgfr" src="/img/ck-frame2.webp?v=1" alt=""><div class="mgbody"><div class="mgtop"><div class="mgbadge" id="mgbadge"></div></div>
+  <div class="mgstage" id="mgstage"><div class="mgin" id="mgin"><img id="mgmon" class="mgmon" alt=""><div id="mgfx"></div></div><button class="btn small ghost mgx" data-m="x" type="button">‹ Выйти</button><div class="mgsl" id="mgsl"></div><button class="mgfarm" id="mgfarm" data-m="farm" type="button"></button></div>
   <div class="mginfo"><div class="mgnm" id="mgnm"></div><div class="mgbt" id="mgbt" hidden><i id="mgbtf"></i></div><div class="mghp"><i id="mghpf"></i><span id="mghpt"></span></div></div>
   <div class="mgsk" id="mgsk"></div>
   <div class="mgtabs"><button data-m="tab" data-v="up" type="button">Улучшения</button><button data-m="tab" data-v="sk" type="button">Навыки</button><button data-m="tab" data-v="rb" type="button">Возрождение</button></div>
@@ -2263,12 +2263,19 @@ async function mgAct(a,arg){
   await mgFlush(true);while(mg.inflight)await new Promise(r=>setTimeout(r,60));
   try{const j=await call('POST','/api/act',{a,arg});apply(j);mgResync();}catch(e){toast(e.message||'Не получилось');}
 }
+function mgPose(){
+  const m=$('mgmon');if(!m)return;const base=m.getAttribute('data-s');if(!base)return;
+  mg.flip=!mg.flip;mg.pose=mg.flip?'a':'b';m.src=base.replace('.webp',mg.pose+'.webp');
+  clearTimeout(mg.poseT);mg.poseT=setTimeout(()=>{mg.pose='';const mm=$('mgmon');if(mm&&mm.getAttribute('data-s'))mm.src=mm.getAttribute('data-s');},130);
+}
+function mgFlash(x,y){const fx=$('mgfx');if(!fx)return;const r=fx.getBoundingClientRect();const d=document.createElement('i');d.className='mgfl';d.style.left=(x-r.left)+'px';d.style.top=(y-r.top)+'px';fx.appendChild(d);setTimeout(()=>d.remove(),280);}
+function mgBgOf(c){if(Core.ckBoss(c)&&!c.farm){const bn=c.st/10-1;return [6,7,10,9,11][bn%5];}return (c.st-1)%12;}
 function mgHit(x,y){
   const c=mg.loc,now=Core.now();
   const before=c.hp;const nb=c.n;const dbl=c.dbl>0;
   Core.ckStep(c,{taps:1},now,true);mg.pend.taps++;
   const crit=false;
-  mgFloat(x,y,'',0);
+  mgFloat(x,y,'',0);mgPose();mgFlash(x,y);
   const m=$('mgmon');if(m){m.classList.remove('hit');void m.offsetWidth;m.classList.add('hit');}
 }
 function mgFloat(x,y,txt,big){
@@ -2295,7 +2302,7 @@ function mgSkills(){
 }
 function mgTick(){
   if(!mg.open||!mg.loc)return;const c=mg.loc,now=Core.now();
-  if(mg.autoQ>0){const n=Math.min(mg.autoQ,4);mg.autoQ-=n;Core.ckStep(c,{taps:n},now,true);const fx=$('mgstage');if(fx&&Math.random()<.5){const r=fx.getBoundingClientRect();mgFloat(r.left+r.width*(.3+Math.random()*.4),r.top+r.height*.5,'',0);}const m=$('mgmon');if(m){m.classList.remove('hit');void m.offsetWidth;m.classList.add('hit');}}
+  if(mg.autoQ>0){const n=Math.min(mg.autoQ,4);mg.autoQ-=n;Core.ckStep(c,{taps:n},now,true);const fx=$('mgstage');if(fx&&Math.random()<.6){const r=fx.getBoundingClientRect();const ax=r.left+r.width*(.3+Math.random()*.4),ay=r.top+r.height*(.3+Math.random()*.3);mgFloat(ax,ay,'',0);mgFlash(ax,ay);mgPose();}const m=$('mgmon');if(m){m.classList.remove('hit');void m.offsetWidth;m.classList.add('hit');}}
   const key=c.st+':'+(Core.ckBoss(c)&&!c.farm?1:0);
   if(key!==mg.btKey){mg.btKey=key;mg.bt=Core.ckBoss(c)&&!c.farm?mg.btMax:0;}
   if(Core.ckBoss(c)&&!c.farm){mg.bt-=0.1;if(mg.bt<=0){mg.pend.fl=1;Core.ckStep(c,{fl:1},now,true);toast('Босс оказался сильнее. Отступаем и копим силы');mg.btKey='';mgFlush();mgPanel();}}
@@ -2309,7 +2316,8 @@ function mgDraw(force){
   const c=mg.loc;if(!c)return;const boss=Core.ckBoss(c),im=mgImg(c);
   const hpMax=Core.ckHpOf(c.st,boss),hp=Math.max(0,c.hp==null?hpMax:c.hp);
   const sl=$('mgsl');if(sl)sl.innerHTML='Души: <b>'+K(c.souls)+'</b>';
-  const m=$('mgmon');if(m){const s='/img/ck-m'+im.src+'.webp?v=1';if(m.getAttribute('data-s')!==s){m.setAttribute('data-s',s);m.src=s;}m.style.filter=im.hue?`hue-rotate(${im.hue}deg)`:'';m.classList.toggle('bossm',!!boss);}
+  const m=$('mgmon');if(m){const s='/img/ck-m'+im.src+'.webp?v=2';if(m.getAttribute('data-s')!==s){m.setAttribute('data-s',s);m.src=s;['a','b'].forEach(q=>{const pi=new Image();pi.src=s.replace('.webp',q+'.webp');});}m.style.filter=im.hue?`hue-rotate(${im.hue}deg)`:'';m.classList.toggle('bossm',!!boss);}
+  const bgk=mgBgOf(c);const bgs='url(/img/ck-bg'+bgk+'.webp?v=1)';const gi=$('mgin');if(gi&&mg.lastBg!==bgs){mg.lastBg=bgs;gi.style.backgroundImage='linear-gradient(#0a051455,#0a051455),'+bgs;gi.style.backgroundPosition='center,66% 50%';gi.style.backgroundSize='cover,cover';const nx=new Image();nx.src='/img/ck-bg'+((c.st)%12)+'.webp?v=1';}
   const nm=$('mgnm');if(nm)nm.textContent=(boss?'БОСС: ':'')+im.name+(c.k||!boss?` · ${boss?'':(c.k+1)+'/'+Core.CK_PER}`:'');
   const f=$('mghpf');if(f)f.style.width=Math.max(0,Math.min(100,hp/hpMax*100))+'%';const t=$('mghpt');if(t)t.textContent=K(hp)+' / '+K(hpMax);
   const bb=$('mgbt');if(bb){const on=boss&&!c.farm;bb.hidden=!on;if(on){$('mgbtf').style.width=Math.max(0,Math.min(100,mg.bt/mg.btMax*100))+'%';}}
