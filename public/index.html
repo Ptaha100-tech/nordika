@@ -520,7 +520,7 @@ canvas.pic[data-b="farm"],canvas.pic[data-b="sawmill"]{animation:bldSway 6s ease
 .mgbadge{position:absolute;left:2px;top:0;width:72px;height:98px;z-index:3;pointer-events:none;background:url(/img/ck-badge2.webp?v=1) center/100% 100% no-repeat;display:flex;flex-direction:column;align-items:center;justify-content:center;padding-top:4px;line-height:1;color:#f1e6cc}.mgbadge span{font-size:7px;text-transform:uppercase;letter-spacing:.08em}.mgbadge b{font:700 18px Georgia,serif;color:#e8c36b}
 .mgfarm{position:absolute;right:6px;bottom:6px;z-index:3;padding:5px 9px;font-size:12px;border-radius:10px;border:1px solid #b58a3c;background:#15101cdd;color:#f1e6cc}.mgfarm.on{background:#5a3a10}
 .mgsk{display:flex;gap:8px;justify-content:center}
-.mgs{position:relative;width:56px;height:56px;padding:0;border:0;background:none;border-radius:50%}.mgs img{width:100%;height:100%;display:block}.mgs.cd img{filter:grayscale(.85) brightness(.55)}
+.mgs{position:relative;width:56px;height:56px;padding:0;border:0;background:none;border-radius:50%}.mgs img{width:100%;height:100%;display:block}.mgs.cd img{filter:grayscale(.85) brightness(.55)}.mgs.on img{filter:drop-shadow(0 0 8px #ffd36b) brightness(1.15)}
 .mgs b{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:700 22px Georgia,serif;color:#fff;text-shadow:0 0 5px #000}.mgs em{position:absolute;right:-2px;bottom:-2px;min-width:20px;padding:0 4px;border-radius:10px;background:#15101c;border:1px solid #b58a3c;font:700 11px/18px sans-serif;color:#f1e6cc;text-align:center}
 .mgtabs{display:flex;gap:5px}.mgtabs button{flex:1;min-width:0;padding:6px 0;white-space:nowrap;border-radius:8px;border:1px solid #4a3a66;background:#1a1226;color:#cdbfe0;font-size:10.5px}.mgtabs button.on{background:#4a2c70;color:#fff;border-color:#b58a3c}
 .mgpanel{flex:0 0 auto;height:min(19dvh,160px);overflow-y:auto;overscroll-behavior:contain;background:#120c1b;border:1px solid #3a2c52;border-radius:10px;padding:6px 8px}
@@ -2232,10 +2232,10 @@ function act2(a,arg){return act(a,arg);}
 document.addEventListener('change',e=>{const t=e.target;if(t&&t.dataset&&t.dataset.tn){const k=t.dataset.tn;ui.tn[k]=Math.max(1,Math.min(maxBatch()||1,parseInt(t.value,10)||1));render();}});
 /* ---------- мини-игра «Нашествие нечести» ---------- */
 const MGN=['Скелет-страж','Проклятый клинок','Щитоносец','Жрец тьмы','Костяной берсерк','Рыцарь бездны','Рогатый палач','Костяной колосс','Королева нечисти','Владыка нечести'];
-const MGSK={d:['sk-d','Двойной удар','Следующие тапы бьют вдвое сильнее'],a:['sk-a','Автобой','Герой сам бьёт врага без остановки'],f:['sk-f','Огненный шар','Мощный разовый удар огнём'],s:['sk-s','Удар щитом','Сильный удар, оглушает босса: +10 секунд']};
+const MGSK={d:['sk-d','Двойной удар','Следующие тапы бьют вдвое сильнее'],a:['sk-a','Автобой','Герой сам бьёт врага несколько секунд'],f:['sk-f','Огненный шар','Мощный разовый удар огнём'],s:['sk-s','Удар щитом','Сильный удар, оглушает босса: +10 секунд']};
 const mg={poseT:0,pose:'',lastBg:'',open:false,loc:null,pend:null,inflight:false,tab:'up',bt:0,btMax:30,btKey:'',autoQ:0,lastFlush:0,lastBk:0,fx:[],tm:null,fl:0};
 function K(n){n=Math.floor(n);if(n<1e4)return String(n);const u=['','K','M','B','T','Qa','Qi','Sx','Sp','Oc'];let i=0,x=n;while(x>=1000&&i<u.length-1){x/=1000;i++;}return (x<10?x.toFixed(2):x<100?x.toFixed(1):Math.floor(x))+u[i];}
-const mgBlank=()=>({taps:0,d:0,a:0,f:0,s:0,fl:0});
+const mgBlank=()=>({taps:0,d:0,a:0,f:0,s:0,fl:0,ah:0});
 function mgImg(c){const boss=Core.ckBoss(c);if(boss){const bi=c.st/10-1;return {src:6+(bi%5),boss:1,hue:Math.floor(bi/5)*70,name:MGN[5+(bi%5)]};}const i=(c.st*3+c.k)%5;return {src:i+1,boss:0,hue:Math.floor((c.st-1)/10)*28,name:MGN[i]};}
 function mgOpen(){
   if(!S)return;closeModal();mg.open=true;ui.mgOpen=true;mg.loc=JSON.parse(JSON.stringify(S.clk));mg.pend=mgBlank();mg.autoQ=0;mg.btKey='';mg.lastBk=S.clk.bk;
@@ -2250,14 +2250,14 @@ function mgOpen(){
 }
 async function mgClose(){clearInterval(mg.tm);mg.open=false;ui.mgOpen=false;$('mg').hidden=true;$('mg').innerHTML='';try{await mgFlush(true);}catch(e){}render();}
 async function mgFlush(force){
-  if(mg.inflight)return;const p=mg.pend;if(!(p.taps||p.d||p.a||p.f||p.s||p.fl))return;
+  if(mg.inflight)return;const p=mg.pend;if(!(p.taps||p.d||p.a||p.f||p.s||p.fl||p.ah))return;
   mg.pend=mgBlank();mg.inflight=true;mg.lastFlush=Date.now();
   const send=Object.assign({},p);send.taps=Math.min(500,p.taps);
   try{const j=await call('POST','/api/act',{a:'ckb',arg:send});apply(j);mgResync();}
-  catch(e){const q=mg.pend;q.taps+=p.taps;q.fl=q.fl||p.fl;if(e&&e.status===401)logout(true);}
+  catch(e){const q=mg.pend;q.taps+=p.taps;q.ah+=p.ah;q.a+=p.a;q.d+=p.d;q.f+=p.f;q.s+=p.s;q.fl=q.fl||p.fl;if(e&&e.status===401)logout(true);}
   finally{mg.inflight=false;}
 }
-function mgResync(){mg.loc=JSON.parse(JSON.stringify(S.clk));const p=mg.pend;if(p.taps||p.fl||p.d||p.a||p.f||p.s)Core.ckStep(mg.loc,Object.assign({},p,{a:0}),Core.now(),true);mg.autoQ=0;if(mg.open){mgSkills();mgPanel();}}
+function mgResync(){mg.loc=JSON.parse(JSON.stringify(S.clk));const p=mg.pend;if(p.taps||p.fl||p.d||p.a||p.f||p.s||p.ah)Core.ckStep(mg.loc,Object.assign({},p),Core.now(),true);if(mg.open){mgSkills();mgPanel();}}
 async function mgAct(a,arg){
   await mgFlush(true);while(mg.inflight)await new Promise(r=>setTimeout(r,60));
   try{const j=await call('POST','/api/act',{a,arg});apply(j);mgResync();}catch(e){toast(e.message||'Не получилось');}
@@ -2287,7 +2287,7 @@ function mgFloat(x,y,txt,big){
 function mgUse(x){
   const c=mg.loc,now=Core.now();if((c.cd[x]||0)>now)return;
   const sk=Core.CK_SK[x];
-  if(x==='a'){mg.autoQ=30+5*c.sk.a;c.cd.a=now+sk.cd;mg.pend.a++;toast('Автобой!');}
+  if(x==='a'){Core.ckStep(c,{a:1},now,true);mg.pend.a++;toast('Автобой! Герой бьёт сам');}
   else{Core.ckStep(c,{[x]:1},now,true);mg.pend[x]++;}
   if(x==='s'){mg.bt=Math.min(mg.bt+10,mg.btMax+10);}
   if(x==='f'){mgFloat(window.innerWidth/2,window.innerHeight*0.35,'🔥 −'+K(Math.round(Core.ckTap(c)*(20+3*c.sk.f))),1);}
@@ -2297,16 +2297,16 @@ function mgUse(x){
 }
 function mgSkills(){
   const el=$('mgsk');if(!el)return;const c=mg.loc,now=Core.now();
-  el.innerHTML=['d','a','f','s'].map(x=>{const left=Math.max(0,((c.cd[x]||0)-now)/1000);return `<button class="mgs${left>0?' cd':''}" data-m="use" data-v="${x}" type="button"><img src="/img/${MGSK[x][0]}.webp?v=1" alt=""><b>${left>0?Math.ceil(left):''}</b><em>${c.sk[x]}</em></button>`;}).join('');
+  el.innerHTML=['d','a','f','s'].map(x=>{const left=Math.max(0,((c.cd[x]||0)-now)/1000);const on=x==='a'&&(c.auto||0)>0;return `<button class="mgs${left>0?' cd':''}${on?' on':''}" data-m="use" data-v="${x}" type="button"><img src="/img/${MGSK[x][0]}.webp?v=1" alt=""><b>${on?Math.ceil(c.auto/Core.CK_AUTO_RATE)+'с':left>0?Math.ceil(left):''}</b><em>${c.sk[x]}</em></button>`;}).join('');
 }
 function mgTick(){
   if(!mg.open||!mg.loc)return;const c=mg.loc,now=Core.now();
-  if(mg.autoQ>0){const n=Math.min(mg.autoQ,4);mg.autoQ-=n;Core.ckStep(c,{taps:n},now,true);const fx=$('mgstage');if(fx&&Math.random()<.6){const r=fx.getBoundingClientRect();const ax=r.left+r.width*(.3+Math.random()*.4),ay=r.top+r.height*(.3+Math.random()*.3);mgFloat(ax,ay,'',0);mgFlash(ax,ay);mgPose();}const m=$('mgmon');if(m){m.classList.remove('hit');void m.offsetWidth;m.classList.add('hit');}}
-  const key=c.st+':'+(Core.ckBoss(c)&&!c.farm?1:0);
-  if(key!==mg.btKey){mg.btKey=key;mg.bt=Core.ckBoss(c)&&!c.farm?mg.btMax:0;}
-  if(Core.ckBoss(c)&&!c.farm){mg.bt-=0.1;if(mg.bt<=0){mg.pend.fl=1;Core.ckStep(c,{fl:1},now,true);toast('Босс оказался сильнее. Отступаем и копим силы');mg.btKey='';mgFlush();mgPanel();}}
+  if((c.auto||0)>0){mg.acc=(mg.acc||0)+Core.CK_AUTO_RATE/10;const n=Math.min(Math.floor(mg.acc),c.auto);if(n>0){mg.acc-=n;Core.ckStep(c,{ah:n},now,true);mg.pend.ah+=n;const fx=$('mgstage');if(fx){const r=fx.getBoundingClientRect();const ax=r.left+r.width*(.3+Math.random()*.4),ay=r.top+r.height*(.3+Math.random()*.35);mgFloat(ax,ay,'',0);mgFlash(ax,ay);mgPose();}const m=$('mgmon');if(m){m.classList.remove('hit');void m.offsetWidth;m.classList.add('hit');}}}
+  const key=c.st+':'+(Core.ckBoss(c)?1:0);
+  if(key!==mg.btKey){mg.btKey=key;mg.bt=Core.ckBoss(c)?mg.btMax:0;}
+  if(Core.ckBoss(c)){mg.bt-=0.1;if(mg.bt<=0){mg.pend.fl=1;Core.ckStep(c,{fl:1},now,true);toast('Босс оказался сильнее. Отступаем и копим силы');mg.btKey='';mgFlush();mgPanel();}}
   if(c.bk>mg.lastBk){mg.lastBk=c.bk;mgFloat(window.innerWidth/2,window.innerHeight*.3,'БОСС ПОВЕРЖЕН!',1);mgFlush();}
-  if(Date.now()-mg.lastFlush>3000&&(mg.pend.taps||mg.pend.d||mg.pend.a||mg.pend.f||mg.pend.s||mg.pend.fl))mgFlush();
+  if(Date.now()-mg.lastFlush>3000&&(mg.pend.taps||mg.pend.d||mg.pend.a||mg.pend.f||mg.pend.s||mg.pend.fl||mg.pend.ah))mgFlush();
   mgDraw();
   if((mg.tick=(mg.tick||0)+1)%5===0)mgSkills();
   if(mg.tick%10===0)mgPanel(true);
@@ -2319,7 +2319,7 @@ function mgDraw(force){
   const bgk=mgBgOf(c);const bgs='url(/img/ck-bg'+bgk+'.webp?v=1)';const gi=$('mgin');if(gi&&mg.lastBg!==bgs){mg.lastBg=bgs;gi.style.backgroundImage='linear-gradient(#0a051455,#0a051455),'+bgs;gi.style.backgroundPosition='center,66% 50%';gi.style.backgroundSize='cover,cover';const nx=new Image();nx.src='/img/ck-bg'+((c.st)%12)+'.webp?v=1';}
   const nm=$('mgnm');if(nm)nm.textContent=(boss?'БОСС: ':'')+im.name+(c.k||!boss?` · ${boss?'':(c.k+1)+'/'+Core.CK_PER}`:'');
   const f=$('mghpf');if(f)f.style.width=Math.max(0,Math.min(100,hp/hpMax*100))+'%';const t=$('mghpt');if(t)t.textContent=K(hp)+' / '+K(hpMax);
-  const bb=$('mgbt');if(bb){const on=boss&&!c.farm;bb.hidden=!on;if(on){$('mgbtf').style.width=Math.max(0,Math.min(100,mg.bt/mg.btMax*100))+'%';}}
+  const bb=$('mgbt');if(bb){const on=!!boss;bb.hidden=!on;if(on){$('mgbtf').style.width=Math.max(0,Math.min(100,mg.bt/mg.btMax*100))+'%';}}
   const bd=$('mgbadge');if(bd)bd.innerHTML='<span>Этап</span><b>'+c.st+'</b>';
   const fb=$('mgfarm');if(fb){fb.textContent=c.farm?'Фарм ⏸':'Вперёд ▶';fb.classList.toggle('on',!!c.farm);}
 }
@@ -2336,7 +2336,7 @@ function mgPanel(soft){
     h+=row('u','m','Ярость',`Крит бьёт ×${Core.ckCritMul(c).toFixed(1)}`,c.up.m,Core.CK_UP.m.max);
     h+=row('u','g','Жажда душ','Больше душ за каждого врага',c.up.g,Core.CK_UP.g.max);
   }else if(mg.tab==='sk'){
-    const info={d:`Следующие ${10+2*c.sk.d} тапов бьют ×2. Перезарядка 25 с`,a:`${30+5*c.sk.a} ударов сами. Перезарядка 45 с`,f:`Удар в ${20+3*c.sk.f} раз сильнее тапа. Перезарядка 30 с`,s:`Удар в ${8+2*c.sk.s} раз сильнее тапа и +10 с на босса. Перезарядка 35 с`};
+    const info={d:`Следующие ${10+2*c.sk.d} тапов бьют ×2. Перезарядка 25 с`,a:`Герой сам бьёт ${(10+0.5*c.sk.a).toFixed(1).replace('.0','')} с, ${Core.CK_AUTO_RATE} ударов в секунду, каждый в ${(1+0.05*c.sk.a).toFixed(2).replace(/0$/,'')} раза сильнее тапа. Перезарядка 45 с`,f:`Удар в ${20+3*c.sk.f} раз сильнее тапа. Перезарядка 30 с`,s:`Удар в ${8+2*c.sk.s} раз сильнее тапа и +10 с на босса. Перезарядка 35 с`};
     ['d','a','f','s'].forEach(x=>{h+=row('s',x,Core.CK_SK[x].t,info[x],c.sk[x],Core.CK_SK[x].max);});
   }else{
     const g=Math.max(0,Math.floor((c.mx-15)/10));

@@ -1266,7 +1266,7 @@ function act(a, arg) {
     case 'ckb': ckBatch(arg); break;
     case 'ckbuy': ckBuy(arg); break;
     case 'ckrb': ckRebirth(); break;
-    case 'ckfarm': S.clk.farm = S.clk.farm ? 0 : 1; if (!S.clk.farm) { S.clk.k = 0; } break;
+    case 'ckfarm': { const c = S.clk; if (c.farm) { c.farm = 0; c.k = 0; } else { if (ckBoss(c)) c.st = Math.max(1, c.st - 1); c.farm = 1; c.k = 0; c.hp = null; } break; }
     case 'bpc': if (bpClaim(arg)) toast('Награда получена'); break;
     case 'bpall': bpClaimAll(); break;
     case 'intro': S.introDone = true; break;
@@ -1322,8 +1322,8 @@ function fmtT(sec) {
 /* ---------- кликер «Нашествие нечести» ---------- */
 const CK_UP = { p: { t: 'Сила удара', b: 15, g: 1.17 }, c: { t: 'Меткость', b: 40, g: 1.32, max: 70 }, m: { t: 'Ярость', b: 60, g: 1.3, max: 80 }, g: { t: 'Жажда душ', b: 50, g: 1.27, max: 80 } };
 const CK_SK = { d: { t: 'Двойной удар', b: 150, g: 1.5, cd: 25000, max: 30 }, a: { t: 'Автобой', b: 200, g: 1.5, cd: 45000, max: 30 }, f: { t: 'Огненный шар', b: 180, g: 1.5, cd: 30000, max: 30 }, s: { t: 'Удар щитом', b: 220, g: 1.5, cd: 35000, max: 30 } };
-const CK_PER = 5, CK_BOSS_EVERY = 10, CK_REB_MIN = 25;
-function clkNew() { return { st: 1, mx: 1, k: 0, hp: null, n: 0, dbl: 0, souls: 0, up: { p: 0, c: 0, m: 0, g: 0 }, sk: { d: 1, a: 1, f: 1, s: 1 }, cd: { d: 0, a: 0, f: 0, s: 0 }, seal: 0, rb: 0, t: 0, farm: 0, kills: 0, bk: 0, best: 1, ms: {}, day: '', dsil: 0, dmat: 0, dbp: 0, dh: 0 }; }
+const CK_AUTO_RATE = 8, CK_PER = 5, CK_BOSS_EVERY = 10, CK_REB_MIN = 25;
+function clkNew() { return { st: 1, mx: 1, k: 0, hp: null, n: 0, dbl: 0, souls: 0, up: { p: 0, c: 0, m: 0, g: 0 }, sk: { d: 1, a: 1, f: 1, s: 1 }, cd: { d: 0, a: 0, f: 0, s: 0 }, auto: 0, seal: 0, rb: 0, t: 0, farm: 0, kills: 0, bk: 0, best: 1, ms: {}, day: '', dsil: 0, dmat: 0, dbp: 0, dh: 0 }; }
 function clkFix(c) {
   const n = clkNew(); for (const k in n) if (c[k] === undefined) c[k] = n[k];
   for (const k in n.up) if (!(c.up[k] >= 0)) c.up[k] = 0;
@@ -1357,6 +1357,7 @@ function ckStep(c, b, now, loc) {
     if (ok) c.cd[x] = start + ok * cdm; use[x] = ok;
   }
   c.t = now;
+  if (ckBoss(c) && c.farm) c.farm = 0;
   if (b.fl && ckBoss(c) && !c.farm) { c.st = Math.max(1, c.st - 1); c.farm = 1; c.k = 0; c.hp = null; }
   const kill = () => {
     const boss = ckBoss(c);
@@ -1372,10 +1373,12 @@ function ckStep(c, b, now, loc) {
     while (c.hp <= 0 && g++ < 400) { const left = c.hp; kill(); c.hp = ckHpOf(c.st, ckBoss(c)) + left; }
   };
   const base = ckTap(c), cc = ckCritCh(c), cm = ckCritMul(c);
-  const tapHit = () => { let d = base; if (c.dbl > 0) { c.dbl--; d *= 2; } if (ckRng(c.n++) < cc) d *= cm; hit(Math.round(d)); };
+  const tapHit = (mult) => { let d = base * (mult || 1); if (c.dbl > 0) { c.dbl--; d *= 2; } if (ckRng(c.n++) < cc) d *= cm; hit(Math.round(d)); };
   if (use.d) c.dbl += (10 + 2 * c.sk.d) * use.d;
   for (let i = 0; i < taps; i++) tapHit();
-  if (use.a) { const au = use.a * (30 + 5 * c.sk.a); for (let i = 0; i < au; i++) tapHit(); }
+  if (use.a) c.auto = Math.min(900, (c.auto || 0) + use.a * Math.round(CK_AUTO_RATE * (10 + 0.5 * c.sk.a)));
+  { let ah = Math.max(0, Math.min(400, b.ah | 0)); ah = Math.min(ah, c.auto || 0); if (!loc) ah = Math.min(ah, Math.ceil((CK_AUTO_RATE + 1) * span / 1000) + 6);
+    const am = 1 + 0.05 * c.sk.a; for (let i = 0; i < ah; i++) tapHit(am); c.auto = Math.max(0, (c.auto || 0) - ah); }
   if (use.f) hit(Math.round(base * (20 + 3 * c.sk.f) * use.f));
   if (use.s) hit(Math.round(base * (8 + 2 * c.sk.s) * use.s));
   return res;
@@ -1412,7 +1415,7 @@ function ckRebirth() {
   S.clk = Object.assign(clkNew(), keep); toast('Возрождение! Печатей тьмы: +' + g);
 }
 const API = {
-  CK_UP, CK_SK, CK_PER, CK_BOSS_EVERY, CK_REB_MIN, CK_MS, clkNew, ckStep, ckBoss, ckHpOf, ckTap, ckCritCh, ckCritMul, ckSouls, ckCost, ckMax,
+  CK_UP, CK_SK, CK_AUTO_RATE, CK_PER, CK_BOSS_EVERY, CK_REB_MIN, CK_MS, clkNew, ckStep, ckBoss, ckHpOf, ckTap, ckCritCh, ckCritMul, ckSouls, ckCost, ckMax,
   armyAtk, newItem, giveItem, SLOTS, SLOTK, LOOKS, EQS, slotType, EQ_IL, RARN, EQMAX, BAG_COST, BAG_STEP, eqCap, itemPct, itemName, forgeCost, forgeLvl, scrapOf, eqB, jarlStats, jarlPower, setBonus, jMain, affVal, plusOf, itemPower, AFN, MAXPLUS, TM, SETB,
   heroOn, REC_PRICE, SCROLLS, ENH_P, epicReq, hutCap, wnote, healCost, healSecs, MATS, MATK, STACK, bagUsed, giveMat, MOBS, MINEC, MINE_MIN, MINE_IDS, mineTarget, mineBusy, mineDur,
   RES, RI, B, BORDER, U, WEAK, TECH, QUESTS, MAXL, TMAX, CFG, HOOK, NODE, TIERN, TIER_NEED, MAXT, BP_LV, BP_PTS, BP_PRICE, bpInit, bpLevel, bpEnd, bpRw, bpAddTo, CAMP, campReady, campDone, HSK, HBR, MAXHL, MAXSK, skillPts, jarlTitle, respecCost,
