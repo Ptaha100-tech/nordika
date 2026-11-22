@@ -3,7 +3,7 @@
   'use strict';
   const C = window.Chess, TICK = C.TICK;
   const CCOL = { 1: '#8a8f98', 2: '#4fae5b', 3: '#4a86e0', 4: '#a05be0', 5: '#e8b230' };
-  const st = { on: false, v: null, sel: null, item: -1, tm: 0, busy: false, round: 0, rep: null, tab: 0, shown: 0, rwDone: false };
+  const st = { on: false, v: null, sel: null, item: -1, tm: 0, busy: false, round: 0, rep: null, tab: 0, shown: 0, rwDone: false, shop: true };
   const $c = id => document.getElementById(id);
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const stars = n => '★'.repeat(n || 1);
@@ -17,7 +17,12 @@
 @keyframes chglow{from{opacity:.25}to{opacity:1}}
 .chbd:after{content:"";position:absolute;inset:0;pointer-events:none;z-index:2;background:linear-gradient(115deg,transparent 40%,rgba(180,230,255,.22) 50%,transparent 60%);background-size:250% 100%;animation:chsweep 6s linear infinite}
 @keyframes chsweep{from{background-position:130% 0}to{background-position:-130% 0}}
-.chw{position:relative;z-index:1;max-width:640px;margin:0 auto;padding:6px 2px 14px}#chs.dk .chw{padding-bottom:175px}.chtop,.chpl,.chsy,.chvs{margin-left:4px;margin-right:4px}
+.chw{position:relative;z-index:1;max-width:640px;margin:0 auto;padding:6px 2px 14px}#chs.dk .chw{padding-bottom:175px}#chs.sh .chw{padding-bottom:178px}
+.chsheet{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:min(100vw,640px);z-index:40;box-sizing:border-box;background:rgba(14,11,8,.95);border-top:2px solid #e8b230;border-radius:14px 14px 0 0;padding:6px 6px calc(8px + env(safe-area-inset-bottom,0px));box-shadow:0 -6px 22px rgba(0,0,0,.8);--cw:min(17vw,84px);--chh:calc(var(--cw)*1.15)}
+@keyframes chup2{from{transform:translate(-50%,40px);opacity:0}}
+.chsheet .chbt{margin-top:6px;grid-template-columns:1fr 1fr auto auto}
+.chsheet .chbt .btn{padding:6px 4px;min-height:34px}.chsheet .chshop{margin-top:6px}
+.chpill{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(10px + env(safe-area-inset-bottom,0px));z-index:40;background:#3a2a10;border:2px solid #e8b230;color:#ffe9b0;border-radius:22px;padding:9px 20px;font-weight:800;font-size:15px;font-family:inherit;box-shadow:0 4px 14px #000}.chtop,.chpl,.chsy,.chvs{margin-left:4px;margin-right:4px}
 .chtop{display:flex;align-items:center;gap:6px;margin-bottom:5px}
 .chtop .btn{padding:6px 9px;font-size:13px;min-height:34px}
 .chrd{flex:1;text-align:center;font-weight:700;font-size:15px;line-height:1.15}.chrd small{display:block;font-weight:400;opacity:.8;font-size:12px}
@@ -120,7 +125,7 @@
     if (v.fight && !v.fight.log && old && old.fight && old.fight.log && old.round === v.round) v.fight.log = old.fight.log;
     st.v = v; v.skew = v.now ? (Date.now() - v.now) : 0;
     const changed = !old || old.rev !== v.rev || old.phase !== v.phase || old.round !== v.round || !!old.none !== !!v.none || (v.me && old.me && (old.me.rw !== v.me.rw));
-    if (v.phase === 'prep' && (!old || old.phase !== 'prep' || old.round !== v.round)) { st.sel = null; st.item = -1; stopRep(); if (v.me && v.me.last && old) banner(v.me.last); }
+    if (v.phase === 'prep' && (!old || old.phase !== 'prep' || old.round !== v.round)) { st.sel = null; st.item = -1; st.shop = true; stopRep(); if (v.me && v.me.last && old) banner(v.me.last); }
     if (v.phase === 'combat' && v.fight && v.fight.log && (!st.rep || st.rep.round !== v.round)) startRep(v);
     if (v.phase === 'end' || (v.me && !v.me.alive)) { if (!st.rwDone && v.me && v.me.rw !== undefined) { st.rwDone = true; sync(); } }
     if (changed) draw();
@@ -154,7 +159,7 @@
     const me = v.me; if (!me) return;
     if (v.phase === 'end' || !me.alive) { endScreen(el, v); return; }
     const keepScroll = el.scrollTop;
-    el.classList.toggle('dk', v.phase === 'prep' && (st.sel || st.item >= 0));
+    const inPrep = v.phase === 'prep'; el.classList.toggle('dk', inPrep && !!(st.sel || st.item >= 0)); el.classList.toggle('sh', inPrep && !(st.sel || st.item >= 0) && st.shop);
     el.innerHTML = `<div class="chw">${topBar(v)}${plStrip(v)}${v.phase === 'combat' ? vsBar(v) : ''}${boardHtml(v)}${v.phase === 'prep' ? prepHtml(v) : combatInfo(v)}</div>`;
     el.scrollTop = keepScroll; tickClock();
     if (v.phase === 'combat' && st.rep) st.rep.build();
@@ -197,11 +202,17 @@
     }
     return '';
   }
+  function sheetHtml(v, shop) {
+    const me = v.me;
+    if (st.sel || st.item >= 0) return '';
+    if (!st.shop) return `<button class="chpill" data-c="shopt" type="button">🛒 Магазин · 🪙 ${me.gold}</button>`;
+    return `<div class="chsheet"><div class="chshop">${shop}</div><div class="chbt"><button class="btn" data-c="reroll" type="button">🔄 Обновить · 2🪙</button><button class="btn" data-c="xp" type="button">⬆ Опыт · 5🪙</button><button class="btn ghost" data-c="lock" type="button">${me.lock ? '🔒' : '🔓'}</button><button class="btn ghost" data-c="shopt" type="button">▾</button></div></div>`;
+  }
   function prepHtml(v) {
     const me = v.me;
     const shop = me.shop.map((id, i) => { if (!id) return '<div class="chsc empty"></div>'; const c = C.CARDS[id], no = me.gold < c.c; return `<button class="chsc${no ? ' no' : ''}" style="--cc:${CCOL[c.c]}" data-c="buy" data-i="${i}" type="button"><span class="em">${c.e}</span>${art(id)}<span class="cn">${c.c}</span><span class="tr"><i>${C.TRAITS[c.r].e}</i><i>${C.TRAITS[c.k].e}</i></span><span class="nm">${c.n}</span></button>`; }).join('');
     const onB = me.board.filter(Boolean).length;
-    return `${synHtml(v)}<div class="sm" style="text-align:center">На поле: ${onB} из ${me.lvl} · Ур. ${me.lvl}${me.xpn ? ` · опыт ${me.xp}/${me.xpn}` : ' (максимум)'}</div>${me.xpn ? `<div class="chxp"><i style="width:${Math.min(100, me.xp / me.xpn * 100)}%"></i></div>` : ''}${me.items.length ? '<div class="chit">' : '<div class="chit" hidden>'}${me.items.map((q, i) => `<b class="${st.item === i ? 'sel' : ''}" data-c="item" data-i="${i}">${C.ITEMS[q].e}</b>`).join('')}</div><div class="chshop">${shop}</div><div class="chbt"><button class="btn" data-c="reroll" type="button">🔄 Обновить · 2🪙</button><button class="btn" data-c="xp" type="button">⬆ Опыт · 5🪙</button><button class="btn ghost" data-c="lock" type="button">${me.lock ? '🔒' : '🔓'}</button></div>${infoHtml(v)}${me.income ? `<p class="sm muted" style="text-align:center">Доход за раунд: ${me.income.total}🪙 (база 5${me.income.inter ? ' + проценты ' + me.income.inter : ''}${me.income.streak ? ' + серия ' + me.income.streak : ''})</p>` : ''}`;
+    return `${synHtml(v)}<div class="sm" style="text-align:center">На поле: ${onB} из ${me.lvl} · Ур. ${me.lvl}${me.xpn ? ` · опыт ${me.xp}/${me.xpn}` : ' (максимум)'}</div>${me.xpn ? `<div class="chxp"><i style="width:${Math.min(100, me.xp / me.xpn * 100)}%"></i></div>` : ''}${me.items.length ? '<div class="chit">' : '<div class="chit" hidden>'}${me.items.map((q, i) => `<b class="${st.item === i ? 'sel' : ''}" data-c="item" data-i="${i}">${C.ITEMS[q].e}</b>`).join('')}</div>${infoHtml(v)}${sheetHtml(v, shop)}${me.income ? `<p class="sm muted" style="text-align:center">Доход за раунд: ${me.income.total}🪙 (база 5${me.income.inter ? ' + проценты ' + me.income.inter : ''}${me.income.streak ? ' + серия ' + me.income.streak : ''})</p>` : ''}`;
   }
   function vsBar(v) {
     const f = v.fight; if (!f) return '';
@@ -276,6 +287,7 @@
     if (a === 'reroll') { await act({ a: 'reroll' }); return; }
     if (a === 'xp') { await act({ a: 'xp' }); return; }
     if (a === 'lock') { await act({ a: 'lock' }); return; }
+    if (a === 'shopt') { st.shop = !st.shop; draw(); return; }
     if (a === 'desel') { st.sel = null; st.item = -1; draw(); return; }
     if (a === 'sell') { if (st.sel) { const f = st.sel; st.sel = null; await act({ a: 'sell', f }); } return; }
     if (a === 'item') { const i = +t.dataset.i; st.item = st.item === i ? -1 : i; st.sel = null; draw(); return; }
