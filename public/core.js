@@ -299,6 +299,7 @@ function use(st) { S = st; }
 /* Старые сохранения без героя и ступеней получают их при первом обновлении. */
 function ensure(st) {
   st.clk = clkFix(st.clk || {});
+  if (!st.chs) st.chs = { day: '', g: 0, w: 0, sil: 0, mat: 0, bp: 0, best: 0 };
   if (st.tech) { if (st.tech.bld === undefined) st.tech.bld = 0; if (st.tech.fast === undefined) st.tech.fast = 0; if (st.tech.drill === undefined) st.tech.drill = 0; }
   if (st.tech) ['jstr', 'jvit', 'jarm', 'jcrt'].forEach(k => { if (st.tech[k] === undefined) st.tech[k] = 0; });
   if (!st.eq) st.eq = { s: { weapon: null, armor: null, helm: null, amulet: null }, inv: [] };
@@ -1403,6 +1404,24 @@ function ckBatch(arg) {
   });
   if (S.stat) S.stat.clk = Math.max(S.stat.clk || 0, c.best);
 }
+
+/* Шахматы Нордики: награда по месту. Дневные лимиты как у кликера. Возвращает текст для игрока. */
+const CHS_RW = { 1: [12000, 2, 8], 2: [7000, 1, 5], 3: [3500, 1, 3], 4: [1500, 0, 2] };
+function chessReward(st, place) {
+  const prev = S; S = st;
+  try {
+    const c = st.chs, day = new Date(nowMs()).toISOString().slice(0, 10);
+    if (c.day !== day) { c.day = day; c.sil = 0; c.mat = 0; c.bp = 0; }
+    const rw = CHS_RW[place] || [500, 0, 1];
+    const sil = Math.min(rw[0], Math.max(0, 30000 - c.sil)), keys = Object.keys(MATS);
+    S.res.silver += sil; c.sil += sil;
+    let mats = 0; while (mats < rw[1] && c.mat < 6) { const mk = keys[(c.g + mats) % keys.filter(k => k !== 'heart').length]; if (!S.mats) S.mats = {}; S.mats[mk] = (S.mats[mk] || 0) + 1; c.mat++; mats++; }
+    const bp = Math.min(rw[2], Math.max(0, 20 - c.bp)); if (bp > 0) { bpAdd(bp); c.bp += bp; }
+    c.g++; if (place === 1) c.w++; c.best = c.best ? Math.min(c.best, place) : place;
+    gainXp(place <= 3 ? 6 : 2);
+    return { sil, mats, bp };
+  } finally { S = prev; }
+}
 function ckBuy(arg) {
   if (!arg || typeof arg !== 'object') return; const c = S.clk, kind = arg.t === 's' ? 's' : 'u', k = String(arg.k);
   const tbl = kind === 's' ? CK_SK : CK_UP; if (!tbl[k]) return;
@@ -1423,7 +1442,7 @@ const API = {
   RES, RI, B, BORDER, U, WEAK, TECH, QUESTS, MAXL, TMAX, CFG, HOOK, NODE, TIERN, TIER_NEED, MAXT, BP_LV, BP_PTS, BP_PRICE, bpInit, bpLevel, bpEnd, bpRw, bpAddTo, CAMP, campReady, campDone, HSK, HBR, MAXHL, MAXSK, skillPts, jarlTitle, respecCost,
   get S() { return S; },
   use, ensure, newState, update, produce, settle, battle, act, score, verdict,
-  lvl, slots, cap, capAt, rate, prodAt, upCost, upSecs, canUp, canAfford, trainRate, maxBatch, trainSecs, techCost, techSecs, gatherSecs, marchSecs,
+  chessReward, lvl, slots, cap, capAt, rate, prodAt, upCost, upSecs, canUp, canAfford, trainRate, maxBatch, trainSecs, techCost, techSecs, gatherSecs, marchSecs,
   posOf, tgtPos, isLand, snapLand, SHOP, scoutCost, isVip, buy, claimDaily, dailyLeft, streakInfo, claimStreak, STREAK, CONTESTS, PRIZES, PRIZE_PART, weekId, weekEnd, contestOf, wkScoreOf, wkSync, dayId,
   jobInfo, helpJob, chargeClan, CLAN_COST, CLAN_HALL, jobObj,
   tierOf, heroOf, tmul, tiersOf, botTiers, WHEEL, WHEEL_SILVER, WHEEL_GEMS, WHEEL_PAID_MAX, DICE_BETS, DICE_MAX, miniDay, wheelCost, stype, stier, skey, validKey, sname, sortKeys, byType, maxTier, botComp, costOf, upgPlan, UPG_PCT, atkB, defB, lootB, unitName, xpNeed, tierCost, tierSecs,

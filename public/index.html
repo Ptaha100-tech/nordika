@@ -563,9 +563,11 @@ canvas.pic[data-b="farm"],canvas.pic[data-b="sawmill"]{animation:bldSway 6s ease
 <div id="toast" hidden></div>
 
 <script src="/core.js"></script>
+<script src="/chess.js"></script>
 <script src="/audio.js"></script>
 <script>/*PICS*/window.PIC={};[['herop',5],['hall',6],['farm',6],['sawmill',6],['quarry',6],['ironmine',6],['storehouse',6],['vault',6],['barracks',6],['oracle',6],['silvermine',5],['wall',5],['tower',5],['plot',1],['spear',7],['archer',7],['cav',7],['hero',7]].forEach(function(a){PIC[a[0]]=[];for(var i=1;i<=a[1];i++)PIC[a[0]].push('/img/'+a[0]+i+'.webp'+(/^(spear|archer|cav)$/.test(a[0])?'?v=2':''));});</script>
 <script src="/art.js"></script>
+<script src="/chessui.js"></script>
 <script>
 'use strict';
 const {fmtApprox,RES,RI,B,BORDER,U,WEAK,TECH,QUESTS,MAXL,TMAX,lvl,slots,cap,rate,prodAt,upCost,upSecs,canUp,canAfford,maxBatch,trainSecs,techCost,techSecs,gatherSecs,marchSecs,fmt,fmtT,fmtRes,fmtComp,verdict,battle,carryOf,TIERN,TIER_NEED,MAXT,HSK,MAXHL,MAXSK,tierOf,heroOf,tmul,unitName,xpNeed,tierCost,tierSecs}=Core;
@@ -2138,6 +2140,7 @@ function onAct(act,arg){
     case 'fgopen':ui.eqSel=null;forgeSheet();return;
     case 'mgs':mgSheet();return;
     case 'mg':mgOpen();return;
+    case 'chess':ChessUI.open();return;
     case 'adgo':adClose();mgOpen();return;
     case 'adx':adClose();return;
     case 'eqsort':ui.eqSort=arg;if(ui.fgOpen)forgeSheet();else eqSheet();return;
@@ -2364,6 +2367,7 @@ function mgSheet(){
   const c=S.clk;
   $('modal').innerHTML=`<div class="sheet"><h3>Мини игры</h3>
   <div class="mgcard" data-act="mg"><img src="/img/ck-ad.webp?v=1" alt=""><div><b>Нашествие нечести</b><p class="sm muted">Тапайте и бейте нечисть, пока строятся здания и идут бои. Босс каждые 10 этапов, навыки и возрождение. Рекорд: этап ${c.best}.</p><span class="btn small">Играть</span></div></div>
+  <div class="mgcard" data-act="chess"><span class="mgemo">♟</span><div><b>Шахматы Нордики</b><p class="sm muted">Автобитва на 8 игроков: покупайте героев-карточки, собирайте тройки и синергии, побеждайте соперников. Награды: серебро, материалы, очки пропуска.</p><span class="btn small">Играть</span></div></div>
   <div class="mgcard" data-act="tavern"><span class="mgemo">🎲</span><div><b>Таверна</b><p class="sm muted">Кости и игры за столом.</p><span class="btn small">Открыть</span></div></div></div>`;
   ui.modal='mgs';$('modal').hidden=false;
 }

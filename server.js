@@ -9,6 +9,7 @@ const crypto = require('crypto');
 const Core = require('./public/core.js');
 const Clan = require('./public/clans.js');
 const Social = require('./public/social.js');
+const ChessD = require('./chessd.js');
 
 const PORT = Number(process.env.PORT) || 3000;
 const HOST = process.env.HOST || '0.0.0.0';
@@ -590,6 +591,7 @@ function eventsTick() {
   evs.lastAwarded = prev; saveEvs();
 }
 function saveEvs() { try { fs.writeFileSync(EV_FILE + '.tmp', JSON.stringify(evs)); fs.renameSync(EV_FILE + '.tmp', EV_FILE); } catch (e) { console.error('events.json', e.message); } }
+ChessD.setHooks({ reward: (pid, place) => { const u = users.get(pid); if (!u) return; touchState(u); const r = Core.chessReward(u.state, place); markDirty(u); return r; } });
 const backup = require('./backup.js')(DATA_DIR, () => flush());
 backup.start();
 setTimeout(eventsTick, 5000).unref(); setInterval(eventsTick, 60000).unref();
@@ -896,6 +898,18 @@ async function api(req, res, url) {
       u.frame = f;
     }
     markDirty(u); return json(res, 200, { img: u.avatar || '', fr: u.frame || 0 });
+  }
+  if (url === '/api/chess') {
+    if (req.method === 'GET') { touchState(u); return json(res, 200, ChessD.view(u.id, parseInt(new URL(req.url, 'http://x').searchParams.get('have') || '0', 10))); }
+    if (req.method === 'POST') {
+      if (limited('chess:' + u.id, 30, 10000)) return json(res, 429, { error: 'Слишком быстро.' });
+      let b; try { b = await readBody(req); } catch (e) { return json(res, 400, { error: 'Некорректный запрос' }); }
+      touchState(u);
+      if (b.a === 'join') { if (!ChessD.join({ id: u.id, name: u.name })) return json(res, 400, { error: 'Комната занята, попробуйте ещё раз.' }); return json(res, 200, ChessD.view(u.id, 0)); }
+      const pp = ChessD.playerOf(u.id); if (!pp) return json(res, 400, { error: 'Вы не в партии.' });
+      const r = ChessD.act(pp.m, pp.p, b); if (r.error) return json(res, 400, { error: r.error });
+      return json(res, 200, ChessD.view(u.id, parseInt(b.have || '0', 10)));
+    }
   }
   if (req.method === 'GET' && url === '/api/arena') { touchState(u); return json(res, 200, { view: arenaView(u) }); }
   if (req.method === 'POST' && url === '/api/arena') {
