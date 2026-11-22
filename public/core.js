@@ -95,7 +95,10 @@ const HOOK = {
   touch: () => {},
   alert: () => {},
   mines: () => ({}),
-  setMine: () => {}
+  setMine: () => {},
+  mineBan: () => 0,
+  pvp: () => {},
+  enemyIds: () => []
 };
 
 const rnd = (a, b) => a + Math.random() * (b - a);
@@ -803,6 +806,7 @@ function resolvePlayer(m) {
   const vol = towerVolley(m.send, (D.b && D.b.tower) || 0); m.send = vol.left;
   const r = battle(m.send, D.troops, atkB(A), defB(D));
   D.troops = r.survD;
+  try { HOOK.pvp(A.pid, D.pid, r.win); } catch (e) {}
   const wa = woundSt(A, r.lostA), wd = woundSt(D, r.lostD);
   const aName = A.name || 'Неизвестный ярл';
   const raid = (win, loot) => { (D.raids || (D.raids = [])).unshift({ t, pid: A.pid, name: aName, win, lost: fmtComp(r.lostD) || '', elost: fmtComp(r.lostA) || '', loot: loot || '' }); if (D.raids.length > 20) D.raids.pop(); };
@@ -944,6 +948,7 @@ function sendMarch(tid, send) {
   const tg = String(tid).startsWith('mine:') ? mineTarget(String(tid).slice(5)) : S.targets.find(x => x.id === tid);
   if (!tg || S.marches.length >= slots(lvl('hall')) || !send || typeof send !== 'object') return false;
   if (tg.kind === 'mob') { const real = S.targets.find(x => x.id === tg.id); if (real && real.until > nowMs()) { toast('Враги ещё не вернулись'); return false; } if (S.marches.some(x => x.tgt && x.tgt.id === tg.id)) { toast('Отряд уже идёт на этих врагов'); return false; } }
+  if (tg.kind === 'mine' && HOOK.mineBan(S.pid) > nowMs()) { toast('Ваш клан проиграл войну: шахты закрыты до ' + new Date(HOOK.mineBan(S.pid)).toLocaleTimeString().slice(0, 5)); return false; }
   if (tg.kind === 'mine') { if (sum(send) < MINE_MIN[tg.ti]) { toast(`Для этого рудника нужно не меньше ${MINE_MIN[tg.ti]} воинов`); return false; } const o = mineBusy(tg.mine); if (o && o.pid === S.pid) { toast('Этот рудник уже ваш'); return false; } if (S.marches.some(x => x.tgt && x.tgt.mine === tg.mine)) { toast('Отряд уже идёт к руднику'); return false; } }
   if (tg.kind === 'player' && HOOK.sameClan(S.pid, tg.pid)) { toast('Нельзя нападать на соклановца'); return false; }
   const s = {}; let tot = 0;

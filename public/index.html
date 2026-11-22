@@ -564,6 +564,7 @@ canvas.pic[data-b="farm"],canvas.pic[data-b="sawmill"]{animation:bldSway 6s ease
 
 <script src="/core.js"></script>
 <script src="/chess.js"></script>
+<script src="/cwar.js"></script>
 <script src="/audio.js"></script>
 <script>/*PICS*/window.PIC={};[['herop',5],['hall',6],['farm',6],['sawmill',6],['quarry',6],['ironmine',6],['storehouse',6],['vault',6],['barracks',6],['oracle',6],['silvermine',5],['wall',5],['tower',5],['plot',1],['spear',7],['archer',7],['cav',7],['hero',7]].forEach(function(a){PIC[a[0]]=[];for(var i=1;i<=a[1];i++)PIC[a[0]].push('/img/'+a[0]+i+'.webp'+(/^(spear|archer|cav)$/.test(a[0])?'?v=2':''));});</script>
 <script src="/art.js"></script>
@@ -1132,6 +1133,51 @@ function myJobsForHelp(c){
   });
   return out;
 }
+
+const RESI={food:'🌾',wood:'🪵',stone:'🪨',iron:'⛓',silver:'🪙'};
+const cwC=o=>CWar.RES.filter(k=>o[k]).map(k=>RESI[k]+fmt(o[k])).join(' ');
+function cwWarHTML(c,d){
+  const w=c.cw;if(!w)return '';
+  const t=Date.now()+off;
+  const dt=ms=>fmtT(Math.max(0,ms)/1000);
+  let h=`<section class="card"><div class="trow2"><h2>⚔ Война кланов</h2><span class="lv">побед ${w.wins} · поражений ${w.losses}</span></div>`;
+  if(w.mban)h+=`<p class="sm" style="color:#e58">Клан проиграл войну: шахты закрыты ещё ${dt(w.mban-t)}.</p>`;
+  if(w.war){
+    const x=w.war,e=x.enemy;
+    h+=`<p class="sm"><b>${x.att?'Мы нападаем на':'На нас напал'} [${esc(e?e.tag:'?')}] ${esc(e?e.name:'?')}</b></p>`;
+    h+=x.ph==='prep'?`<p class="sm">До боя за лагерь: <b>${dt(x.tb-t)}</b>. Отправляйте солдат в общий отряд: они вернутся после боя (за вычетом потерь).</p>`:`<p class="sm">Лагерь решён. До конца войны: <b>${dt(x.te-t)}</b>. Побеждает клан с большим числом очков.</p>`;
+    h+=`<div class="gbar" style="margin:8px 0"><span style="width:${Math.round(100*x.pts/Math.max(1,x.pts+x.epts))}%"></span></div>
+      <p class="sm" style="display:flex;justify-content:space-between"><span>Мы: <b>${x.pts}</b> очков</span><span>Враг: <b>${x.epts}</b></span></p>
+      <p class="sm muted">Общий отряд: ${fmt(x.sq)} солдат (ваших ${fmt(x.my)}). Враг собрал: ${fmt(x.esq)}. В войне участвуют ${x.join} из ${c.members.length}.</p>`;
+    if(x.ph==='prep'){
+      const tot=Object.values(S.troops).reduce((a,b)=>a+b,0);
+      h+=`<div class="tr2" style="margin-top:8px"><button class="btn small" data-act="csend" data-arg="25" ${tot?'':'disabled'}>Отправить 25%</button><button class="btn small" data-act="csend" data-arg="50" ${tot?'':'disabled'}>50%</button><button class="btn small" data-act="csend" data-arg="100" ${tot?'':'disabled'}>Всех</button>${x.my?'<button class="btn small ghost" data-act="crecall">Забрать своих</button>':''}</div>`;
+    }
+    h+=`<p class="note" style="margin-top:8px">Очки: штурм лагеря ${60}, вступление в отряд +5, победы над врагами в походах +8 (вы ${x.pv}/${x.pvCap}), вклады в казну (вы ${x.wg}/${x.wgCap}), удержанные рудники +10 каждый. Враги членов клана чаще попадаются в целях на карте.</p>`;
+    if(x.camp)h+=`<p class="sm">${x.camp.win?'Лагерь врага разгромлен.':'Штурм лагеря отбит.'}${x.camp.took&&Object.keys(x.camp.took).length?' Казна: '+cwC(x.camp.took):''}</p>`;
+    if(x.ev.length)h+=`<details style="margin-top:6px"><summary class="sm">События войны</summary>${x.ev.slice().reverse().map(v=>`<p class="sm" style="margin:4px 0"><span class="muted">${ago(v.t)}</span> · ${esc(v.text)}</p>`).join('')}</details>`;
+  }else{
+    h+=`<p class="sm muted">Объявите войну другому клану: 3 часа на подготовку, потом бой за лагерь, всего война идёт сутки. Проигравший клан сутки не может занимать шахты, победитель забирает 10% казны. После войны оба клана под щитом 12 часов.</p>`;
+    if(w.shield)h+=`<p class="sm">Щит клана: ещё ${dt(w.shield-t)}.</p>`;
+    if(w.canWar){
+      h+=`<p class="sm" style="margin:6px 0">Стоимость объявления: ${w.declCost} серебра из казны.</p>`+(w.targets.length?w.targets.map(x=>`<div class="hrow"><div><span class="tag4">${esc(x.tag)}</span><b>${esc(x.name)}</b><p class="sm muted">${x.count} игр. · сила ${fmt(x.power)}${x.why?' · '+x.why:''}</p></div><button class="btn small" data-act="cdecl" data-arg="${x.id}" ${x.why?'disabled':''}>Война</button></div>`).join(''):'<p class="muted sm">Других кланов пока нет.</p>');
+      h+=`<div class="crow" style="margin-top:8px"><label class="sm" for="cq">Часы покоя клана (вам не объявят бой в эти 8 часов), начало по UTC:</label><input id="cq" data-keep type="number" min="0" max="23" value="${w.quiet}" style="width:70px"><button class="btn small" data-act="cquiet">Сохранить</button></div>`;
+    }else h+=`<p class="sm muted">Войну объявляют предводитель и воеводы. Вы можете помогать: вносить ресурсы в казну и отправлять солдат в общий отряд.</p>`;
+    if(w.hist.length)h+=`<p class="sm muted" style="margin-top:8px">Прошлые войны: ${w.hist.map(x=>`${esc(x.a)} ${x.pa}:${x.pd} ${esc(x.d)} (${esc(x.won)})`).join('; ')}</p>`;
+  }
+  return h+'</section>';
+}
+function cwTreasuryHTML(c,d){
+  const w=c.cw;if(!w)return '';
+  let h=`<section class="card"><h2>Казна и постройки клана</h2><p class="sm"><b>В казне:</b> ${cwC(w.tr)||'пусто'}</p>
+  <div class="crow" style="margin:8px 0"><select id="cgres">${CWar.RES.map(k=>`<option value="${k}">${CWar.RN[k]} (от ${w.min[k]})</option>`).join('')}</select><input id="cgn" data-keep type="number" inputmode="numeric" min="0" placeholder="Сколько" style="width:100px"><button class="btn small" data-act="cgive">Внести</button></div>
+  <p class="note">Вносить нужно сразу крупными порциями. Казну можно потерять, если враг разгромит лагерь, поэтому её стоит защищать.</p>`;
+  if(w.giftLv)h+=`<button class="btn" style="margin:8px 0" data-act="cgift" ${w.giftOk?'':'disabled'}>${w.giftOk?'Забрать подарок из амбара':'Подарок на сегодня получен'}</button>`;
+  h+=w.bl.map(b=>`<div class="hrow"><div><b>${b.e} ${b.n}</b> · ур. ${b.lv} из ${b.max}<p class="sm muted">${b.d}</p>${b.cost?`<p class="sm">Следующий уровень: ${cwC(b.cost)}</p>`:''}</div>${b.cost&&w.canWar?`<button class="btn small" data-act="cbuild" data-arg="${b.id}">Улучшить</button>`:''}</div>`).join('');
+  const top=Object.keys(w.gave).map(p=>({p,v:w.gave[p],n:(c.members.find(m=>m.pid===p)||{}).name})).filter(x=>x.n).sort((a,b)=>b.v-a.v).slice(0,5);
+  if(top.length)h+=`<details style="margin-top:6px"><summary class="sm">Больше всех вложили</summary>${top.map(x=>`<p class="sm" style="display:flex;justify-content:space-between;margin:2px 0"><span>${esc(x.n)}</span><b>${fmt(x.v)}</b></p>`).join('')}</details>`;
+  return h+'</section>';
+}
 function clanGoalHTML(d){
   const g=d.goal;if(!g)return '';
   const left=Math.max(0,g.end-(Date.now()+off)),top=g.tiers[g.tiers.length-1].need,pct=Math.min(100,Math.round(g.total/top*100));
@@ -1175,15 +1221,16 @@ function viewClan(){
   mine.forEach(j=>{help+=`<div class="hrow"><div><b>${esc(j.what)}</b></div>${j.asked?'<span class="muted sm">Просьба отправлена</span>':`<button class="btn small" data-act="cask" data-arg="${j.kind}">Попросить помощь</button>`}</div>`;});
   others.forEach(r=>{help+=`<div class="hrow"><div><b>${esc(r.name)}</b><p class="sm muted">${esc(r.what)} · осталось ${fmtT(Math.max(0,(r.end-Core.now())/1000))} · помогли ${r.n} из ${r.max}</p></div>${r.done?'<span class="muted sm">Вы помогли</span>':`<button class="btn small" data-act="chelp" data-arg="${r.id}">Помочь</button>`}</div>`;});
   if(!help)help='<p class="muted sm">Сейчас никто не просит помощи, и у вас нет дел, которым она нужна.</p>';
-  const members=c.members.map(m=>`<div class="cm"><span class="nm" data-act="profp" data-arg="${m.pid}" style="cursor:pointer">${m.leader?'👑 ':''}<b>${esc(m.name)}</b>${m.pid===d.me?' <span class="muted sm">(вы)</span>':''}</span><span class="lv">${seenTxt(m.seen,m.online)} · Палата ${m.hall} · сила ${fmt(m.score)} · помог ${m.helps}</span>${iAmLeader&&m.pid!==d.me?`<button class="btn small ghost" data-act="ctrans" data-arg="${m.pid}">Передать власть</button><button class="btn small danger" data-act="ckick" data-arg="${m.pid}">Исключить</button>`:''}</div>`).join('');
+  const cw=c.cw||{role:''};
+  const members=c.members.map(m=>`<div class="cm"><span class="nm" data-act="profp" data-arg="${m.pid}" style="cursor:pointer">${m.role==='L'?'👑 ':m.role==='v'?'⚔ ':m.role==='o'?'🎖 ':''}<b>${esc(m.name)}</b>${m.role&&m.role!=='L'?` <span class="muted sm">${CWar.ROLEN[m.role]}</span>`:''}${m.pid===d.me?' <span class="muted sm">(вы)</span>':''}</span><span class="lv">${seenTxt(m.seen,m.online)} · Палата ${m.hall} · сила ${fmt(m.score)} · помог ${m.helps}</span>${iAmLeader&&m.pid!==d.me?`<button class="btn small ghost" data-act="crole" data-arg="${m.pid}:${m.role==='v'?'':m.role==='o'?'v':'o'}">${m.role==='v'?'Снять роль':m.role==='o'?'Сделать воеводой':'Сделать офицером'}</button><button class="btn small ghost" data-act="ctrans" data-arg="${m.pid}">Передать власть</button>`:''}${(iAmLeader||['v','o'].includes(cw.role))&&m.pid!==d.me&&m.role!=='L'&&!(cw.role==='o'&&m.role)&&!(cw.role==='v'&&m.role==='v')?`<button class="btn small danger" data-act="ckick" data-arg="${m.pid}">Исключить</button>`:''}</div>`).join('');
   return `<section class="card"><div class="trow2"><h2><span class="tag4">${esc(c.tag)}</span>${esc(c.name)}</h2><span class="lv">${c.members.length} из ${d.max}</span></div>
       <p class="sm muted">Сила клана ${fmt(c.power)}</p></section>
-    ${goalH}
+    ${cwWarHTML(c,d)}${cwTreasuryHTML(c,d)}${goalH}
     <section class="card"><h2>Помощь соклановцев</h2>${help}${canAll?'<button class="btn" style="margin-top:10px" data-act="chelpall">Помочь всем</button>':''}
       <p class="note">Каждая помощь сокращает дело на 2% (не меньше 30 секунд), всего до ${d.helpMax} раз. Помогать можно один раз с каждым делом.</p></section>
     ${clanLogHTML(c)}
     <section class="card"><h2>Новости клана</h2>${newsHTML(c)}
-      ${iAmLeader?`<div class="crow"><input id="cnews" data-keep maxlength="300" placeholder="Новость для клана" autocomplete="off" enterkeyhint="send"><button class="btn small" data-act="cnews">Опубликовать</button></div>`:'<p class="note">Новости пишет предводитель. Общаться с кланом можно во вкладке «Чат» → «Клан».</p>'}</section>
+      ${(iAmLeader||cw.role)?`<div class="crow"><input id="cnews" data-keep maxlength="300" placeholder="Новость для клана" autocomplete="off" enterkeyhint="send"><button class="btn small" data-act="cnews">Опубликовать</button></div>`:'<p class="note">Новости пишет предводитель. Общаться с кланом можно во вкладке «Чат» → «Клан».</p>'}</section>
     <section class="card"><h2>Участники</h2>${members}</section>
     <button class="btn danger ${ui.leaveSure?'':'ghost'}" data-act="cleave">${ui.leaveSure?'Точно выйти из клана?':'Выйти из клана'}</button>`;
 }
@@ -1224,6 +1271,12 @@ async function cact(a,p){
     else if(a==='join')toast('Вы в клане');
     else if(a==='help'||a==='helpall')toast('Помощь отправлена');
     else if(a==='ask')toast('Просьба о помощи отправлена');
+    else if(a==='declare')toast('Война объявлена!');
+    else if(a==='send')toast('Солдаты отправлены в общий отряд');
+    else if(a==='give')toast('Вклад внесён в казну');
+    else if(a==='build')toast('Постройка улучшена');
+    else if(a==='gift'&&j.result&&j.result.gift){toast('Подарок получен');sync();}
+    if(['give','send','recall','gift','declare'].includes(a))sync();
     render();
     if(a==='say'){const b=$('cbox');if(b)b.scrollTop=b.scrollHeight;}
   }catch(e){toast(e.message||'Не получилось');}
@@ -1813,6 +1866,15 @@ function wmDraw(){
     if(p.online){g.fillStyle='#7ee07e';g.beginPath();g.arc(x+h*.42,y-h*.9,2.2,0,7);g.fill();}
     if(p.me||p.pid===ui.wsel||z>=2.2)lab(p.name,x,y-h*.55,h*.45);
   });
+  (j.camps||[]).forEach(o=>{
+    const x=X(o.x),y=Y(o.y),h=17*sc;if(x<-40||y<-40||x>W+40||y>W+50)return;
+    const mineC=myTag&&o.tag===myTag,col=o.war?'#ff5a4a':mineC?'#7fb4ff':'#d9b45a';
+    g.save();g.strokeStyle=col;g.lineWidth=2;g.globalAlpha=.9;g.beginPath();g.ellipse(x,y+h*.1,h*.62,h*.2,0,0,7);g.stroke();
+    if(o.war){g.fillStyle='rgba(255,70,50,'+(.12+.1*Math.sin(tt*4))+')';g.beginPath();g.ellipse(x,y+h*.1,h*.9,h*.3,0,0,7);g.fill();}
+    g.font=Math.round(h)+'px system-ui,sans-serif';g.textAlign='center';g.textBaseline='bottom';g.fillText(o.sh?'🛡':'🏕',x,y+h*.2);g.restore();
+    hit.push({k:'c',id:o.id,x,y,h});
+    if(z>=1.4||mineC)lab('['+o.tag+'] '+o.name,x,y-h*.9,h*.35);
+  });
   wmBosses().forEach((o,bi)=>{
     const x=X(o.x),y=Y(o.y),h=22*sc;if(x<-40||y<-40||x>W+40||y>W+50)return;
     const nm='mboss'+o.n;if(!WSP[nm]){const im=new Image();im.src='/img/boss'+o.n+'.webp?v=1';WSP[nm]=im;}
@@ -2199,6 +2261,14 @@ function onAct(act,arg){
     case 'cjoin':cact('join',{id:arg});return;
     case 'cleave':if(!ui.leaveSure){ui.leaveSure=true;render();setTimeout(()=>{ui.leaveSure=false;if(ui.tab==='clan')render();},4000);return;}ui.leaveSure=false;cact('leave');return;
     case 'ckick':cact('kick',{pid:arg});return;
+    case 'crole':{const q=String(arg).split(':');cact('role',{pid:q[0],role:q[1]||''});return;}
+    case 'cgive':cact('give',{res:$('cgres').value,n:Number($('cgn').value)});return;
+    case 'cbuild':cact('build',{id:arg});return;
+    case 'cgift':cact('gift');return;
+    case 'cquiet':cact('quiet',{h:Number($('cq').value)});return;
+    case 'cdecl':cact('declare',{id:arg});return;
+    case 'crecall':cact('recall');return;
+    case 'csend':{const pc=Number(arg)/100,comp={};for(const k in S.troops){const n=Math.floor(S.troops[k]*pc);if(n>0)comp[k]=n;}cact('send',{comp}).then(()=>sync());return;}
     case 'ctrans':cact('transfer',{pid:arg});return;
     case 'cnews':{const el=$('cnews');const t=el?el.value.trim():'';if(!t)return;el.value='';cact('news',{text:t});return;}
     case 'csay':chatSend('c');return;

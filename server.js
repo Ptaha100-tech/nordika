@@ -10,6 +10,7 @@ const Core = require('./public/core.js');
 const Clan = require('./public/clans.js');
 const Social = require('./public/social.js');
 const ChessD = require('./public/chessd.js');
+const CWar = require('./public/cwar.js');
 
 const PORT = Number(process.env.PORT) || 3000;
 const HOST = process.env.HOST || '0.0.0.0';
@@ -105,8 +106,24 @@ const cctx = {
   charge: pid => { const u = users.get(pid); if (!u) return 'Нет такого игрока.'; touchState(u); Core.use(u.state); const e = Core.chargeClan(); if (!e) markDirty(u); return e; },
   jobInfo: (pid, kind) => { const u = users.get(pid); if (!u) return null; touchState(u); Core.use(u.state); const r = Core.jobInfo(kind); markDirty(u); return r; },
   helpApply: (pid, kind, sid, cut) => { const u = users.get(pid); if (!u) return false; touchState(u); Core.use(u.state); const ok = Core.helpJob(kind, sid, cut); if (ok) { Core.update(); markDirty(u); } return ok; },
-  notify: (pid, text) => { const u = users.get(pid); if (u) { Core.addLogTo(u.state, text, 'good'); markDirty(u); } }
+  notify: (pid, text) => { const u = users.get(pid); if (u) { Core.addLogTo(u.state, text, 'good'); markDirty(u); } },
+  validKey: k => Core.validKey(k),
+  take: (pid, res) => { const u = users.get(pid); if (!u) return 'Нет такого игрока.'; touchState(u); const R = u.state.res; for (const k in res) if ((R[k] || 0) < res[k]) return 'Не хватает ресурсов.'; for (const k in res) R[k] -= res[k]; markDirty(u); return ''; },
+  give: (pid, res) => { const u = users.get(pid); if (!u) return; touchState(u); const cp = Core.cap(); for (const k in res) u.state.res[k] = Math.max(u.state.res[k] || 0, Math.min(cp, (u.state.res[k] || 0) + res[k])); markDirty(u); },
+  reward: (pid, r) => { const u = users.get(pid); if (!u) return; touchState(u); if (r.gems) u.state.gems = (u.state.gems || 0) + r.gems; if (r.haste) u.state.haste = (u.state.haste || 0) + r.haste; if (r.silver) u.state.res.silver = (u.state.res.silver || 0) + r.silver; markDirty(u); },
+  troopsOf: pid => { const u = users.get(pid); return u ? Object.assign({}, u.state.troops) : {}; },
+  takeTroops: (pid, comp) => { const u = users.get(pid); if (!u) return null; touchState(u); const got = {}; for (const k in comp) { const n = Math.min(u.state.troops[k] || 0, comp[k]); if (n > 0) { u.state.troops[k] -= n; got[k] = n; } } markDirty(u); return got; },
+  giveTroops: (pid, comp) => { const u = users.get(pid); if (!u) return; touchState(u); for (const k in comp) if (Core.validKey(k)) u.state.troops[k] = (u.state.troops[k] || 0) + comp[k]; markDirty(u); },
+  battle: (a, d, ab, db) => Core.battle(a, d, ab, db),
+  minesHeld: pid => { const now = Date.now(); let n = 0; for (const id in MINES) if (MINES[id].pid === pid && MINES[id].end > now) n++; return n; },
+  releaseMines: pids => { const now = Date.now(); for (const id in MINES) { const o = MINES[id]; if (!pids.includes(o.pid)) continue; const u = users.get(o.pid); if (u) { const m = (u.state.marches || []).find(x => x.id === o.mid && x.phase === 'hold'); if (m) { m.phase = 'back'; m.back = now + (m.dur || 60000); m.loot = {}; } markDirty(u); } delete MINES[id]; minesDirty = true; } }
 };
+Clan.cwView = (st, ctx, pid, c) => CWar.view(st, ctx, pid, c);
+Clan.cwAct = (st, ctx, pid, a, p, c) => CWar.act(st, ctx, pid, a, p, c);
+setInterval(() => { try { if (CWar.tick(cstore, cctx)) cdirty = true; } catch (e) { console.error('cwar', e); } }, 15000).unref();
+Core.HOOK.mineBan = pid => { const c = Clan.clanOf(cstore, pid); return c && c.mban ? c.mban : 0; };
+Core.HOOK.pvp = (a, d, win) => { if (CWar.pvp(cstore, cctx, a, d, win)) cdirty = true; };
+Core.HOOK.enemyIds = pid => { const e = CWar.enemyOf(cstore, pid); return e ? Object.keys(e.members) : []; };
 setInterval(flush, 2000).unref();
 function shutdown() { flush(); flushMines(); flushArena(); flushClans(); flushSocial(); process.exit(0); }
 process.on('SIGINT', shutdown); process.on('SIGTERM', shutdown);
@@ -136,6 +153,7 @@ Core.HOOK.pickPlayers = (st, n) => {
   let near = all.filter(u => Math.abs(u.state.b.hall - H) <= 2);
   if (near.length < n) near = all;
   for (let i = near.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [near[i], near[j]] = [near[j], near[i]]; }
+  const foes = new Set(Core.HOOK.enemyIds(st.pid)); if (foes.size) { const fo = all.filter(u => foes.has(u.id)); near = fo.concat(near.filter(u => !foes.has(u.id))); }
   return near.slice(0, n).map(u => ({ pid: u.id, name: u.name, level: u.state.b.hall, comp: Object.assign({}, u.state.troops), shield: u.state.shield, dist: distTo(st.pid, u.id) }));
 };
 
@@ -963,7 +981,7 @@ async function api(req, res, url) {
     }
     players.sort((a, b) => (b.me - a.me) || a.d - b.d);
     marches.sort((a, b) => (b.mine - a.mine) || (b.inc - a.inc));
-    return json(res, 200, { now, players: players.slice(0, 300).map(p => (delete p.d, p)), marches: marches.slice(0, 120), total: players.length });
+    return json(res, 200, { now, players: players.slice(0, 300).map(p => (delete p.d, p)), marches: marches.slice(0, 120), total: players.length, camps: CWar.camps(cstore, cctx, Core) });
   }
   if (req.method === 'GET' && url === '/api/profile') {
     const q = new URL(req.url, 'http://x').searchParams, nm = (q.get('name') || '').trim().toLowerCase().slice(0, 20), id = nm ? (byName.get(nm) || '') : (q.get('id') || '').slice(0, 16), t = users.get(id);

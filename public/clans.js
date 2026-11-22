@@ -10,7 +10,7 @@ const HELP_MAX = 10;      // сколько раз можно помочь од�
 const NAME_RE = /^[\p{L}\p{N}_\- ]{3,16}$/u;
 const TAG_RE = /^[A-Za-zА-Яа-яЁё0-9]{2,4}$/;
 
-function newStore() { return { clans: {}, of: {}, seq: 1 }; }
+function newStore() { return { clans: {}, of: {}, seq: 1, wars: {}, wseq: 1 }; }
 const clean = (s, n) => String(s == null ? '' : s).replace(/[\u0000-\u001f\u007f<>]/g, '').replace(/\s+/g, ' ').trim().slice(0, n);
 const clanOf = (st, pid) => { const id = st.of[pid]; return id ? st.clans[id] || null : null; };
 
@@ -25,7 +25,7 @@ function sys(c, ctx, text) {
 }
 function dropMember(st, ctx, c, pid, why) {
   const m = c.members[pid]; if (!m) return;
-  delete c.members[pid]; delete st.of[pid];
+  delete c.members[pid]; delete st.of[pid]; if (c.role) delete c.role[pid];
   c.reqs = c.reqs.filter(r => r.pid !== pid);
   const left = Object.keys(c.members);
   if (!left.length) { delete st.clans[c.id]; return; }
@@ -58,8 +58,8 @@ function view(st, ctx, pid) {
   const out = { list: topList(st, ctx), me: pid, max: MAXM, helpMax: HELP_MAX };
   if (!c) { out.clan = null; return out; }
   purge(c, ctx);
-  const members = Object.keys(c.members).map(p => ({ pid: p, name: c.members[p].name, hall: ctx.hallOf(p), score: ctx.scoreOf(p) || 0, helps: c.members[p].helps || 0, leader: p === c.leader, seen: ctx.seen ? ctx.seen(p) : 0, online: ctx.seen ? Date.now() - ctx.seen(p) < 180000 : false }));
-  members.sort((a, b) => (b.leader - a.leader) || (b.score - a.score));
+  const members = Object.keys(c.members).map(p => ({ pid: p, name: c.members[p].name, hall: ctx.hallOf(p), score: ctx.scoreOf(p) || 0, helps: c.members[p].helps || 0, leader: p === c.leader, role: p === c.leader ? 'L' : ((c.role && c.role[p]) || ''), seen: ctx.seen ? ctx.seen(p) : 0, online: ctx.seen ? Date.now() - ctx.seen(p) < 180000 : false }));
+  const RK = { L: 3, v: 2, o: 1, '': 0 }; members.sort((a, b) => (RK[b.role] - RK[a.role]) || (b.score - a.score));
   out.clan = {
     id: c.id, name: c.name, tag: c.tag, leader: c.leader, power: members.reduce((a, m) => a + m.score, 0), members,
     chat: c.chat.slice(-40),
@@ -67,6 +67,7 @@ function view(st, ctx, pid) {
     log: (c.log || c.chat.filter(m => m.sys).map(m => ({ t: m.t, text: m.text }))).slice(-30),
     reqs: c.reqs.map(r => ({ id: r.id, pid: r.pid, name: c.members[r.pid] ? c.members[r.pid].name : '?', what: r.what, end: r.end, n: r.n, max: r.max, mine: r.pid === pid, done: r.by.includes(pid) }))
   };
+  if (API.cwView) out.clan.cw = API.cwView(st, ctx, pid, c);
   return out;
 }
 
@@ -105,8 +106,11 @@ function act(st, ctx, pid, a, p) {
       dropMember(st, ctx, c, pid, 'leave'); cache.at = 0; return { ok: true };
     }
     case 'kick': {
-      if (!c || c.leader !== pid) return { error: 'Исключать может только предводитель.' };
+      const rk = { L: 3, v: 2, o: 1, '': 0 }, my = c ? (c.leader === pid ? 'L' : ((c.role && c.role[pid]) || '')) : '';
+      if (!c || rk[my] < 1) return { error: 'Исключать могут предводитель, воеводы и офицеры.' };
       if (!c.members[p.pid] || p.pid === pid) return { error: 'Некого исключать.' };
+      const tr = c.leader === p.pid ? 'L' : ((c.role && c.role[p.pid]) || '');
+      if (rk[tr] >= rk[my]) return { error: 'Нельзя исключить того, кто выше или равен вам по роли.' };
       dropMember(st, ctx, c, p.pid, 'kick'); cache.at = 0; return { ok: true };
     }
     case 'transfer': {
@@ -115,7 +119,7 @@ function act(st, ctx, pid, a, p) {
       c.leader = p.pid; sys(c, ctx, `${c.members[p.pid].name} теперь предводитель клана.`); return { ok: true };
     }
     case 'news': {
-      if (!c || c.leader !== pid) return { error: 'Писать новости может только предводитель.' };
+      if (!c || !(c.leader === pid || (c.role && c.role[pid]))) return { error: 'Писать новости могут предводитель, воеводы и офицеры.' };
       const text = clean(p.text, 300); if (!text) return { error: '' };
       (c.news || (c.news = [])).push({ t, text });
       if (c.news.length > 20) c.news.splice(0, c.news.length - 20);
@@ -170,6 +174,7 @@ function act(st, ctx, pid, a, p) {
       return { ok: true, done, saved };
     }
   }
+  if (API.cwAct) { const r = API.cwAct(st, ctx, pid, a, p, c); if (r) return r; }
   return { error: 'Неизвестное действие.' };
 }
 
