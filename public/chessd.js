@@ -11,10 +11,11 @@ let lobby = null;
 let hooks = { reward: () => {}, name: id => id };
 
 const isPve = r => r <= 3 || (r >= 10 && r % 5 === 0);
-const emptyBoard = () => Array(32).fill(null);
+const CELLS = Chess.COLS * Chess.HALF, XS = [2, 1, 3, 0, 4];
+const emptyBoard = () => Array(CELLS).fill(null);
 
 function newPlayer(id, name, bot) {
-  return { id, name, bot: !!bot, hp: START_HP, gold: START_GOLD, lvl: START_LV, xp: 0, bench: Array(8).fill(null), board: emptyBoard(), shop: [null, null, null, null, null], items: [], streak: 0, alive: true, place: 0, seen: Date.now(), left: false, last: null, skill: 0.7 + Math.random() * 0.3, rewarded: false, lock: false };
+  return { id, name, bot: !!bot, hp: START_HP, gold: START_GOLD, lvl: START_LV, xp: 0, bench: Array(Chess.BENCH).fill(null), board: emptyBoard(), shop: [null, null, null, null, null], items: [], streak: 0, alive: true, place: 0, seen: Date.now(), left: false, last: null, skill: 0.7 + Math.random() * 0.3, rewarded: false, lock: false };
 }
 
 function lobbyGet() {
@@ -135,7 +136,7 @@ function act(m, p, b) {
   } else if (b.a === 'move') {
     const fw = b.f && b.f[0] === 'f' ? 'f' : 'b', tw = b.t && b.t[0] === 'f' ? 'f' : 'b', fi = parseInt(String(b.f).slice(1), 10), ti = parseInt(String(b.t).slice(1), 10);
     const mx = n => (n >= 0 && n < (n === n ? 99 : 0));
-    if (!(fi >= 0) || !(ti >= 0) || (fw === 'b' && fi > 7) || (tw === 'b' && ti > 7) || (fw === 'f' && fi > 31) || (tw === 'f' && ti > 31)) return { error: 'Неверная клетка.' };
+    if (!(fi >= 0) || !(ti >= 0) || (fw === 'b' && fi >= Chess.BENCH) || (tw === 'b' && ti >= Chess.BENCH) || (fw === 'f' && fi >= CELLS) || (tw === 'f' && ti >= CELLS)) return { error: 'Неверная клетка.' };
     const a = getAt(p, fw, fi), t = getAt(p, tw, ti);
     if (!a) return { error: 'Тут никого нет.' };
     if (fw === 'b' && tw === 'f' && !t && lim >= p.lvl) return { error: 'На поле можно не больше ' + p.lvl + ' героев. Повысьте уровень.' };
@@ -180,12 +181,12 @@ function botTurn(m, p) {
   // расстановка: сильнейшие на поле
   const all = allUnits(p).sort((a, b) => (CARDS[b.u.card].c * (1 + b.u.star * 1.5) + b.u.items.length) - (CARDS[a.u.card].c * (1 + a.u.star * 1.5) + a.u.items.length));
   const take = all.slice(0, p.lvl);
-  p.bench = Array(8).fill(null); p.board = emptyBoard();
+  p.bench = Array(Chess.BENCH).fill(null); p.board = emptyBoard();
   const rest = all.slice(p.lvl).map(e => e.u);
-  rest.forEach((u, i) => { if (i < 8) p.bench[i] = u; });
-  const rowOf = u => { const r = CARDS[u.card].ro; return r === 'tank' ? 0 : (r === 'melee' || r === 'assassin') ? 1 : 3; };
-  const rowCnt = [0, 0, 0, 0];
-  take.forEach(e => { let y = rowOf(e.u); while (rowCnt[y] >= 8) y = (y + 1) % 4; const xs = [3, 4, 2, 5, 1, 6, 0, 7]; p.board[y * 8 + xs[rowCnt[y]++]] = e.u; });
+  rest.forEach((u, i) => { if (i < Chess.BENCH) p.bench[i] = u; else { p.gold += CARDS[u.card].c * [0, 1, 3, 9][u.star]; } });
+  const rowOf = u => { const r = CARDS[u.card].ro; return r === 'tank' ? 0 : (r === 'melee' || r === 'assassin') ? 1 : 2; };
+  const rowCnt = [0, 0, 0];
+  take.forEach(e => { let y = rowOf(e.u); while (rowCnt[y] >= Chess.COLS) y = (y + 1) % Chess.HALF; p.board[y * Chess.COLS + XS[rowCnt[y]++]] = e.u; });
 }
 
 // ---------- ход игры ----------
@@ -193,13 +194,13 @@ function creepBoard(r) {
   const pve = r <= 3 ? r : r / 5 + 3; // сила растёт
   const n = Math.min(8, 2 + Math.floor(pve * 0.9));
   const hp = 220 + pve * 170 + (r >= 10 ? 500 : 0), atk = 9 + pve * 5.5, boss = r >= 10;
-  const out = [];
+  const out = [], pos = []; for (let y = 0; y < 2; y++) XS.forEach(x => { if (!(boss && x === 2 && y === 0)) pos.push([x, y]); });
   const imgs = [1, 2, 3, 4, 5];
-  for (let i = 0; i < n; i++) out.push({ e: '💀', img: 'ck-m' + imgs[(i + r) % 5], x: [3, 4, 2, 5, 1, 6, 0, 7][i], y: i < 4 ? 0 : 1, st: { star: 1, hp: Math.round(hp), atk: Math.round(atk), ar: 4 + pve, as: 1, crit: 0, cm: 2, dodge: 0, ls: 0, regen: 0, mr: 1, sp: 1, rg: 1, ai: 2, mana: 0, mana0: 0 } });
-  if (boss) { const bi = (r / 5) % 5; out.push({ e: '👹', img: 'ck-m' + (6 + bi), x: 3, y: 0, st: { star: 3, hp: Math.round(hp * 3.4), atk: Math.round(atk * 1.7), ar: 10 + pve, as: 1, crit: 0, cm: 2, dodge: 0, ls: 0, regen: 0, mr: 1, sp: 1, rg: 1, ai: 2, mana: 0, mana0: 0 } }); }
+  for (let i = 0; i < n; i++) out.push({ e: '💀', img: 'ck-m' + imgs[(i + r) % 5], x: pos[i][0], y: pos[i][1], st: { star: 1, hp: Math.round(hp), atk: Math.round(atk), ar: 4 + pve, as: 1, crit: 0, cm: 2, dodge: 0, ls: 0, regen: 0, mr: 1, sp: 1, rg: 1, ai: 2, mana: 0, mana0: 0 } });
+  if (boss) { const bi = (r / 5) % 5; out.push({ e: '👹', img: 'ck-m' + (6 + bi), x: 2, y: 0, st: { star: 3, hp: Math.round(hp * 3.4), atk: Math.round(atk * 1.7), ar: 10 + pve, as: 1, crit: 0, cm: 2, dodge: 0, ls: 0, regen: 0, mr: 1, sp: 1, rg: 1, ai: 2, mana: 0, mana0: 0 } }); }
   return out;
 }
-function playerBoard(p) { const a = []; p.board.forEach((u, i) => { if (u) a.push({ card: u.card, star: u.star, items: u.items, x: i % 8, y: Math.floor(i / 8) }); }); return a; }
+function playerBoard(p) { const a = []; p.board.forEach((u, i) => { if (u) a.push({ card: u.card, star: u.star, items: u.items, x: i % Chess.COLS, y: Math.floor(i / Chess.COLS) }); }); return a; }
 
 function startPrep(m) {
   m.round++; m.phase = 'prep';
@@ -222,7 +223,7 @@ function startCombat(m) {
   const alive = m.players.filter(p => p.alive);
   for (const p of alive) { // убрать лишних с поля
     let c = unitCount(p);
-    for (let i = 31; i >= 0 && c > p.lvl; i--) if (p.board[i]) { const bi = freeBench(p); if (bi < 0) break; p.bench[bi] = p.board[i]; p.board[i] = null; c--; }
+    for (let i = CELLS - 1; i >= 0 && c > p.lvl; i--) if (p.board[i]) { const bi = freeBench(p); if (bi < 0) break; p.bench[bi] = p.board[i]; p.board[i] = null; c--; }
     if (p.bot) botTurn(m, p);
   }
   const pve = isPve(m.round), fights = [];
@@ -249,7 +250,7 @@ function startCombat(m) {
 }
 
 function endCombat(m) {
-  const dmgOf = (r, surv) => 3 + surv + Math.floor(r / 2);
+  const dmgOf = (r, surv) => 4 + Math.round(surv * 1.4) + Math.floor(r * 0.8);
   for (const f of m.fights) {
     const w = f.log.winner;
     const res = (side) => w === -1 ? 'draw' : (w === side ? 'win' : 'lose');

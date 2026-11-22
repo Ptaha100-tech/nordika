@@ -9,7 +9,7 @@
   const stars = n => '★'.repeat(n || 1);
 
   const css = `
-#chs{position:fixed;inset:0;z-index:60;background:#14110d;color:#f2e8d5;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;--cs:min(12.4vw,calc((100vh - 380px)/9),72px);padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0);font-family:inherit}
+#chs{position:fixed;inset:0;z-index:60;background:#14110d;color:#f2e8d5;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;--cw:min(18.6vw,96px);--chh:calc(var(--cw)*1.2);padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0);font-family:inherit}
 #chs[hidden]{display:none}
 #chs:before{content:"";position:fixed;inset:-6%;background:url(/img/ch-arena.webp?v=1) center/cover;filter:brightness(.5) saturate(1.1);pointer-events:none;animation:chdrift 40s ease-in-out infinite alternate}
 @keyframes chdrift{from{transform:scale(1.02) translate(-1.5%,-1%)}to{transform:scale(1.1) translate(1.5%,1%)}}
@@ -17,7 +17,7 @@
 @keyframes chglow{from{opacity:.25}to{opacity:1}}
 .chbd:after{content:"";position:absolute;inset:0;pointer-events:none;z-index:2;background:linear-gradient(115deg,transparent 40%,rgba(180,230,255,.22) 50%,transparent 60%);background-size:250% 100%;animation:chsweep 6s linear infinite}
 @keyframes chsweep{from{background-position:130% 0}to{background-position:-130% 0}}
-.chw{position:relative;z-index:1;max-width:640px;margin:0 auto;padding:6px 2px 14px}#chs.cmb{--cs:min(12.4vw,calc((100vh - 250px)/8.4),80px)}.chtop,.chpl,.chsy,.chvs{margin-left:4px;margin-right:4px}
+.chw{position:relative;z-index:1;max-width:640px;margin:0 auto;padding:6px 2px 14px}#chs.dk .chw{padding-bottom:175px}.chtop,.chpl,.chsy,.chvs{margin-left:4px;margin-right:4px}
 .chtop{display:flex;align-items:center;gap:6px;margin-bottom:5px}
 .chtop .btn{padding:6px 9px;font-size:13px;min-height:34px}
 .chrd{flex:1;text-align:center;font-weight:700;font-size:15px;line-height:1.15}.chrd small{display:block;font-weight:400;opacity:.8;font-size:12px}
@@ -26,43 +26,49 @@
 .chp{background:rgba(0,0,0,.5);border:1px solid #4a3d28;border-radius:6px;padding:2px 1px;text-align:center;font-size:10px;line-height:1.1;overflow:hidden;position:relative}
 .chp b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}.chp i{display:block;height:4px;margin:2px 2px 0;background:#3a2a22;border-radius:2px;overflow:hidden}.chp i u{display:block;height:100%;background:#d2584c}
 .chp.me{border-color:#e8b230;background:rgba(232,178,48,.18)}.chp.dead{opacity:.35}.chp.foe{border-color:#d2584c}
-.chbd{position:relative;width:calc(var(--cs)*8);height:calc(var(--cs)*8);margin:0 auto;border:2px solid #6a5434;border-radius:6px;box-shadow:0 4px 14px #000;background:#2b2418 url(/img/ch-board.webp?v=2) 0 0/100% 100%;touch-action:manipulation}
-.chcell{position:absolute;width:var(--cs);height:var(--cs);box-sizing:border-box}
-\.chcell{box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}.chcell.t0,.chcell.t1{background:rgba(60,140,255,.07)}.chcell.e0,.chcell.e1{background:rgba(220,60,40,.14)}.chcell:has(.sel){z-index:30}
-.chcell.ok{box-shadow:inset 0 0 0 2px rgba(120,220,120,.7)}.chcell.sel{box-shadow:inset 0 0 0 3px #ffe27a}
-.chmid{position:absolute;left:0;right:0;top:calc(var(--cs)*4 - 2px);height:3px;background:linear-gradient(90deg,transparent,#ffd35a,transparent);opacity:.8;pointer-events:none;z-index:3}
-.chcd{position:relative;width:100%;height:100%;box-sizing:border-box;border:2px solid var(--cc,#888);border-radius:7px;background:linear-gradient(160deg,#4a3d2c,#241c13);display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:calc(var(--cs)*.58);line-height:1}
-.chcd img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 12%}
-.chcd .st{position:absolute;left:1px;top:0;font-size:calc(var(--cs)*.22);color:#ffd35a;text-shadow:0 0 2px #000,0 0 2px #000;letter-spacing:-1px}
-.chcd .it{position:absolute;right:1px;bottom:0;font-size:calc(var(--cs)*.2);text-shadow:0 0 2px #000}
-.chcd{transition:transform .14s}.chcd.sel{transform:scale(1.32);z-index:30;box-shadow:0 0 0 2px #ffe27a,0 0 14px 4px rgba(255,226,122,.8),0 6px 12px #000}
-.chbn{display:grid;grid-template-columns:repeat(8,var(--cs));gap:0;justify-content:center;margin:8px auto;width:calc(var(--cs)*8);background:#2b2418 url(/img/ch-bench.webp?v=2) 0 0/100% 100%;border:2px solid #6a5434;border-radius:6px;box-shadow:0 3px 10px #000}
+.chbd{position:relative;width:calc(var(--cw)*5);height:calc(var(--chh)*6);margin:0 auto;border:2px solid #6a5434;border-radius:6px;box-shadow:0 4px 14px #000;background:#2b2418 url(/img/ch-board.webp?v=3) 0 0/100% 100%;touch-action:manipulation;box-sizing:content-box}
+.chcell{position:absolute;width:var(--cw);height:var(--chh);box-sizing:border-box;box-shadow:inset 0 0 0 1px rgba(255,255,255,.1)}
+.chcell.t0,.chcell.t1{background:rgba(60,140,255,.06)}.chcell.e0,.chcell.e1{background:rgba(220,60,40,.13)}.chcell:has(.sel){z-index:30}
+.chmid{position:absolute;left:0;right:0;top:calc(var(--chh)*3 - 2px);height:3px;background:linear-gradient(90deg,transparent,#ffd35a,transparent);opacity:.85;pointer-events:none;z-index:3}
+.chcd{position:relative;width:100%;height:100%;box-sizing:border-box;border:2px solid var(--cc,#888);border-radius:6px;background:linear-gradient(160deg,#4a3d2c,#241c13);display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:calc(var(--cw)*.6);line-height:1;transition:transform .14s}
+.chcd img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 0}
+.chcd .cn{position:absolute;left:4%;top:1%;width:27%;aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:calc(var(--cw)*.2);font-weight:800;color:#fff;text-shadow:0 1px 2px #000,0 0 3px #000}
+.chcd .nm{position:absolute;left:0;right:0;bottom:0;padding:8px 2px 1px;text-align:center;font-size:calc(var(--cw)*.14);font-weight:700;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.85));white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chcd .st{position:absolute;right:3px;top:2px;font-size:calc(var(--cw)*.17);color:#ffd35a;text-shadow:0 0 2px #000,0 0 2px #000;letter-spacing:-1px}
+.chcd .it{position:absolute;left:2px;bottom:calc(var(--cw)*.16);font-size:calc(var(--cw)*.17);text-shadow:0 0 2px #000}
+.chcd.sel{transform:scale(1.18);z-index:30;box-shadow:0 0 0 2px #ffe27a,0 0 16px 5px rgba(255,226,122,.85),0 6px 14px #000}
+.chbn{display:grid;grid-template-columns:repeat(5,var(--cw));justify-content:center;margin:8px auto;width:calc(var(--cw)*5);background:#2b2418 url(/img/ch-bench.webp?v=3) 0 0/100% 100%;border:2px solid #6a5434;border-radius:6px;box-shadow:0 3px 10px #000;box-sizing:content-box}
 .chbn .chcell{position:relative}
 .chsy{display:flex;flex-wrap:wrap;gap:4px;min-height:24px;margin:4px 0}
 .chsy span{background:rgba(0,0,0,.5);border:1px solid #5a4a30;border-radius:12px;padding:2px 7px;font-size:12px;opacity:.65}.chsy span.on{opacity:1;border-color:#e8b230;background:rgba(232,178,48,.2)}
 .chit{display:flex;gap:5px;margin:4px 0;flex-wrap:wrap}.chit b{width:34px;height:34px;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.5);border:1px solid #6a5434;border-radius:7px;font-size:20px;font-weight:400}.chit b.sel{border-color:#ffe27a;box-shadow:0 0 0 2px #ffe27a}
-.chinfo{background:rgba(0,0,0,.72);border:1px solid #6a5434;border-radius:8px;padding:5px 8px;margin:4px 0;font-size:12px;line-height:1.3}.chinfo .btn{margin-top:3px;padding:3px 10px;min-height:28px;font-size:12px}
-.chshop{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px;margin-top:8px}
-.chsc{position:relative;aspect-ratio:5/8;border:0;border-radius:7px;background:#241c13;overflow:hidden;cursor:pointer;padding:0;color:inherit;font-family:inherit;box-shadow:0 3px 8px #000}
-.chsc img{position:absolute;inset:0;width:100%;height:100%;object-fit:fill}
-.chsc .em{position:absolute;left:0;right:0;top:22%;text-align:center;font-size:calc(var(--cs)*.9);line-height:1}
-.chsc .pr{position:absolute;left:3%;top:1%;width:29%;aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:clamp(12px,4.8vw,22px);font-weight:800;color:#fff;text-shadow:0 1px 3px #000,0 0 3px #000}
-.chsc .nm{position:absolute;left:11%;right:11%;bottom:2.5%;text-align:center;font-size:clamp(8px,2.6vw,12px);font-weight:700;color:#fff;text-shadow:0 1px 2px #000,0 0 3px #000;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.chsc .tr{position:absolute;right:6%;top:3%;display:flex;flex-direction:column;gap:1px;font-size:clamp(11px,3.4vw,16px);text-shadow:0 0 3px #000,0 0 3px #000}
+.chinfo{background:rgba(0,0,0,.72);border:1px solid #6a5434;border-radius:8px;padding:6px 8px;margin:4px 0;font-size:12px;line-height:1.3}
+.chdock{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(4px + env(safe-area-inset-bottom,0px));width:min(98vw,600px);height:150px;z-index:40;box-sizing:border-box;background:#c9c4b8 center/100% 100% no-repeat;border-radius:10px;box-shadow:0 -4px 18px rgba(0,0,0,.8);color:#2a2118;overflow:hidden}
+.chdock .dn{position:absolute;left:16%;right:16%;top:7px;text-align:center;font-weight:800;font-size:14px;color:#fff;text-shadow:0 1px 3px #000;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chdock .dt{position:absolute;left:8%;right:8%;top:42px;bottom:8px;font-size:12px;line-height:1.3;overflow:hidden}
+.chdock .dt b{color:#1b140c}.chdock .btn{padding:3px 12px;min-height:28px;font-size:12px;margin-top:3px}
+.chdock .dx{position:absolute;right:8px;top:4px;width:28px;height:28px;border-radius:50%;background:rgba(0,0,0,.5);border:1px solid #fff5;color:#fff;font-size:15px;line-height:1;padding:0}
+.chdock.it{background:#d1cbbc;border:3px solid #6a5434}.chdock.it .dn{color:#2a2118;text-shadow:none}
+.chshop{display:grid;grid-template-columns:repeat(5,var(--cw));justify-content:center;gap:0;margin-top:8px}
+.chsc{position:relative;width:var(--cw);height:var(--chh);border:2px solid var(--cc);border-radius:6px;background:#241c13;overflow:hidden;cursor:pointer;padding:0;color:inherit;font-family:inherit;box-sizing:border-box;box-shadow:0 3px 8px #000}
+.chsc img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 0}
+.chsc .em{position:absolute;left:0;right:0;top:20%;text-align:center;font-size:calc(var(--cw)*.6);line-height:1}
+.chsc .cn{position:absolute;left:4%;top:1%;width:27%;aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:calc(var(--cw)*.2);font-weight:800;color:#fff;text-shadow:0 1px 2px #000,0 0 3px #000}
+.chsc .nm{position:absolute;left:0;right:0;bottom:0;padding:8px 2px 1px;text-align:center;font-size:calc(var(--cw)*.14);font-weight:700;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.85));white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chsc .tr{position:absolute;right:3px;top:2px;display:flex;flex-direction:column;gap:1px;font-size:calc(var(--cw)*.2);text-shadow:0 0 3px #000,0 0 3px #000}
 .chsc:active{transform:scale(1.06)}.chsc.no{filter:brightness(.55) saturate(.6)}.chsc.empty{visibility:hidden}
-.chinfo{display:flex;gap:9px}.chinfo .cimg{width:48px;flex:none;aspect-ratio:5/8;border-radius:6px;overflow:hidden;position:relative;box-shadow:0 2px 6px #000}.chinfo .cimg img{position:absolute;inset:0;width:100%;height:100%}.chinfo .ctx{min-width:0}
 .chbt{display:grid;grid-template-columns:1fr 1fr auto;gap:5px;margin-top:6px}.chbt .btn{padding:8px 4px;font-size:13px;min-height:38px}
 .chxp{height:6px;background:#3a2a22;border-radius:3px;margin:5px 0;overflow:hidden}.chxp i{display:block;height:100%;background:#4a86e0}
 .cbn{position:fixed;left:50%;top:38%;transform:translate(-50%,-50%);background:rgba(10,8,6,.92);border:2px solid #e8b230;border-radius:14px;padding:14px 22px;text-align:center;z-index:70;font-size:18px;font-weight:700;pointer-events:none;animation:chfade 2.6s forwards}
 @keyframes chfade{0%{opacity:0;transform:translate(-50%,-40%)}10%{opacity:1;transform:translate(-50%,-50%)}80%{opacity:1}100%{opacity:0}}
-.cu{position:absolute;width:var(--cs);height:var(--cs);box-sizing:border-box;padding:1px;transition:left .45s linear,top .45s linear,opacity .5s;z-index:4}
+.cu{position:absolute;width:var(--cw);height:var(--chh);box-sizing:border-box;padding:1px;transition:left .45s linear,top .45s linear,opacity .5s;z-index:4}
 .cu .chcd{border-radius:7px;border-width:3px;border-color:#3fd070;box-shadow:0 0 8px rgba(60,220,110,.7),0 3px 6px #000}.cu.t1 .chcd{border-color:#e0483c;box-shadow:0 0 8px rgba(230,70,60,.8),0 3px 6px #000}.cu .chcd img{object-position:50% 10%}.chvs{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:5px;font-weight:700;font-size:14px}.chvs span{flex:1;background:rgba(0,0,0,.6);border-radius:8px;padding:5px 8px;border:2px solid #3fd070;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.chvs span.foe{border-color:#e0483c;text-align:right}.chvs b{font-size:16px;color:#ffd35a}.cu .hp{position:absolute;left:2px;right:2px;top:1px;height:6px;border:1px solid #000;box-sizing:border-box;background:#000a;border-radius:2px;overflow:hidden;z-index:2}.cu .hp i{display:block;height:100%;background:#58c86a}.cu.t1 .hp i{background:#d8584c}
 .cu .mn{position:absolute;left:2px;right:2px;top:7px;height:3px;background:#000a;z-index:2}.cu .mn i{display:block;height:100%;background:#4aa0ff}
 .cu .sh{position:absolute;left:2px;right:2px;top:0;height:2px;background:#fff;z-index:2}
 .cu.dead{opacity:0}.cu.stun .chcd{filter:grayscale(.8) brightness(1.2)}
 .cu.hit .chcd{animation:chhit .25s}@keyframes chhit{50%{filter:brightness(2.2)}}
 .cu.go .chcd{animation:chgo .3s}@keyframes chgo{50%{transform:scale(1.18)}}
-.cfx{position:absolute;pointer-events:none;z-index:9;font-weight:800;font-size:calc(var(--cs)*.38);text-shadow:0 0 3px #000,0 0 3px #000;animation:chup 1s forwards;white-space:nowrap}
+.cfx{position:absolute;pointer-events:none;z-index:9;font-weight:800;font-size:calc(var(--cw)*.3);text-shadow:0 0 3px #000,0 0 3px #000;animation:chup 1s forwards;white-space:nowrap}
 @keyframes chup{to{transform:translateY(-26px);opacity:0}}
 .cspell{position:absolute;pointer-events:none;z-index:8;border-radius:50%;border:3px solid #ffd35a;animation:chring .7s forwards}
 @keyframes chring{from{opacity:.9;transform:scale(.3)}to{opacity:0;transform:scale(1)}}
@@ -71,13 +77,10 @@
 `;
   const stl = document.createElement('style'); stl.textContent = css; document.head.appendChild(stl);
 
-  function art(id, cls) {
-    const c = C.CARDS[id];
-    return `<img src="/img/chp-${id}.webp?v=1" alt="" onerror="this.remove()">`;
-  }
-  function cardHtml(u, sel, extraCls) {
+  function art(id) { return `<img src="/img/ch-${id}.webp?v=2" alt="" onerror="this.remove()">`; }
+  function cardHtml(u, sel) {
     const c = C.CARDS[u.c];
-    return `<div class="chcd${sel ? ' sel' : ''}${extraCls ? ' ' + extraCls : ''}" style="--cc:${CCOL[c.c]}">${c.e}${art(u.c)}<span class="st">${stars(u.s)}</span>${u.i && u.i.length ? `<span class="it">${u.i.map(i => C.ITEMS[i].e).join('')}</span>` : ''}</div>`;
+    return `<div class="chcd${sel ? ' sel' : ''}" style="--cc:${CCOL[c.c]}">${c.e}${art(u.c)}<span class="cn">${c.c}</span><span class="st">${stars(u.s)}</span>${u.i && u.i.length ? `<span class="it">${u.i.map(i => C.ITEMS[i].e).join('')}</span>` : ''}<span class="nm">${c.n}</span></div>`;
   }
 
   function open() {
@@ -151,7 +154,7 @@
     const me = v.me; if (!me) return;
     if (v.phase === 'end' || !me.alive) { endScreen(el, v); return; }
     const keepScroll = el.scrollTop;
-    el.classList.toggle('cmb', v.phase === 'combat');
+    el.classList.toggle('dk', v.phase === 'prep' && (st.sel || st.item >= 0));
     el.innerHTML = `<div class="chw">${topBar(v)}${plStrip(v)}${v.phase === 'combat' ? vsBar(v) : ''}${boardHtml(v)}${v.phase === 'prep' ? prepHtml(v) : combatInfo(v)}</div>`;
     el.scrollTop = keepScroll; tickClock();
     if (v.phase === 'combat' && st.rep) st.rep.build();
@@ -161,17 +164,15 @@
     el.innerHTML = `<div class="chw"><div class="chend"><div class="big">${me.place === 1 ? '🏆' : me.place <= 3 ? '🥈' : '⚔'}</div><h2>${me.place === 1 ? 'Победа!' : 'Ваше место: ' + me.place}</h2><p>Раундов: ${v.round}</p>${rw ? `<p>Награда: 🪙 ${rw.sil}${rw.mats ? ' · материалы ×' + rw.mats : ''}${rw.bp ? ' · очки пропуска +' + rw.bp : ''}</p>${rw.sil === 0 ? '<p class="sm muted">Дневной предел наград достигнут.</p>' : ''}` : '<p class="muted">Подсчитываем награду…</p>'}<button class="btn" data-c="exit" type="button">Закрыть</button> <button class="btn ghost" data-c="again" type="button">Играть ещё</button></div></div>`;
   }
   function boardHtml(v) {
-    const me = v.me, combat = v.phase === 'combat';
+    const me = v.me, combat = v.phase === 'combat', CO = C.COLS, HA = C.HALF;
     let h = '<div class="chbd" id="chbd">';
-    for (let i = 0; i < 64; i++) {
-      const x = i % 8, y = Math.floor(i / 8), mine = y >= 4, k = (x + y) & 1;
-      let cls = 'chcell ' + (mine ? 't' : 'e') + k;
-      h += `<div class="${cls}" style="left:calc(var(--cs)*${x});top:calc(var(--cs)*${y})" data-c="cell" data-i="${mine ? (y - 4) * 8 + x : -1}">`;
-      if (!combat && mine) { const u = me.board[(y - 4) * 8 + x]; if (u) h += cardHtml(u, st.sel === 'f' + ((y - 4) * 8 + x)); }
+    for (let y = 0; y < 2 * HA; y++) for (let x = 0; x < CO; x++) {
+      const mine = y >= HA, k = (x + y) & 1, i = (y - HA) * CO + x;
+      h += `<div class="chcell ${mine ? 't' : 'e'}${k}" style="left:calc(var(--cw)*${x});top:calc(var(--chh)*${y})" data-c="cell" data-i="${mine ? i : -1}">`;
+      if (!combat && mine) { const u = me.board[i]; if (u) h += cardHtml(u, st.sel === 'f' + i); }
       h += '</div>';
     }
     h += '<div class="chmid"></div>';
-    if (combat) h += '<div id="chfx"></div>';
     h += '</div>';
     if (v.phase === 'prep') {
       h += `<div class="chbn">${me.bench.map((u, i) => `<div class="chcell" data-c="bench" data-i="${i}">${u ? cardHtml(u, st.sel === 'b' + i) : ''}</div>`).join('')}</div>`;
@@ -185,22 +186,22 @@
   }
   function infoHtml(v) {
     const me = v.me;
-    if (st.item >= 0 && me.items[st.item]) { const it = C.ITEMS[me.items[st.item]]; return `<div class="chinfo"><b>${it.e} ${it.n}</b><br>${it.d}<br><span class="sm">Нажмите на героя, чтобы выдать предмет.</span></div>`; }
+    if (st.item >= 0 && me.items[st.item]) { const it = C.ITEMS[me.items[st.item]]; return `<div class="chdock it"><button class="dx" data-c="desel" type="button">✕</button><div class="dn">${it.e} ${it.n}</div><div class="dt">${it.d}<br><span>Нажмите на героя, чтобы выдать предмет.</span></div></div>`; }
     if (st.sel) {
       const w = st.sel[0], i = +st.sel.slice(1), u = (w === 'f' ? me.board : me.bench)[i];
       if (u) {
         const c = C.CARDS[u.c], R = C.TRAITS[c.r], K = C.TRAITS[c.k], sp = C.SP[c.sp], s = C.stats(u.c, u.s, u.i, {});
         const price = c.c * [0, 1, 3, 9][u.s];
-        return `<div class="chinfo"><div class="cimg" style="background:#241c13"><img src="/img/ch-${u.c}.webp?v=1" alt="" onerror="this.remove()"></div><div class="ctx"><b>${c.e} ${c.n}</b> ${stars(u.s)} · ${R.e}${R.n} · ${K.e}${K.n}<br>❤ ${s.hp} · ⚔ ${s.atk} · дальность ${s.rg}<br><b>${sp.n}:</b> ${sp.d}${u.i.length ? '<br>' + u.i.map(q => C.ITEMS[q].e + ' ' + C.ITEMS[q].n).join(', ') : ''}<br><button class="btn small" data-c="sell" type="button">Продать за ${price} 🪙</button></div></div>`;
+        return `<div class="chdock" style="background-image:url(/img/chb-${u.c}.webp?v=2)"><button class="dx" data-c="desel" type="button">✕</button><div class="dn">${c.n} ${stars(u.s)}</div><div class="dt"><b>${R.e}${R.n} · ${K.e}${K.n}</b> · ❤ ${s.hp} · ⚔ ${s.atk} · дальность ${s.rg}<br><b>${sp.n}:</b> ${sp.d}${u.i.length ? '<br>' + u.i.map(q => C.ITEMS[q].e + ' ' + C.ITEMS[q].n).join(', ') : ''}<br><button class="btn small" data-c="sell" type="button">Продать за ${price} 🪙</button></div></div>`;
       }
     }
     return '';
   }
   function prepHtml(v) {
     const me = v.me;
-    const shop = me.shop.map((id, i) => { if (!id) return '<div class="chsc empty"></div>'; const c = C.CARDS[id], no = me.gold < c.c; return `<button class="chsc${no ? ' no' : ''}" data-c="buy" data-i="${i}" type="button"><span class="em">${c.e}</span><img src="/img/ch-${id}.webp?v=1" alt="" onerror="this.remove()"><span class="pr">${c.c}</span><span class="tr"><i>${C.TRAITS[c.r].e}</i><i>${C.TRAITS[c.k].e}</i></span><span class="nm">${c.n}</span></button>`; }).join('');
+    const shop = me.shop.map((id, i) => { if (!id) return '<div class="chsc empty"></div>'; const c = C.CARDS[id], no = me.gold < c.c; return `<button class="chsc${no ? ' no' : ''}" style="--cc:${CCOL[c.c]}" data-c="buy" data-i="${i}" type="button"><span class="em">${c.e}</span>${art(id)}<span class="cn">${c.c}</span><span class="tr"><i>${C.TRAITS[c.r].e}</i><i>${C.TRAITS[c.k].e}</i></span><span class="nm">${c.n}</span></button>`; }).join('');
     const onB = me.board.filter(Boolean).length;
-    return `${synHtml(v)}<div class="sm" style="text-align:center">На поле: ${onB} из ${me.lvl} · Ур. ${me.lvl}${me.xpn ? ` · опыт ${me.xp}/${me.xpn}` : ' (максимум)'}</div>${me.xpn ? `<div class="chxp"><i style="width:${Math.min(100, me.xp / me.xpn * 100)}%"></i></div>` : ''}${me.items.length ? '<div class="chit">' : '<div class="chit" hidden>'}${me.items.map((q, i) => `<b class="${st.item === i ? 'sel' : ''}" data-c="item" data-i="${i}">${C.ITEMS[q].e}</b>`).join('')}</div>${infoHtml(v)}<div class="chshop">${shop}</div><div class="chbt"><button class="btn" data-c="reroll" type="button">🔄 Обновить · 2🪙</button><button class="btn" data-c="xp" type="button">⬆ Опыт · 5🪙</button><button class="btn ghost" data-c="lock" type="button">${me.lock ? '🔒' : '🔓'}</button></div>${me.income ? `<p class="sm muted" style="text-align:center">Доход за раунд: ${me.income.total}🪙 (база 5${me.income.inter ? ' + проценты ' + me.income.inter : ''}${me.income.streak ? ' + серия ' + me.income.streak : ''})</p>` : ''}`;
+    return `${synHtml(v)}<div class="sm" style="text-align:center">На поле: ${onB} из ${me.lvl} · Ур. ${me.lvl}${me.xpn ? ` · опыт ${me.xp}/${me.xpn}` : ' (максимум)'}</div>${me.xpn ? `<div class="chxp"><i style="width:${Math.min(100, me.xp / me.xpn * 100)}%"></i></div>` : ''}${me.items.length ? '<div class="chit">' : '<div class="chit" hidden>'}${me.items.map((q, i) => `<b class="${st.item === i ? 'sel' : ''}" data-c="item" data-i="${i}">${C.ITEMS[q].e}</b>`).join('')}</div><div class="chshop">${shop}</div><div class="chbt"><button class="btn" data-c="reroll" type="button">🔄 Обновить · 2🪙</button><button class="btn" data-c="xp" type="button">⬆ Опыт · 5🪙</button><button class="btn ghost" data-c="lock" type="button">${me.lock ? '🔒' : '🔓'}</button></div>${infoHtml(v)}${me.income ? `<p class="sm muted" style="text-align:center">Доход за раунд: ${me.income.total}🪙 (база 5${me.income.inter ? ' + проценты ' + me.income.inter : ''}${me.income.streak ? ' + серия ' + me.income.streak : ''})</p>` : ''}`;
   }
   function vsBar(v) {
     const f = v.fight; if (!f) return '';
@@ -218,16 +219,16 @@
     stopRep();
     const lg = v.fight.log, side = v.fight.side;
     const R = { round: v.round, i: 0, els: {}, tm: 0 };
-    const fx = (x, y, txt, col) => { const b = $c('chbd'); if (!b) return; const d = document.createElement('div'); d.className = 'cfx'; d.style.cssText = `left:calc(var(--cs)*${x} + var(--cs)*.15);top:calc(var(--cs)*${y});color:${col}`; d.textContent = txt; b.appendChild(d); setTimeout(() => d.remove(), 1000); };
-    const pos = (x, y) => side === 1 ? [7 - x, 7 - y] : [x, y];
+    const fx = (x, y, txt, col) => { const b = $c('chbd'); if (!b) return; const d = document.createElement('div'); d.className = 'cfx'; d.style.cssText = `left:calc(var(--cw)*${x} + var(--cw)*.1);top:calc(var(--chh)*${y});color:${col}`; d.textContent = txt; b.appendChild(d); setTimeout(() => d.remove(), 1000); };
+    const pos = (x, y) => side === 1 ? [C.COLS - 1 - x, 2 * C.HALF - 1 - y] : [x, y];
     R.build = () => {
       const b = $c('chbd'); if (!b) return; R.els = {};
       lg.init.forEach(a => {
         const [id, team, card, emo, img, star, x, y, mhp, hp, mm, mana, items] = a;
         const [px, py] = pos(x, y), d = document.createElement('div'); d.className = 'cu t' + (team === side ? 0 : 1);
-        d.style.cssText = `left:calc(var(--cs)*${px});top:calc(var(--cs)*${py})`;
+        d.style.cssText = `left:calc(var(--cw)*${px});top:calc(var(--chh)*${py})`;
         const cc = card ? C.CARDS[card] : null, col = cc ? CCOL[cc.c] : '#b0463a';
-        d.innerHTML = `<div class="chcd" style="--cc:${col}">${cc ? cc.e : (emo || '💀')}${cc ? art(card) : (img ? `<img src="/img/${img}.webp?v=1" alt="" onerror="this.remove()">` : '')}<span class="st">${stars(star)}</span></div><div class="hp"><i style="width:100%"></i></div><div class="mn"><i style="width:0"></i></div>`;
+        d.innerHTML = `<div class="chcd" style="--cc:${col}">${cc ? cc.e : (emo || '💀')}${cc ? art(card) : (img ? `<img src="/img/${img}.webp?v=1" alt="" onerror="this.remove()">` : '')}${cc ? `<span class="cn">${cc.c}</span>` : ''}<span class="st">${stars(star)}</span></div><div class="hp"><i style="width:100%"></i></div><div class="mn"><i style="width:0"></i></div>`;
         b.appendChild(d); R.els[id] = { d, mhp, mm, x: px, y: py };
       });
       show(R.i - 1 >= 0 ? R.i - 1 : -1, true);
@@ -238,7 +239,7 @@
       f.s.forEach(a => {
         const [id, x, y, hp, mana, sh, stun] = a, e = R.els[id]; if (!e) return; live.add(id);
         const [px, py] = pos(x, y); e.x = px; e.y = py;
-        e.d.style.left = `calc(var(--cs)*${px})`; e.d.style.top = `calc(var(--cs)*${py})`;
+        e.d.style.left = `calc(var(--cw)*${px})`; e.d.style.top = `calc(var(--chh)*${py})`;
         e.d.classList.toggle('dead', hp <= 0); e.d.classList.toggle('stun', !!stun);
         e.d.querySelector('.hp i').style.width = Math.max(0, hp / e.mhp * 100) + '%';
         e.d.querySelector('.mn i').style.width = (e.mm ? Math.min(100, mana / e.mm * 100) : 0) + '%';
@@ -248,7 +249,7 @@
       f.e.forEach(ev => {
         const t = ev[0], e = R.els[ev[1]];
         if (t === 'a') { const tg = R.els[ev[2]]; if (e) { e.d.classList.remove('go'); void e.d.offsetWidth; e.d.classList.add('go'); } if (tg) { tg.d.classList.remove('hit'); void tg.d.offsetWidth; tg.d.classList.add('hit'); fx(tg.x, tg.y, (ev[4] ? '💥' : '') + '-' + ev[3], ev[4] ? '#ffcf4a' : '#fff'); } }
-        else if (t === 's' && e) { const sp = C.SP[ev[2]]; fx(e.x, e.y - .2, sp ? sp.n : '', '#8fd0ff'); const r = document.createElement('div'); r.className = 'cspell'; r.style.cssText = `left:calc(var(--cs)*${e.x} - var(--cs)*.4);top:calc(var(--cs)*${e.y} - var(--cs)*.4);width:calc(var(--cs)*1.8);height:calc(var(--cs)*1.8)`; const b = $c('chbd'); if (b) { b.appendChild(r); setTimeout(() => r.remove(), 700); } }
+        else if (t === 's' && e) { const sp = C.SP[ev[2]]; fx(e.x, e.y - .2, sp ? sp.n : '', '#8fd0ff'); const r = document.createElement('div'); r.className = 'cspell'; r.style.cssText = `left:calc(var(--cw)*${e.x} - var(--cw)*.4);top:calc(var(--chh)*${e.y} - var(--cw)*.2);width:calc(var(--cw)*1.8);height:calc(var(--cw)*1.8)`; const b = $c('chbd'); if (b) { b.appendChild(r); setTimeout(() => r.remove(), 700); } }
         else if (t === 'h' && e) fx(e.x, e.y, '+' + ev[2], '#6fe08a');
         else if (t === 'sh' && e) fx(e.x, e.y, '🛡', '#fff');
         else if (t === 'd' && e) fx(e.x, e.y, 'мимо', '#ccc');
@@ -275,6 +276,7 @@
     if (a === 'reroll') { await act({ a: 'reroll' }); return; }
     if (a === 'xp') { await act({ a: 'xp' }); return; }
     if (a === 'lock') { await act({ a: 'lock' }); return; }
+    if (a === 'desel') { st.sel = null; st.item = -1; draw(); return; }
     if (a === 'sell') { if (st.sel) { const f = st.sel; st.sel = null; await act({ a: 'sell', f }); } return; }
     if (a === 'item') { const i = +t.dataset.i; st.item = st.item === i ? -1 : i; st.sel = null; draw(); return; }
     if (a === 'cell' || a === 'bench') {

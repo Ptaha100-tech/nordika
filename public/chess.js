@@ -3,7 +3,7 @@
   if (typeof module === 'object' && module.exports) module.exports = factory(); else root.Chess = factory();
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
-  const COLS = 8, HALF = 4, BENCH = 8, MAXLV = 9, TICK = 500;
+  const COLS = 5, HALF = 3, BENCH = 5, MAXLV = 9, TICK = 500;
 
   // ---- Родства и классы (синергии) ----
   const TRAITS = {
@@ -147,7 +147,7 @@
     const R = rng(seed || 1), units = [];
     const add = (arr, team, syn) => arr.forEach((u, i) => {
       const st = u.st || stats(u.card, u.star, u.items, syn);
-      const x = team === 0 ? u.x : 7 - u.x, y = team === 0 ? 4 + u.y : 3 - u.y;
+      const x = team === 0 ? u.x : COLS - 1 - u.x, y = team === 0 ? HALF + u.y : HALF - 1 - u.y;
       units.push({ id: units.length, team, card: u.card || '', e: u.e || '', img: u.img || '', star: st.star || 1, x, y, mhp: st.hp, hp: st.hp, atk: st.atk, ar: st.ar, as: st.as, crit: st.crit, cm: st.cm, dodge: st.dodge, ls: st.ls, regen: st.regen, mr: st.mr, sp: st.sp, rg: st.rg, ai: st.ai,
         mm: st.mana, mana: st.mana0 || 0, spell: u.card ? CARDS[u.card].sp : (u.sp || ''), cd: 0, stun: 0, buff: [], shield: 0, tgt: -1, items: (u.items || []).length, pri: syn && syn.priest ? syn.priest.lv : 0 });
     });
@@ -183,7 +183,7 @@
       let best = null, bd = 1e9;
       for (let ax = -1; ax <= 1; ax++) for (let ay = -1; ay <= 1; ay++) {
         if (!ax && !ay) continue; const nx = u.x + ax, ny = u.y + ay;
-        if (nx < 0 || nx > 7 || ny < 0 || ny > 7 || occ.has(nx + ',' + ny)) continue;
+        if (nx < 0 || nx > COLS - 1 || ny < 0 || ny > 2 * HALF - 1 || occ.has(nx + ',' + ny)) continue;
         const d = Math.max(Math.abs(t.x - nx), Math.abs(t.y - ny)) * 10 + Math.hypot(t.x - nx, t.y - ny);
         if (d < bd) { bd = d; best = [nx, ny]; }
       }
