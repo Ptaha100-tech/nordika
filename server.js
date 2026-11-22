@@ -9,7 +9,7 @@ const crypto = require('crypto');
 const Core = require('./public/core.js');
 const Clan = require('./public/clans.js');
 const Social = require('./public/social.js');
-const ChessD = require('./chessd.js');
+const ChessD = require('./public/chessd.js');
 
 const PORT = Number(process.env.PORT) || 3000;
 const HOST = process.env.HOST || '0.0.0.0';

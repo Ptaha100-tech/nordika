@@ -1,6 +1,6 @@
 'use strict';
 /* Сервер «Шахмат Нордики»: комнаты на 8 мест (игроки + боты), раунды, магазин, экономика, бои. Всё хранится в памяти. */
-const Chess = require('./public/chess.js');
+const Chess = require('./chess.js');
 const { CARDS, ORDER, POOL, XP_NEED, TICK, ITEM_IDS } = Chess;
 
 const LOBBY_WAIT = 20000, PREP_MS = 30000, PREP_FIRST = 38000, SEATS = 8, START_HP = 100, START_GOLD = 4, START_LV = 3;
