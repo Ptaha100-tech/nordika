@@ -9,7 +9,7 @@
   const stars = n => '★'.repeat(n || 1);
 
   const css = `
-#chs{position:fixed;inset:0;z-index:60;background:#14110d;color:#f2e8d5;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;--cs:min(11.4vw,calc((100vh - 395px)/9),64px);padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0);font-family:inherit}
+#chs{position:fixed;inset:0;z-index:60;background:#14110d;color:#f2e8d5;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;--cs:min(12.4vw,calc((100vh - 380px)/9),72px);padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0);font-family:inherit}
 #chs[hidden]{display:none}
 #chs:before{content:"";position:fixed;inset:-6%;background:url(/img/ch-arena.webp?v=1) center/cover;filter:brightness(.5) saturate(1.1);pointer-events:none;animation:chdrift 40s ease-in-out infinite alternate}
 @keyframes chdrift{from{transform:scale(1.02) translate(-1.5%,-1%)}to{transform:scale(1.1) translate(1.5%,1%)}}
@@ -17,7 +17,7 @@
 @keyframes chglow{from{opacity:.25}to{opacity:1}}
 .chbd:after{content:"";position:absolute;inset:0;pointer-events:none;z-index:2;background:linear-gradient(115deg,transparent 40%,rgba(180,230,255,.22) 50%,transparent 60%);background-size:250% 100%;animation:chsweep 6s linear infinite}
 @keyframes chsweep{from{background-position:130% 0}to{background-position:-130% 0}}
-.chw{position:relative;z-index:1;max-width:560px;margin:0 auto;padding:6px 6px 14px}
+.chw{position:relative;z-index:1;max-width:640px;margin:0 auto;padding:6px 2px 14px}#chs.cmb{--cs:min(12.4vw,calc((100vh - 250px)/8.4),80px)}.chtop,.chpl,.chsy,.chvs{margin-left:4px;margin-right:4px}
 .chtop{display:flex;align-items:center;gap:6px;margin-bottom:5px}
 .chtop .btn{padding:6px 9px;font-size:13px;min-height:34px}
 .chrd{flex:1;text-align:center;font-weight:700;font-size:15px;line-height:1.15}.chrd small{display:block;font-weight:400;opacity:.8;font-size:12px}
@@ -56,13 +56,13 @@
 .cbn{position:fixed;left:50%;top:38%;transform:translate(-50%,-50%);background:rgba(10,8,6,.92);border:2px solid #e8b230;border-radius:14px;padding:14px 22px;text-align:center;z-index:70;font-size:18px;font-weight:700;pointer-events:none;animation:chfade 2.6s forwards}
 @keyframes chfade{0%{opacity:0;transform:translate(-50%,-40%)}10%{opacity:1;transform:translate(-50%,-50%)}80%{opacity:1}100%{opacity:0}}
 .cu{position:absolute;width:var(--cs);height:var(--cs);box-sizing:border-box;padding:1px;transition:left .45s linear,top .45s linear,opacity .5s;z-index:4}
-.cu .chcd{border-radius:6px}.cu .hp{position:absolute;left:2px;right:2px;top:1px;height:4px;background:#000a;border-radius:2px;overflow:hidden;z-index:2}.cu .hp i{display:block;height:100%;background:#58c86a}.cu.t1 .hp i{background:#d8584c}
-.cu .mn{position:absolute;left:2px;right:2px;top:5px;height:3px;background:#000a;z-index:2}.cu .mn i{display:block;height:100%;background:#4aa0ff}
+.cu .chcd{border-radius:7px;border-width:3px;border-color:#3fd070;box-shadow:0 0 8px rgba(60,220,110,.7),0 3px 6px #000}.cu.t1 .chcd{border-color:#e0483c;box-shadow:0 0 8px rgba(230,70,60,.8),0 3px 6px #000}.cu .chcd img{object-position:50% 10%}.chvs{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:5px;font-weight:700;font-size:14px}.chvs span{flex:1;background:rgba(0,0,0,.6);border-radius:8px;padding:5px 8px;border:2px solid #3fd070;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.chvs span.foe{border-color:#e0483c;text-align:right}.chvs b{font-size:16px;color:#ffd35a}.cu .hp{position:absolute;left:2px;right:2px;top:1px;height:6px;border:1px solid #000;box-sizing:border-box;background:#000a;border-radius:2px;overflow:hidden;z-index:2}.cu .hp i{display:block;height:100%;background:#58c86a}.cu.t1 .hp i{background:#d8584c}
+.cu .mn{position:absolute;left:2px;right:2px;top:7px;height:3px;background:#000a;z-index:2}.cu .mn i{display:block;height:100%;background:#4aa0ff}
 .cu .sh{position:absolute;left:2px;right:2px;top:0;height:2px;background:#fff;z-index:2}
 .cu.dead{opacity:0}.cu.stun .chcd{filter:grayscale(.8) brightness(1.2)}
 .cu.hit .chcd{animation:chhit .25s}@keyframes chhit{50%{filter:brightness(2.2)}}
 .cu.go .chcd{animation:chgo .3s}@keyframes chgo{50%{transform:scale(1.18)}}
-.cfx{position:absolute;pointer-events:none;z-index:9;font-weight:700;font-size:calc(var(--cs)*.3);text-shadow:0 0 3px #000,0 0 3px #000;animation:chup 1s forwards;white-space:nowrap}
+.cfx{position:absolute;pointer-events:none;z-index:9;font-weight:800;font-size:calc(var(--cs)*.38);text-shadow:0 0 3px #000,0 0 3px #000;animation:chup 1s forwards;white-space:nowrap}
 @keyframes chup{to{transform:translateY(-26px);opacity:0}}
 .cspell{position:absolute;pointer-events:none;z-index:8;border-radius:50%;border:3px solid #ffd35a;animation:chring .7s forwards}
 @keyframes chring{from{opacity:.9;transform:scale(.3)}to{opacity:0;transform:scale(1)}}
@@ -151,7 +151,8 @@
     const me = v.me; if (!me) return;
     if (v.phase === 'end' || !me.alive) { endScreen(el, v); return; }
     const keepScroll = el.scrollTop;
-    el.innerHTML = `<div class="chw">${topBar(v)}${plStrip(v)}${boardHtml(v)}${v.phase === 'prep' ? prepHtml(v) : combatInfo(v)}</div>`;
+    el.classList.toggle('cmb', v.phase === 'combat');
+    el.innerHTML = `<div class="chw">${topBar(v)}${plStrip(v)}${v.phase === 'combat' ? vsBar(v) : ''}${boardHtml(v)}${v.phase === 'prep' ? prepHtml(v) : combatInfo(v)}</div>`;
     el.scrollTop = keepScroll; tickClock();
     if (v.phase === 'combat' && st.rep) st.rep.build();
   }
@@ -201,9 +202,14 @@
     const onB = me.board.filter(Boolean).length;
     return `${synHtml(v)}<div class="sm" style="text-align:center">На поле: ${onB} из ${me.lvl} · Ур. ${me.lvl}${me.xpn ? ` · опыт ${me.xp}/${me.xpn}` : ' (максимум)'}</div>${me.xpn ? `<div class="chxp"><i style="width:${Math.min(100, me.xp / me.xpn * 100)}%"></i></div>` : ''}${me.items.length ? '<div class="chit">' : '<div class="chit" hidden>'}${me.items.map((q, i) => `<b class="${st.item === i ? 'sel' : ''}" data-c="item" data-i="${i}">${C.ITEMS[q].e}</b>`).join('')}</div>${infoHtml(v)}<div class="chshop">${shop}</div><div class="chbt"><button class="btn" data-c="reroll" type="button">🔄 Обновить · 2🪙</button><button class="btn" data-c="xp" type="button">⬆ Опыт · 5🪙</button><button class="btn ghost" data-c="lock" type="button">${me.lock ? '🔒' : '🔓'}</button></div>${me.income ? `<p class="sm muted" style="text-align:center">Доход за раунд: ${me.income.total}🪙 (база 5${me.income.inter ? ' + проценты ' + me.income.inter : ''}${me.income.streak ? ' + серия ' + me.income.streak : ''})</p>` : ''}`;
   }
+  function vsBar(v) {
+    const f = v.fight; if (!f) return '';
+    const mine = v.me, foe = v.players.find(p => p.n === f.opp);
+    return `<div class="chvs"><span>🟢 Вы · ❤ ${mine.hp}</span><b>⚔</b><span class="foe">${esc(f.opp)}${foe ? ' · ❤ ' + foe.hp : ''}${f.ghost ? ' (тень)' : ''} 🔴</span></div>`;
+  }
   function combatInfo(v) {
     const f = v.fight; if (!f) return '<p class="sm muted" style="text-align:center">Ваш бой окончен, ждём остальных…</p>';
-    return `${synHtml(v)}<p class="sm" style="text-align:center">Соперник: <b>${esc(f.opp)}</b>${f.ghost ? ' (отражение дружины)' : ''}</p>`;
+    return synHtml(v);
   }
 
   // ---------- повтор боя ----------
