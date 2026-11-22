@@ -9,7 +9,7 @@
   const stars = n => '★'.repeat(n || 1);
 
   const css = `
-#chs{position:fixed;inset:0;z-index:60;background:#14110d;color:#f2e8d5;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;--cs:min(11.4vw,calc((100vh - 300px)/9.2),64px);padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0);font-family:inherit}
+#chs{position:fixed;inset:0;z-index:60;background:#14110d;color:#f2e8d5;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;--cs:min(11.4vw,calc((100vh - 395px)/9),64px);padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0);font-family:inherit}
 #chs[hidden]{display:none}
 #chs:before{content:"";position:fixed;inset:-6%;background:url(/img/ch-arena.webp?v=1) center/cover;filter:brightness(.5) saturate(1.1);pointer-events:none;animation:chdrift 40s ease-in-out infinite alternate}
 @keyframes chdrift{from{transform:scale(1.02) translate(-1.5%,-1%)}to{transform:scale(1.1) translate(1.5%,1%)}}
@@ -26,30 +26,31 @@
 .chp{background:rgba(0,0,0,.5);border:1px solid #4a3d28;border-radius:6px;padding:2px 1px;text-align:center;font-size:10px;line-height:1.1;overflow:hidden;position:relative}
 .chp b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}.chp i{display:block;height:4px;margin:2px 2px 0;background:#3a2a22;border-radius:2px;overflow:hidden}.chp i u{display:block;height:100%;background:#d2584c}
 .chp.me{border-color:#e8b230;background:rgba(232,178,48,.18)}.chp.dead{opacity:.35}.chp.foe{border-color:#d2584c}
-.chbd{position:relative;width:calc(var(--cs)*8);height:calc(var(--cs)*8);margin:0 auto;border:2px solid #6a5434;border-radius:6px;overflow:hidden;background:#2b2418 url(/img/ch-board.webp?v=1) 0 0/100% 100%;touch-action:manipulation}
+.chbd{position:relative;width:calc(var(--cs)*8);height:calc(var(--cs)*8);margin:0 auto;border:2px solid #6a5434;border-radius:6px;box-shadow:0 4px 14px #000;background:#2b2418 url(/img/ch-board.webp?v=2) 0 0/100% 100%;touch-action:manipulation}
 .chcell{position:absolute;width:var(--cs);height:var(--cs);box-sizing:border-box}
-.chcell.t0,.chcell.t1{background:rgba(70,150,255,.10)}.chcell.e0,.chcell.e1{background:rgba(220,70,50,.13)}.chcell.t1,.chcell.e1{box-shadow:inset 0 0 0 1px rgba(255,255,255,.05)}
+\.chcell{box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}.chcell.t0,.chcell.t1{background:rgba(60,140,255,.07)}.chcell.e0,.chcell.e1{background:rgba(220,60,40,.14)}.chcell:has(.sel){z-index:30}
 .chcell.ok{box-shadow:inset 0 0 0 2px rgba(120,220,120,.7)}.chcell.sel{box-shadow:inset 0 0 0 3px #ffe27a}
-.chmid{position:absolute;left:0;right:0;top:calc(var(--cs)*4 - 1px);height:2px;background:#e8b230;opacity:.55;pointer-events:none;z-index:3}
+.chmid{position:absolute;left:0;right:0;top:calc(var(--cs)*4 - 2px);height:3px;background:linear-gradient(90deg,transparent,#ffd35a,transparent);opacity:.8;pointer-events:none;z-index:3}
 .chcd{position:relative;width:100%;height:100%;box-sizing:border-box;border:2px solid var(--cc,#888);border-radius:7px;background:linear-gradient(160deg,#4a3d2c,#241c13);display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:calc(var(--cs)*.58);line-height:1}
-.chcd img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.chcd img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 12%}
 .chcd .st{position:absolute;left:1px;top:0;font-size:calc(var(--cs)*.22);color:#ffd35a;text-shadow:0 0 2px #000,0 0 2px #000;letter-spacing:-1px}
 .chcd .it{position:absolute;right:1px;bottom:0;font-size:calc(var(--cs)*.2);text-shadow:0 0 2px #000}
-.chcd .nm{position:absolute;left:0;right:0;bottom:0;font-size:calc(var(--cs)*.17);text-align:center;background:rgba(0,0,0,.6);padding:0 1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.chcd.sel{outline:3px solid #ffe27a;outline-offset:-1px;z-index:5}
-.chbn{display:grid;grid-template-columns:repeat(8,var(--cs));gap:0;justify-content:center;margin:6px auto;width:calc(var(--cs)*8);background:rgba(0,0,0,.4);border:1px solid #5a4a30;border-radius:6px}
-.chbn .chcell{position:relative;border:1px dashed rgba(255,255,255,.12)}
+.chcd{transition:transform .14s}.chcd.sel{transform:scale(1.32);z-index:30;box-shadow:0 0 0 2px #ffe27a,0 0 14px 4px rgba(255,226,122,.8),0 6px 12px #000}
+.chbn{display:grid;grid-template-columns:repeat(8,var(--cs));gap:0;justify-content:center;margin:8px auto;width:calc(var(--cs)*8);background:#2b2418 url(/img/ch-bench.webp?v=2) 0 0/100% 100%;border:2px solid #6a5434;border-radius:6px;box-shadow:0 3px 10px #000}
+.chbn .chcell{position:relative}
 .chsy{display:flex;flex-wrap:wrap;gap:4px;min-height:24px;margin:4px 0}
 .chsy span{background:rgba(0,0,0,.5);border:1px solid #5a4a30;border-radius:12px;padding:2px 7px;font-size:12px;opacity:.65}.chsy span.on{opacity:1;border-color:#e8b230;background:rgba(232,178,48,.2)}
-.chit{display:flex;gap:5px;min-height:30px;margin:4px 0;flex-wrap:wrap}.chit b{width:34px;height:34px;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.5);border:1px solid #6a5434;border-radius:7px;font-size:20px;font-weight:400}.chit b.sel{border-color:#ffe27a;box-shadow:0 0 0 2px #ffe27a}
-.chinfo{background:rgba(0,0,0,.6);border:1px solid #6a5434;border-radius:8px;padding:7px 9px;margin:5px 0;font-size:13px;line-height:1.35}.chinfo .btn{margin-top:5px;padding:5px 12px;min-height:32px}
-.chshop{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;margin-top:6px}
-.chsc{position:relative;aspect-ratio:3/4;border:2px solid var(--cc);border-radius:8px;background:linear-gradient(160deg,#4a3d2c,#241c13);display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;cursor:pointer;padding:0;color:inherit;font-family:inherit}
-.chsc .em{font-size:calc(var(--cs)*.78);line-height:1}.chsc img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-.chsc .nm{position:absolute;left:0;right:0;bottom:0;background:rgba(0,0,0,.72);font-size:10px;padding:1px 0 2px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.chsc .pr{position:absolute;right:2px;top:2px;background:rgba(0,0,0,.7);border-radius:8px;padding:0 5px;font-size:12px;font-weight:700;color:#ffd35a}
-.chsc .tr{position:absolute;left:2px;top:2px;font-size:11px;text-shadow:0 0 2px #000}
-.chsc.no{opacity:.4}.chsc.empty{visibility:hidden}
+.chit{display:flex;gap:5px;margin:4px 0;flex-wrap:wrap}.chit b{width:34px;height:34px;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.5);border:1px solid #6a5434;border-radius:7px;font-size:20px;font-weight:400}.chit b.sel{border-color:#ffe27a;box-shadow:0 0 0 2px #ffe27a}
+.chinfo{background:rgba(0,0,0,.72);border:1px solid #6a5434;border-radius:8px;padding:5px 8px;margin:4px 0;font-size:12px;line-height:1.3}.chinfo .btn{margin-top:3px;padding:3px 10px;min-height:28px;font-size:12px}
+.chshop{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px;margin-top:8px}
+.chsc{position:relative;aspect-ratio:5/8;border:0;border-radius:7px;background:#241c13;overflow:hidden;cursor:pointer;padding:0;color:inherit;font-family:inherit;box-shadow:0 3px 8px #000}
+.chsc img{position:absolute;inset:0;width:100%;height:100%;object-fit:fill}
+.chsc .em{position:absolute;left:0;right:0;top:22%;text-align:center;font-size:calc(var(--cs)*.9);line-height:1}
+.chsc .pr{position:absolute;left:3%;top:1%;width:29%;aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:clamp(12px,4.8vw,22px);font-weight:800;color:#fff;text-shadow:0 1px 3px #000,0 0 3px #000}
+.chsc .nm{position:absolute;left:11%;right:11%;bottom:2.5%;text-align:center;font-size:clamp(8px,2.6vw,12px);font-weight:700;color:#fff;text-shadow:0 1px 2px #000,0 0 3px #000;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chsc .tr{position:absolute;right:6%;top:3%;display:flex;flex-direction:column;gap:1px;font-size:clamp(11px,3.4vw,16px);text-shadow:0 0 3px #000,0 0 3px #000}
+.chsc:active{transform:scale(1.06)}.chsc.no{filter:brightness(.55) saturate(.6)}.chsc.empty{visibility:hidden}
+.chinfo{display:flex;gap:9px}.chinfo .cimg{width:48px;flex:none;aspect-ratio:5/8;border-radius:6px;overflow:hidden;position:relative;box-shadow:0 2px 6px #000}.chinfo .cimg img{position:absolute;inset:0;width:100%;height:100%}.chinfo .ctx{min-width:0}
 .chbt{display:grid;grid-template-columns:1fr 1fr auto;gap:5px;margin-top:6px}.chbt .btn{padding:8px 4px;font-size:13px;min-height:38px}
 .chxp{height:6px;background:#3a2a22;border-radius:3px;margin:5px 0;overflow:hidden}.chxp i{display:block;height:100%;background:#4a86e0}
 .cbn{position:fixed;left:50%;top:38%;transform:translate(-50%,-50%);background:rgba(10,8,6,.92);border:2px solid #e8b230;border-radius:14px;padding:14px 22px;text-align:center;z-index:70;font-size:18px;font-weight:700;pointer-events:none;animation:chfade 2.6s forwards}
@@ -72,7 +73,7 @@
 
   function art(id, cls) {
     const c = C.CARDS[id];
-    return `<img src="/img/ch-${id}.webp?v=1" alt="" onerror="this.remove()">`;
+    return `<img src="/img/chp-${id}.webp?v=1" alt="" onerror="this.remove()">`;
   }
   function cardHtml(u, sel, extraCls) {
     const c = C.CARDS[u.c];
@@ -189,16 +190,16 @@
       if (u) {
         const c = C.CARDS[u.c], R = C.TRAITS[c.r], K = C.TRAITS[c.k], sp = C.SP[c.sp], s = C.stats(u.c, u.s, u.i, {});
         const price = c.c * [0, 1, 3, 9][u.s];
-        return `<div class="chinfo"><b>${c.e} ${c.n}</b> ${stars(u.s)} · ${R.e}${R.n} · ${K.e}${K.n}<br>❤ ${s.hp} · ⚔ ${s.atk} · дальность ${s.rg}<br><b>${sp.n}:</b> ${sp.d}${u.i.length ? '<br>' + u.i.map(q => C.ITEMS[q].e + ' ' + C.ITEMS[q].n).join(', ') : ''}<br><button class="btn small" data-c="sell" type="button">Продать за ${price} 🪙</button></div>`;
+        return `<div class="chinfo"><div class="cimg" style="background:#241c13"><img src="/img/ch-${u.c}.webp?v=1" alt="" onerror="this.remove()"></div><div class="ctx"><b>${c.e} ${c.n}</b> ${stars(u.s)} · ${R.e}${R.n} · ${K.e}${K.n}<br>❤ ${s.hp} · ⚔ ${s.atk} · дальность ${s.rg}<br><b>${sp.n}:</b> ${sp.d}${u.i.length ? '<br>' + u.i.map(q => C.ITEMS[q].e + ' ' + C.ITEMS[q].n).join(', ') : ''}<br><button class="btn small" data-c="sell" type="button">Продать за ${price} 🪙</button></div></div>`;
       }
     }
     return '';
   }
   function prepHtml(v) {
     const me = v.me;
-    const shop = me.shop.map((id, i) => { if (!id) return '<div class="chsc empty"></div>'; const c = C.CARDS[id], no = me.gold < c.c; return `<button class="chsc${no ? ' no' : ''}" style="--cc:${CCOL[c.c]}" data-c="buy" data-i="${i}" type="button"><span class="em">${c.e}</span>${art(id)}<span class="pr">${c.c}🪙</span><span class="tr">${C.TRAITS[c.r].e}${C.TRAITS[c.k].e}</span><span class="nm">${c.n}</span></button>`; }).join('');
+    const shop = me.shop.map((id, i) => { if (!id) return '<div class="chsc empty"></div>'; const c = C.CARDS[id], no = me.gold < c.c; return `<button class="chsc${no ? ' no' : ''}" data-c="buy" data-i="${i}" type="button"><span class="em">${c.e}</span><img src="/img/ch-${id}.webp?v=1" alt="" onerror="this.remove()"><span class="pr">${c.c}</span><span class="tr"><i>${C.TRAITS[c.r].e}</i><i>${C.TRAITS[c.k].e}</i></span><span class="nm">${c.n}</span></button>`; }).join('');
     const onB = me.board.filter(Boolean).length;
-    return `${synHtml(v)}<div class="sm" style="text-align:center">На поле: ${onB} из ${me.lvl} · Ур. ${me.lvl}${me.xpn ? ` · опыт ${me.xp}/${me.xpn}` : ' (максимум)'}</div>${me.xpn ? `<div class="chxp"><i style="width:${Math.min(100, me.xp / me.xpn * 100)}%"></i></div>` : ''}<div class="chit">${me.items.map((q, i) => `<b class="${st.item === i ? 'sel' : ''}" data-c="item" data-i="${i}">${C.ITEMS[q].e}</b>`).join('')}</div>${infoHtml(v)}<div class="chshop">${shop}</div><div class="chbt"><button class="btn" data-c="reroll" type="button">🔄 Обновить · 2🪙</button><button class="btn" data-c="xp" type="button">⬆ Опыт · 5🪙</button><button class="btn ghost" data-c="lock" type="button">${me.lock ? '🔒' : '🔓'}</button></div>${me.income ? `<p class="sm muted" style="text-align:center">Доход за раунд: ${me.income.total}🪙 (база 5${me.income.inter ? ' + проценты ' + me.income.inter : ''}${me.income.streak ? ' + серия ' + me.income.streak : ''})</p>` : ''}`;
+    return `${synHtml(v)}<div class="sm" style="text-align:center">На поле: ${onB} из ${me.lvl} · Ур. ${me.lvl}${me.xpn ? ` · опыт ${me.xp}/${me.xpn}` : ' (максимум)'}</div>${me.xpn ? `<div class="chxp"><i style="width:${Math.min(100, me.xp / me.xpn * 100)}%"></i></div>` : ''}${me.items.length ? '<div class="chit">' : '<div class="chit" hidden>'}${me.items.map((q, i) => `<b class="${st.item === i ? 'sel' : ''}" data-c="item" data-i="${i}">${C.ITEMS[q].e}</b>`).join('')}</div>${infoHtml(v)}<div class="chshop">${shop}</div><div class="chbt"><button class="btn" data-c="reroll" type="button">🔄 Обновить · 2🪙</button><button class="btn" data-c="xp" type="button">⬆ Опыт · 5🪙</button><button class="btn ghost" data-c="lock" type="button">${me.lock ? '🔒' : '🔓'}</button></div>${me.income ? `<p class="sm muted" style="text-align:center">Доход за раунд: ${me.income.total}🪙 (база 5${me.income.inter ? ' + проценты ' + me.income.inter : ''}${me.income.streak ? ' + серия ' + me.income.streak : ''})</p>` : ''}`;
   }
   function combatInfo(v) {
     const f = v.fight; if (!f) return '<p class="sm muted" style="text-align:center">Ваш бой окончен, ждём остальных…</p>';
