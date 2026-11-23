@@ -113,13 +113,14 @@
   // ---------- сцена: картинка и наклонная сетка 5×6 ----------
   const PT = [[[0.30131,0.26073],[0.38154,0.26073],[0.46176,0.26073],[0.54199,0.26073],[0.62222,0.26073],[0.70244,0.26073]],[[0.29539,0.30826],[0.37787,0.30826],[0.46035,0.30826],[0.54284,0.30826],[0.62532,0.30826],[0.7078,0.30826]],[[0.28788,0.36845],[0.37322,0.36845],[0.45856,0.36845],[0.54391,0.36845],[0.62925,0.36845],[0.71459,0.36845]],[[0.27825,0.44575],[0.36726,0.44575],[0.45627,0.44575],[0.54528,0.44575],[0.63429,0.44575],[0.7233,0.44575]],[[0.26532,0.54941],[0.35926,0.54941],[0.45319,0.54941],[0.54712,0.54941],[0.64105,0.54941],[0.73499,0.54941]],[[0.25015,0.67115],[0.34986,0.67115],[0.44957,0.67115],[0.54928,0.67115],[0.649,0.67115],[0.74871,0.67115]],[[0.23719,0.7751],[0.34183,0.7751],[0.44648,0.7751],[0.55113,0.7751],[0.65578,0.7751],[0.76043,0.7751]]];
   const KS = 1 / 1932, pc = (x0, y0, x1, y1) => `left:${x0 * KS * 100}%;top:${y0 * KS * 100}%;width:${(x1 - x0) * KS * 100}%;height:${(y1 - y0) * KS * 100}%`;
+  let ASP = 1;
   function cellBox(c, r) {
     const a = PT[r][c], b = PT[r][c + 1], d = PT[r + 1][c], e = PT[r + 1][c + 1];
-    const w = ((b[0] - a[0]) + (e[0] - d[0])) / 2 * 0.96, rh = ((d[1] - a[1]) + (e[1] - b[1])) / 2, cx = (d[0] + e[0]) / 2, by = (d[1] + e[1]) / 2 - rh * 0.1, h = w * 1.18;
+    const w = ((b[0] - a[0]) + (e[0] - d[0])) / 2 * 0.96, rh = ((d[1] - a[1]) + (e[1] - b[1])) / 2, cx = (d[0] + e[0]) / 2, by = (d[1] + e[1]) / 2 - rh * 0.1, h = w * 1.18 * ASP;
     return { l: cx - w / 2, t: by - h, w, h, z: 10 + r, cx, rh };
   }
   const unitStyle = (c, r) => { const q = cellBox(c, r); return `left:${q.l * 100}%;top:${q.t * 100}%;width:${q.w * 100}%;height:${q.h * 100}%;z-index:${q.z}`; };
-  function stageS() { const w = innerWidth, h = innerHeight; return Math.floor(Math.min(w >= h ? h - 4 : w, 760)); }
+  function stageS() { const w = innerWidth, h = innerHeight; if (w >= h) { const s = Math.floor(Math.min(h - 4, w, 760)); return { W: s, H: s }; } const W = Math.floor(Math.min(w, 760)); return { W, H: Math.floor(Math.max(W, Math.min(h * 0.7, W * 1.6))) }; }
 
   function art(id) { return `<img src="/img/ch-${id}.webp?v=2" alt="" onerror="this.remove()">`; }
   function cardHtml(u, sel) {
@@ -208,9 +209,9 @@
     el.innerHTML = `<div class="chw"><div class="chend"><div class="big">${me.place === 1 ? '🏆' : me.place <= 3 ? '🥈' : '⚔'}</div><h2>${me.place === 1 ? 'Победа!' : 'Ваше место: ' + me.place}</h2><p>Раундов: ${v.round}</p>${rw ? `<p>Награда: 🪙 ${rw.sil}${rw.mats ? ' · материалы ×' + rw.mats : ''}${rw.bp ? ' · очки пропуска +' + rw.bp : ''}</p>${rw.sil === 0 ? '<p class="sm muted">Дневной предел наград достигнут.</p>' : ''}` : '<p class="muted">Подсчитываем награду…</p>'}<button class="btn" data-c="exit" type="button">Закрыть</button> <button class="btn ghost" data-c="again" type="button">Играть ещё</button></div></div>`;
   }
   function stageHtml(v) {
-    const me = v.me, combat = v.phase === 'combat', prep = v.phase === 'prep', CO = C.COLS, HA = C.HALF, S = stageS();
+    const me = v.me, combat = v.phase === 'combat', prep = v.phase === 'prep', CO = C.COLS, HA = C.HALF, SS = stageS(), S = SS.W; ASP = SS.W / SS.H;
     const title = `Раунд ${v.round}${v.pve ? ' · нечисть' : ''}`;
-    let h = `<div class="stg" id="stg" style="--S:${S}px;width:${S}px;height:${S}px">`;
+    let h = `<div class="stg" id="stg" style="--S:${S}px;width:${S}px;height:${SS.H}px">`;
     h += `<button class="hb" data-c="exit" type="button" style="${pc(487, 72, 677, 155)}">‹ Выйти</button>`;
     h += `<div class="hpl" style="${pc(690, 60, 1140, 165)}"><span>${title}</span><small id="chclk"></small></div>`;
     h += `<div class="hch" style="${pc(1145, 80, 1315, 148)}">❤ ${me.hp}</div><div class="hch" style="${pc(1325, 80, 1445, 148)}">🪙 ${me.gold}</div>`;
@@ -318,7 +319,7 @@
       f.e.forEach(ev => {
         const t = ev[0], e = R.els[ev[1]];
         if (t === 'a') { const tg = R.els[ev[2]]; if (e) { e.d.classList.remove('go'); void e.d.offsetWidth; e.d.classList.add('go'); } if (tg) { tg.d.classList.remove('hit'); void tg.d.offsetWidth; tg.d.classList.add('hit'); fx(tg.x, tg.y, (ev[4] ? '💥' : '') + '-' + ev[3], ev[4] ? '#ffcf4a' : '#fff'); } }
-        else if (t === 's' && e) { const sp = C.SP[ev[2]]; fx(e.x, e.y - .2, sp ? sp.n : '', '#8fd0ff'); const r = document.createElement('div'); r.className = 'cspell'; const q = cellBox(e.x, Math.max(0, Math.min(5, Math.round(e.y)))); r.style.cssText = `left:${(q.cx - q.w * .9) * 100}%;top:${(q.t + q.h / 2 - q.w * .9) * 100}%;width:${q.w * 180}%;height:${q.w * 180}%`; const b = $c('chbd'); if (b) { b.appendChild(r); setTimeout(() => r.remove(), 700); } }
+        else if (t === 's' && e) { const sp = C.SP[ev[2]]; fx(e.x, e.y - .2, sp ? sp.n : '', '#8fd0ff'); const r = document.createElement('div'); r.className = 'cspell'; const q = cellBox(e.x, Math.max(0, Math.min(5, Math.round(e.y)))); r.style.cssText = `left:${(q.cx - q.w * .9) * 100}%;top:${(q.t + q.h / 2 - q.w * .9 * ASP) * 100}%;width:${q.w * 180}%;height:${q.w * 180 * ASP}%`; const b = $c('chbd'); if (b) { b.appendChild(r); setTimeout(() => r.remove(), 700); } }
         else if (t === 'h' && e) fx(e.x, e.y, '+' + ev[2], '#6fe08a');
         else if (t === 'sh' && e) fx(e.x, e.y, '🛡', '#fff');
         else if (t === 'd' && e) fx(e.x, e.y, 'мимо', '#ccc');
