@@ -5,6 +5,10 @@
   const CCOL = { 1: '#8a8f98', 2: '#4fae5b', 3: '#4a86e0', 4: '#a05be0', 5: '#e8b230' };
   const st = { on: false, v: null, sel: null, item: -1, tm: 0, busy: false, round: 0, rep: null, tab: 0, shown: 0, rwDone: false, shop: true };
   const $c = id => document.getElementById(id);
+  const IC = n => `<img class="ic" src="/img/ic-${n}.webp?v=1" alt="">`, TI = k => IC('t-' + k), II = k => IC('i-' + k);
+  const UIE = { '🪙': 'u-coin', '❤️': 'u-heart', '❤': 'u-heart', '⚔️': 'u-swords', '⚔': 'u-swords', '🏆': 'u-trophy', '💔': 'u-broken', '☠': 'u-skull', '🟢': 'green', '🔴': 'red', '⏳': 'u-hourglass', '🛒': 'u-bag', '🔄': 'u-refresh', '🔒': 'u-lock', '🔓': 'u-unlock', '🧱': 'u-bricks', '💎': 'u-crystal', '📚': 'u-deck', '⬆': 'u-arrow' };
+  const UIRE = new RegExp(Object.keys(UIE).sort((a, b) => b.length - a.length).join('|'), 'g');
+  const E2 = h => h.replace(UIRE, m => IC(UIE[m]));
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const stars = n => '★'.repeat(n || 1);
 
@@ -75,6 +79,7 @@
 .chlob{text-align:center;padding:40px 14px}.chlob .big{font-size:56px}
 
 #chs{background:#0a1120}
+.ic{width:1.25em;height:1.25em;vertical-align:-.25em;object-fit:contain;display:inline-block}.chsc .tr i{display:block;line-height:0}.chsc .tr .ic,.chcd .it .ic{position:static;inset:auto;object-fit:contain}.chsc .tr .ic{width:calc(var(--cw)*.24);height:calc(var(--cw)*.24)}.chcd .it .ic{width:calc(var(--cw)*.2);height:calc(var(--cw)*.2)}.chit b .ic{width:28px;height:28px}.hch .ic,.hb .ic{width:1.3em;height:1.3em}
 .chw{max-width:none;padding:0 0 14px}
 .stg{position:relative;margin:0 auto;width:var(--S);height:var(--S);background:#0a1120 url(/img/ch-stage.webp?v=2) 0 0/100% 100%;overflow:hidden;--cw:calc(var(--S)*.1);--chh:calc(var(--cw)*1.2);--u:calc(var(--S)/1116);user-select:none;-webkit-user-select:none;touch-action:manipulation}
 .stg>*{position:absolute;box-sizing:border-box}
@@ -125,7 +130,7 @@
   function art(id) { return `<img src="/img/ch-${id}.webp?v=2" alt="" onerror="this.remove()">`; }
   function cardHtml(u, sel) {
     const c = C.CARDS[u.c];
-    return `<div class="chcd${sel ? ' sel' : ''}" style="--cc:${CCOL[c.c]}">${c.e}${art(u.c)}<span class="cn">${c.c}</span><span class="st">${stars(u.s)}</span>${u.i && u.i.length ? `<span class="it">${u.i.map(i => C.ITEMS[i].e).join('')}</span>` : ''}<span class="nm">${c.n}</span></div>`;
+    return `<div class="chcd${sel ? ' sel' : ''}" style="--cc:${CCOL[c.c]}">${c.e}${art(u.c)}<span class="cn">${c.c}</span><span class="st">${stars(u.s)}</span>${u.i && u.i.length ? `<span class="it">${u.i.map(i => II(i)).join('')}</span>` : ''}<span class="nm">${c.n}</span></div>`;
   }
 
   function open() {
@@ -194,19 +199,19 @@
   }
   function draw() {
     const el = $c('chs'); if (!el || !st.on) return; const v = st.v; if (!v) return;
-    if (v.none) { el.innerHTML = `<div class="chw"><div class="chtop"><button class="btn small ghost" data-c="exit" type="button">‹ Назад</button><div class="chrd">Шахматы Нордики</div></div><div class="chlob"><div class="big">♟</div><h3>Шахматы Нордики</h3><p class="muted">8 игроков. Покупайте героев, собирайте тройки, стройте дружины и побеждайте соперников. Последний выживший — победитель.</p><p class="sm muted">Свободные места займут воины-боты.</p><button class="btn" data-c="join" type="button">Начать партию</button></div></div>`; return; }
-    if (v.phase === 'lobby') { el.innerHTML = `<div class="chw">${topBar(v)}${plStrip(v)}<div class="chlob"><div class="big">⏳</div><h3>Ищем соперников…</h3><p class="muted">В партии ${v.players.length} из 8. Свободные места займут боты.</p><button class="btn" data-c="start" type="button">Начать сейчас</button></div></div>`; tickClock(); return; }
+    if (v.none) { el.innerHTML = E2(`<div class="chw"><div class="chtop"><button class="btn small ghost" data-c="exit" type="button">‹ Назад</button><div class="chrd">Шахматы Нордики</div></div><div class="chlob"><div class="big">♟</div><h3>Шахматы Нордики</h3><p class="muted">8 игроков. Покупайте героев, собирайте тройки, стройте дружины и побеждайте соперников. Последний выживший — победитель.</p><p class="sm muted">Свободные места займут воины-боты.</p><button class="btn" data-c="join" type="button">Начать партию</button></div></div>`); return; }
+    if (v.phase === 'lobby') { el.innerHTML = E2(`<div class="chw">${topBar(v)}${plStrip(v)}<div class="chlob"><div class="big">⏳</div><h3>Ищем соперников…</h3><p class="muted">В партии ${v.players.length} из 8. Свободные места займут боты.</p><button class="btn" data-c="start" type="button">Начать сейчас</button></div></div>`); tickClock(); return; }
     const me = v.me; if (!me) return;
     if (v.phase === 'end' || !me.alive) { endScreen(el, v); return; }
     const keepScroll = el.scrollTop;
     const inPrep = v.phase === 'prep'; el.classList.toggle('dk', inPrep && !!(st.sel || st.item >= 0)); el.classList.toggle('sh', inPrep && !(st.sel || st.item >= 0) && st.shop);
-    el.innerHTML = `<div class="chw">${stageHtml(v)}${v.phase === 'prep' ? prepHtml(v) : combatInfo(v)}</div>`;
+    el.innerHTML = E2(`<div class="chw">${stageHtml(v)}${v.phase === 'prep' ? prepHtml(v) : combatInfo(v)}</div>`);
     el.scrollTop = keepScroll; tickClock();
     if (v.phase === 'combat' && st.rep) st.rep.build();
   }
   function endScreen(el, v) {
     const me = v.me, rw = me.rw;
-    el.innerHTML = `<div class="chw"><div class="chend"><div class="big">${me.place === 1 ? '🏆' : me.place <= 3 ? '🥈' : '⚔'}</div><h2>${me.place === 1 ? 'Победа!' : 'Ваше место: ' + me.place}</h2><p>Раундов: ${v.round}</p>${rw ? `<p>Награда: 🪙 ${rw.sil}${rw.mats ? ' · материалы ×' + rw.mats : ''}${rw.bp ? ' · очки пропуска +' + rw.bp : ''}</p>${rw.sil === 0 ? '<p class="sm muted">Дневной предел наград достигнут.</p>' : ''}` : '<p class="muted">Подсчитываем награду…</p>'}<button class="btn" data-c="exit" type="button">Закрыть</button> <button class="btn ghost" data-c="again" type="button">Играть ещё</button></div></div>`;
+    el.innerHTML = E2(`<div class="chw"><div class="chend"><div class="big">${me.place === 1 ? '🏆' : me.place <= 3 ? '🥈' : '⚔'}</div><h2>${me.place === 1 ? 'Победа!' : 'Ваше место: ' + me.place}</h2><p>Раундов: ${v.round}</p>${rw ? `<p>Награда: 🪙 ${rw.sil}${rw.mats ? ' · материалы ×' + rw.mats : ''}${rw.bp ? ' · очки пропуска +' + rw.bp : ''}</p>${rw.sil === 0 ? '<p class="sm muted">Дневной предел наград достигнут.</p>' : ''}` : '<p class="muted">Подсчитываем награду…</p>'}<button class="btn" data-c="exit" type="button">Закрыть</button> <button class="btn ghost" data-c="again" type="button">Играть ещё</button></div></div>`);
   }
   function stageHtml(v) {
     const me = v.me, combat = v.phase === 'combat', prep = v.phase === 'prep', CO = C.COLS, MY = C.ROWS - C.HALF, SS = stageS(), S = SS.W; ASP = SS.W / SS.H;
@@ -237,17 +242,17 @@
   function synHtml(v) {
     const cards = v.me.board.filter(Boolean).map(u => u.c), s = C.synergies(cards);
     const keys = Object.keys(s).sort((a, b) => s[b].lv - s[a].lv || s[b].n - s[a].n);
-    return `<div class="chsy">${keys.map(t => { const T = C.TRAITS[t], x = s[t], nx = T.th.find(q => q > x.n) || T.th[T.th.length - 1]; return `<span class="${x.lv ? 'on' : ''}" data-c="syn" data-t="${t}">${T.e} ${T.n} ${x.n}/${nx}</span>`; }).join('') || '<span>Выставьте героев — получите бонусы родов и классов</span>'}</div>`;
+    return `<div class="chsy">${keys.map(t => { const T = C.TRAITS[t], x = s[t], nx = T.th.find(q => q > x.n) || T.th[T.th.length - 1]; return `<span class="${x.lv ? 'on' : ''}" data-c="syn" data-t="${t}">${TI(t)} ${T.n} ${x.n}/${nx}</span>`; }).join('') || '<span>Выставьте героев — получите бонусы родов и классов</span>'}</div>`;
   }
   function infoHtml(v) {
     const me = v.me;
-    if (st.item >= 0 && me.items[st.item]) { const it = C.ITEMS[me.items[st.item]]; return `<div class="chdock it"><button class="dx" data-c="desel" type="button">✕</button><div class="dn">${it.e} ${it.n}</div><div class="dt">${it.d}<br><span>Нажмите на героя, чтобы выдать предмет.</span></div></div>`; }
+    if (st.item >= 0 && me.items[st.item]) { const it = C.ITEMS[me.items[st.item]]; return `<div class="chdock it"><button class="dx" data-c="desel" type="button">✕</button><div class="dn">${II(me.items[st.item])} ${it.n}</div><div class="dt">${it.d}<br><span>Нажмите на героя, чтобы выдать предмет.</span></div></div>`; }
     if (st.sel) {
       const w = st.sel[0], i = +st.sel.slice(1), u = (w === 'f' ? me.board : me.bench)[i];
       if (u) {
         const c = C.CARDS[u.c], R = C.TRAITS[c.r], K = C.TRAITS[c.k], sp = C.SP[c.sp], s = C.stats(u.c, u.s, u.i, {});
         const price = c.c * [0, 1, 3, 9][u.s];
-        return `<div class="chdock" style="background-image:url(/img/chb-${u.c}.webp?v=2)"><button class="dx" data-c="desel" type="button">✕</button><div class="dn">${c.n} ${stars(u.s)}</div><div class="dt"><b>${R.e}${R.n} · ${K.e}${K.n}</b> · ❤ ${s.hp} · ⚔ ${s.atk} · дальность ${s.rg}<br><b>${sp.n}:</b> ${sp.d}${u.i.length ? '<br>' + u.i.map(q => C.ITEMS[q].e + ' ' + C.ITEMS[q].n).join(', ') : ''}<br><button class="btn small" data-c="sell" type="button">Продать за ${price} 🪙</button></div></div>`;
+        return `<div class="chdock" style="background-image:url(/img/chb-${u.c}.webp?v=2)"><button class="dx" data-c="desel" type="button">✕</button><div class="dn">${c.n} ${stars(u.s)}</div><div class="dt"><b>${TI(c.r)}${R.n} · ${TI(c.k)}${K.n}</b> · ❤ ${s.hp} · ⚔ ${s.atk} · дальность ${s.rg}<br><b>${sp.n}:</b> ${sp.d}${u.i.length ? '<br>' + u.i.map(q => II(q) + ' ' + C.ITEMS[q].n).join(', ') : ''}<br><button class="btn small" data-c="sell" type="button">Продать за ${price} 🪙</button></div></div>`;
       }
     }
     return '';
@@ -260,9 +265,9 @@
   }
   function prepHtml(v) {
     const me = v.me;
-    const shop = me.shop.map((id, i) => { if (!id) return ''; const c = C.CARDS[id], no = me.gold < c.c; return `<button class="chsc${no ? ' no' : ''}" style="--cc:${CCOL[c.c]}" data-c="buy" data-i="${i}" type="button"><span class="em">${c.e}</span>${art(id)}<span class="cn">${c.c}</span><span class="tr"><i>${C.TRAITS[c.r].e}</i><i>${C.TRAITS[c.k].e}</i></span><span class="nm">${c.n}</span></button>`; }).join('');
+    const shop = me.shop.map((id, i) => { if (!id) return ''; const c = C.CARDS[id], no = me.gold < c.c; return `<button class="chsc${no ? ' no' : ''}" style="--cc:${CCOL[c.c]}" data-c="buy" data-i="${i}" type="button"><span class="em">${c.e}</span>${art(id)}<span class="cn">${c.c}</span><span class="tr"><i>${TI(c.r)}</i><i>${TI(c.k)}</i></span><span class="nm">${c.n}</span></button>`; }).join('');
     const onB = me.board.filter(Boolean).length;
-    return `${synHtml(v)}<div class="sm" style="text-align:center">На поле: ${onB} из ${me.lvl} · Ур. ${me.lvl}${me.xpn ? ` · опыт ${me.xp}/${me.xpn}` : ' (максимум)'}</div>${me.xpn ? `<div class="chxp"><i style="width:${Math.min(100, me.xp / me.xpn * 100)}%"></i></div>` : ''}${me.items.length ? '<div class="chit">' : '<div class="chit" hidden>'}${me.items.map((q, i) => `<b class="${st.item === i ? 'sel' : ''}" data-c="item" data-i="${i}">${C.ITEMS[q].e}</b>`).join('')}</div>${infoHtml(v)}${sheetHtml(v, shop)}${me.income ? `<p class="sm muted" style="text-align:center">Доход за раунд: ${me.income.total}🪙 (база 5${me.income.inter ? ' + проценты ' + me.income.inter : ''}${me.income.streak ? ' + серия ' + me.income.streak : ''})</p>` : ''}`;
+    return `${synHtml(v)}<div class="sm" style="text-align:center">На поле: ${onB} из ${me.lvl} · Ур. ${me.lvl}${me.xpn ? ` · опыт ${me.xp}/${me.xpn}` : ' (максимум)'}</div>${me.xpn ? `<div class="chxp"><i style="width:${Math.min(100, me.xp / me.xpn * 100)}%"></i></div>` : ''}${me.items.length ? '<div class="chit">' : '<div class="chit" hidden>'}${me.items.map((q, i) => `<b class="${st.item === i ? 'sel' : ''}" data-c="item" data-i="${i}">${II(q)}</b>`).join('')}</div>${infoHtml(v)}${sheetHtml(v, shop)}${me.income ? `<p class="sm muted" style="text-align:center">Доход за раунд: ${me.income.total}🪙 (база 5${me.income.inter ? ' + проценты ' + me.income.inter : ''}${me.income.streak ? ' + серия ' + me.income.streak : ''})</p>` : ''}`;
   }
   function vsBar(v) {
     const f = v.fight; if (!f) return '';
@@ -354,7 +359,7 @@
   }
   function synTip(tid) {
     const T = C.TRAITS[tid]; if (!T) return;
-    toast(T.e + ' ' + T.n + ': ' + T.th.map((n, i) => n + ' — ' + T.d[i]).join('; '));
+    toast(T.n + ': ' + T.th.map((n, i) => n + ' — ' + T.d[i]).join('; '));
   }
 
   window.ChessUI = { open, close };
