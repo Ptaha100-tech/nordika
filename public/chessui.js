@@ -11,12 +11,6 @@
   const css = `
 #chs{position:fixed;inset:0;z-index:60;background:#14110d;color:#f2e8d5;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;--cw:min(18.6vw,96px);--chh:calc(var(--cw)*1.2);padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0);font-family:inherit}
 #chs[hidden]{display:none}
-#chs:before{content:"";position:fixed;inset:-6%;background:url(/img/ch-arena.webp?v=2) center/cover;filter:brightness(.5) saturate(1.1);pointer-events:none;animation:chdrift 40s ease-in-out infinite alternate}
-@keyframes chdrift{from{transform:scale(1.02) translate(-1.5%,-1%)}to{transform:scale(1.1) translate(1.5%,1%)}}
-#chs:after{content:"";position:fixed;inset:0;pointer-events:none;background:radial-gradient(circle at 8% 12%,rgba(90,190,255,.35),transparent 18%),radial-gradient(circle at 92% 12%,rgba(90,190,255,.35),transparent 18%),radial-gradient(circle at 10% 55%,rgba(90,190,255,.3),transparent 16%),radial-gradient(circle at 90% 60%,rgba(90,190,255,.3),transparent 16%);animation:chglow 3.2s ease-in-out infinite alternate}
-@keyframes chglow{from{opacity:.25}to{opacity:1}}
-.chbd:after{content:"";position:absolute;inset:0;pointer-events:none;z-index:2;background:linear-gradient(115deg,transparent 40%,rgba(180,230,255,.22) 50%,transparent 60%);background-size:250% 100%;animation:chsweep 6s linear infinite}
-@keyframes chsweep{from{background-position:130% 0}to{background-position:-130% 0}}
 .chw{position:relative;z-index:1;max-width:640px;margin:0 auto;padding:6px 2px 14px}#chs.dk .chw{padding-bottom:175px}#chs.sh .chw{padding-bottom:178px}
 .chsheet{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:min(100vw,640px);z-index:40;box-sizing:border-box;background:rgba(14,11,8,.95);border-top:2px solid #e8b230;border-radius:14px 14px 0 0;padding:6px 6px calc(8px + env(safe-area-inset-bottom,0px));box-shadow:0 -6px 22px rgba(0,0,0,.8);--cw:min(17vw,84px);--chh:calc(var(--cw)*1.15)}
 @keyframes chup2{from{transform:translate(-50%,40px);opacity:0}}
@@ -79,8 +73,53 @@
 @keyframes chring{from{opacity:.9;transform:scale(.3)}to{opacity:0;transform:scale(1)}}
 .chend{text-align:center;padding:30px 14px}.chend h2{margin:6px 0}.chend .big{font-size:60px}
 .chlob{text-align:center;padding:40px 14px}.chlob .big{font-size:56px}
+
+#chs{background:#0a1120}
+.chw{max-width:none;padding:0 0 14px}
+.stg{position:relative;margin:0 auto;width:var(--S);height:var(--S);background:#0a1120 url(/img/ch-stage.webp?v=1) 0 0/100% 100%;overflow:hidden;--cw:calc(var(--S)*.1);--chh:calc(var(--cw)*1.2);--u:calc(var(--S)/1932);user-select:none;-webkit-user-select:none;touch-action:manipulation}
+.stg>*{position:absolute;box-sizing:border-box}
+.stg .hb{background:linear-gradient(#4a3320,#2a1c10);border:1px solid #c9a24a;border-radius:calc(var(--u)*18);color:#ffe9b0;font-family:inherit;font-weight:700;font-size:max(8px,calc(var(--u)*34));padding:0}
+.stg .hpl{background:linear-gradient(#2c3442,#1a202b);border:1px solid #8a93a8;border-radius:calc(var(--u)*16);text-align:center;display:flex;flex-direction:column;justify-content:center;line-height:1.1;color:#f4e6bd;font-weight:800;font-size:max(8px,calc(var(--u)*36))}
+.stg .hpl small{font-weight:500;font-size:max(7px,calc(var(--u)*28));opacity:.9;color:#dfe8f5}
+.stg .hch{background:rgba(10,14,22,.78);border:1px solid #5a6480;border-radius:calc(var(--u)*18);display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:max(8px,calc(var(--u)*38));white-space:nowrap}
+.stg .p8{background:rgba(10,14,22,.72);border:1px solid #4a5470;border-radius:calc(var(--u)*14);text-align:center;font-size:max(7px,calc(var(--u)*30));line-height:1.1;display:flex;flex-direction:column;justify-content:center;overflow:hidden;color:#eee}
+.stg .p8 b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:700;padding:0 2px}.stg .p8.me{border-color:#e8b230;background:rgba(232,178,48,.28)}.stg .p8.foe{border-color:#e0483c}.stg .p8.dead{opacity:.4}
+.stg .qc{background:none}#chs.dk .stg .qc.my{background:rgba(255,236,160,.3)}
+.stg .ln{height:.5%;background:linear-gradient(90deg,transparent,#ffd35a,transparent);opacity:.8;pointer-events:none;z-index:3}
+.stg .sk,.stg .cu{--cw:calc(var(--S)*.1);transition:left .45s linear,top .45s linear,width .45s linear,height .45s linear,opacity .5s}
+.stg .sk{transition:none}.stg .sk:has(.sel){z-index:80!important}
+.stg .sk .chcd,.stg .cu .chcd{border-width:max(1.5px,calc(var(--u)*5));border-radius:calc(var(--u)*14)}
+.stg .chcd .cn{font-size:max(7px,calc(var(--cw)*.24));width:32%}
+.stg .chcd .st{font-size:max(6px,calc(var(--cw)*.2))}
+.stg .chcd .nm{display:none}
+.stg .chcd.sel{transform:scale(1.22);transform-origin:50% 100%}
+.stg .bs{background:rgba(10,14,22,.55);border:1px solid #c9a24a;border-radius:calc(var(--u)*16);--cw:calc(var(--S)*.1)}
+.stg .bs .chcd{border-radius:calc(var(--u)*14)}
+.stg .tray{background:rgba(10,14,22,.62);border:2px solid #8a7240;border-radius:calc(var(--u)*30);pointer-events:none}
+.stg .chsc{--cw:calc(var(--S)*.144);width:auto;height:auto}
+.stg .sb{background:linear-gradient(#5a3a1c,#2e1d0e);border:1px solid #e8b230;border-radius:calc(var(--u)*22);color:#ffe9b0;font-family:inherit;font-weight:800;font-size:max(8px,calc(var(--u)*38));padding:0;white-space:nowrap}
+.stg .sb.lk{font-size:max(10px,calc(var(--u)*52))}
+.stg .vs{display:flex;align-items:center;justify-content:center;gap:calc(var(--u)*30);font-weight:800;font-size:max(9px,calc(var(--u)*44));text-shadow:0 1px 3px #000;pointer-events:none}
+.stg .vs span{background:rgba(0,0,0,.55);border:2px solid #3fd070;border-radius:calc(var(--u)*24);padding:calc(var(--u)*14) calc(var(--u)*30);white-space:nowrap}.stg .vs span.foe{border-color:#e0483c}
+.stg .ul{inset:0;pointer-events:none;z-index:50}
+.stg .ul .cu{pointer-events:none}
+.stg .cu .hp{height:max(2px,calc(var(--u)*14));left:0;right:0;top:-3px}.stg .cu .mn{display:none}
+.stg .cfx{transform:translateX(-50%);font-size:max(9px,calc(var(--S)*.03))}
+.stg .sk,.stg .cu{filter:drop-shadow(0 2px 3px rgba(0,0,0,.7))}
 `;
   const stl = document.createElement('style'); stl.textContent = css; document.head.appendChild(stl);
+
+
+  // ---------- сцена: картинка и наклонная сетка 5×6 ----------
+  const PT = [[[0.30131,0.26073],[0.38154,0.26073],[0.46176,0.26073],[0.54199,0.26073],[0.62222,0.26073],[0.70244,0.26073]],[[0.29539,0.30826],[0.37787,0.30826],[0.46035,0.30826],[0.54284,0.30826],[0.62532,0.30826],[0.7078,0.30826]],[[0.28788,0.36845],[0.37322,0.36845],[0.45856,0.36845],[0.54391,0.36845],[0.62925,0.36845],[0.71459,0.36845]],[[0.27825,0.44575],[0.36726,0.44575],[0.45627,0.44575],[0.54528,0.44575],[0.63429,0.44575],[0.7233,0.44575]],[[0.26532,0.54941],[0.35926,0.54941],[0.45319,0.54941],[0.54712,0.54941],[0.64105,0.54941],[0.73499,0.54941]],[[0.25015,0.67115],[0.34986,0.67115],[0.44957,0.67115],[0.54928,0.67115],[0.649,0.67115],[0.74871,0.67115]],[[0.23719,0.7751],[0.34183,0.7751],[0.44648,0.7751],[0.55113,0.7751],[0.65578,0.7751],[0.76043,0.7751]]];
+  const KS = 1 / 1932, pc = (x0, y0, x1, y1) => `left:${x0 * KS * 100}%;top:${y0 * KS * 100}%;width:${(x1 - x0) * KS * 100}%;height:${(y1 - y0) * KS * 100}%`;
+  function cellBox(c, r) {
+    const a = PT[r][c], b = PT[r][c + 1], d = PT[r + 1][c], e = PT[r + 1][c + 1];
+    const w = ((b[0] - a[0]) + (e[0] - d[0])) / 2 * 0.96, rh = ((d[1] - a[1]) + (e[1] - b[1])) / 2, cx = (d[0] + e[0]) / 2, by = (d[1] + e[1]) / 2 - rh * 0.1, h = w * 1.18;
+    return { l: cx - w / 2, t: by - h, w, h, z: 10 + r, cx, rh };
+  }
+  const unitStyle = (c, r) => { const q = cellBox(c, r); return `left:${q.l * 100}%;top:${q.t * 100}%;width:${q.w * 100}%;height:${q.h * 100}%;z-index:${q.z}`; };
+  function stageS() { const w = innerWidth, h = innerHeight; return Math.floor(Math.min(w >= h ? h - 4 : w, 760)); }
 
   function art(id) { return `<img src="/img/ch-${id}.webp?v=2" alt="" onerror="this.remove()">`; }
   function cardHtml(u, sel) {
@@ -159,8 +198,8 @@
     const me = v.me; if (!me) return;
     if (v.phase === 'end' || !me.alive) { endScreen(el, v); return; }
     const keepScroll = el.scrollTop;
-    const inPrep = v.phase === 'prep'; el.classList.toggle('dk', inPrep && !!(st.sel || st.item >= 0)); el.classList.toggle('sh', inPrep && !(st.sel || st.item >= 0) && st.shop);
-    el.innerHTML = `<div class="chw">${topBar(v)}${plStrip(v)}${v.phase === 'combat' ? vsBar(v) : ''}${boardHtml(v)}${v.phase === 'prep' ? prepHtml(v) : combatInfo(v)}</div>`;
+    const inPrep = v.phase === 'prep'; el.classList.toggle('dk', inPrep && !!(st.sel || st.item >= 0));
+    el.innerHTML = `<div class="chw">${stageHtml(v)}${v.phase === 'prep' ? prepHtml(v) : combatInfo(v)}</div>`;
     el.scrollTop = keepScroll; tickClock();
     if (v.phase === 'combat' && st.rep) st.rep.build();
   }
@@ -168,21 +207,40 @@
     const me = v.me, rw = me.rw;
     el.innerHTML = `<div class="chw"><div class="chend"><div class="big">${me.place === 1 ? '🏆' : me.place <= 3 ? '🥈' : '⚔'}</div><h2>${me.place === 1 ? 'Победа!' : 'Ваше место: ' + me.place}</h2><p>Раундов: ${v.round}</p>${rw ? `<p>Награда: 🪙 ${rw.sil}${rw.mats ? ' · материалы ×' + rw.mats : ''}${rw.bp ? ' · очки пропуска +' + rw.bp : ''}</p>${rw.sil === 0 ? '<p class="sm muted">Дневной предел наград достигнут.</p>' : ''}` : '<p class="muted">Подсчитываем награду…</p>'}<button class="btn" data-c="exit" type="button">Закрыть</button> <button class="btn ghost" data-c="again" type="button">Играть ещё</button></div></div>`;
   }
-  function boardHtml(v) {
-    const me = v.me, combat = v.phase === 'combat', CO = C.COLS, HA = C.HALF;
-    let h = '<div class="chbd" id="chbd">';
-    for (let y = 0; y < 2 * HA; y++) for (let x = 0; x < CO; x++) {
-      const mine = y >= HA, k = (x + y) & 1, i = (y - HA) * CO + x;
-      h += `<div class="chcell ${mine ? 't' : 'e'}${k}" style="left:calc(var(--cw)*${x});top:calc(var(--chh)*${y})" data-c="cell" data-i="${mine ? i : -1}">`;
-      if (!combat && mine) { const u = me.board[i]; if (u) h += cardHtml(u, st.sel === 'f' + i); }
-      h += '</div>';
+  function stageHtml(v) {
+    const me = v.me, combat = v.phase === 'combat', prep = v.phase === 'prep', CO = C.COLS, HA = C.HALF, S = stageS();
+    const title = `Раунд ${v.round}${v.pve ? ' · нечисть' : ''}`;
+    let h = `<div class="stg" id="stg" style="--S:${S}px;width:${S}px;height:${S}px">`;
+    h += `<button class="hb" data-c="exit" type="button" style="${pc(487, 72, 677, 155)}">‹ Выйти</button>`;
+    h += `<div class="hpl" style="${pc(690, 60, 1140, 165)}"><span>${title}</span><small id="chclk"></small></div>`;
+    h += `<div class="hch" style="${pc(1145, 80, 1315, 148)}">❤ ${me.hp}</div><div class="hch" style="${pc(1325, 80, 1445, 148)}">🪙 ${me.gold}</div>`;
+    const opp = v.fight ? v.fight.opp : '';
+    h += v.players.map((p, i) => `<div class="p8${p.me ? ' me' : ''}${p.a ? '' : ' dead'}${opp && p.n === opp && !p.me ? ' foe' : ''}" style="${pc(487 + i * 120, 178, 487 + i * 120 + 112, 270)}"><b>${esc(p.n)}</b>${p.a ? p.hp : '☠'}</div>`).join('');
+    if (prep) {
+      for (let r = 0; r < 2 * HA; r++) for (let c = 0; c < CO; c++) {
+        const a = PT[r][c], b = PT[r][c + 1], d = PT[r + 1][c], e = PT[r + 1][c + 1];
+        const xs = [a[0], b[0], d[0], e[0]], ys = [a[1], b[1], d[1], e[1]], x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys), W = x1 - x0, Hh = y1 - y0;
+        const pt = p => `${((p[0] - x0) / W * 100).toFixed(1)}% ${((p[1] - y0) / Hh * 100).toFixed(1)}%`;
+        const mine = r >= HA, i = (r - HA) * CO + c;
+        h += `<div class="qc${mine ? ' my' : ''}" data-c="cell" data-i="${mine ? i : -1}" style="left:${x0 * 100}%;top:${y0 * 100}%;width:${W * 100}%;height:${Hh * 100}%;z-index:1;clip-path:polygon(${pt(a)},${pt(b)},${pt(e)},${pt(d)})"></div>`;
+      }
+      for (let i = 0; i < me.board.length; i++) { const u = me.board[i]; if (u) h += `<div class="sk" data-c="cell" data-i="${i}" style="${unitStyle(i % CO, HA + Math.floor(i / CO))}">${cardHtml(u, st.sel === 'f' + i)}</div>`; }
+      me.bench.forEach((u, i) => { h += `<div class="bs" data-c="bench" data-i="${i}" style="${pc(70, 540 + i * 180, 280, 540 + i * 180 + 168)}">${u ? cardHtml(u, st.sel === 'b' + i) : ''}</div>`; });
     }
-    h += '<div class="chmid"></div>';
-    h += '</div>';
-    if (v.phase === 'prep') {
-      h += `<div class="chbn">${me.bench.map((u, i) => `<div class="chcell" data-c="bench" data-i="${i}">${u ? cardHtml(u, st.sel === 'b' + i) : ''}</div>`).join('')}</div>`;
-    }
-    return h;
+    h += `<div class="ln" style="left:${PT[3][0][0] * 100}%;top:${PT[3][0][1] * 100 - .25}%;width:${(PT[3][5][0] - PT[3][0][0]) * 100}%"></div>`;
+    h += `<div class="ul" id="chbd"></div>`;
+    h += `<div class="tray" style="${pc(160, 1500, 1772, 1905)}"></div>`;
+    if (prep) {
+      me.shop.forEach((id, i) => {
+        if (!id) return; const c = C.CARDS[id], no = me.gold < c.c;
+        h += `<button class="chsc${no ? ' no' : ''}" style="--cc:${CCOL[c.c]};${pc(212 + i * 307, 1525, 212 + i * 307 + 278, 1745)}" data-c="buy" data-i="${i}" type="button"><span class="em">${c.e}</span>${art(id)}<span class="cn">${c.c}</span><span class="tr"><i>${C.TRAITS[c.r].e}</i><i>${C.TRAITS[c.k].e}</i></span><span class="nm">${c.n}</span></button>`;
+      });
+      h += `<button class="sb" data-c="reroll" type="button" style="${pc(478, 1765, 918, 1855)}">🔄 Обновить · 2🪙</button><button class="sb" data-c="xp" type="button" style="${pc(945, 1765, 1345, 1855)}">⬆ Опыт · 5🪙</button><button class="sb lk" data-c="lock" type="button" style="${pc(1368, 1765, 1455, 1855)}">${me.lock ? '🔒' : '🔓'}</button>`;
+    } else if (v.fight) {
+      const foe = v.players.find(p => p.n === v.fight.opp);
+      h += `<div class="vs" style="${pc(180, 1560, 1750, 1700)}"><span>🟢 Вы · ❤ ${me.hp}</span><b>⚔</b><span class="foe">${esc(v.fight.opp)}${foe ? ' · ❤ ' + foe.hp : ''}${v.fight.ghost ? ' (тень)' : ''} 🔴</span></div>`;
+    } else h += `<div class="vs" style="${pc(180, 1560, 1750, 1700)}"><span>Ваш бой окончен, ждём остальных…</span></div>`;
+    return h + '</div>';
   }
   function synHtml(v) {
     const cards = v.me.board.filter(Boolean).map(u => u.c), s = C.synergies(cards);
@@ -210,9 +268,9 @@
   }
   function prepHtml(v) {
     const me = v.me;
-    const shop = me.shop.map((id, i) => { if (!id) return '<div class="chsc empty"></div>'; const c = C.CARDS[id], no = me.gold < c.c; return `<button class="chsc${no ? ' no' : ''}" style="--cc:${CCOL[c.c]}" data-c="buy" data-i="${i}" type="button"><span class="em">${c.e}</span>${art(id)}<span class="cn">${c.c}</span><span class="tr"><i>${C.TRAITS[c.r].e}</i><i>${C.TRAITS[c.k].e}</i></span><span class="nm">${c.n}</span></button>`; }).join('');
+    const shop = '', _unused = me.shop.map((id, i) => { if (!id) return ''; const c = C.CARDS[id], no = me.gold < c.c; return `<button class="chsc${no ? ' no' : ''}" style="--cc:${CCOL[c.c]}" data-c="buy" data-i="${i}" type="button"><span class="em">${c.e}</span>${art(id)}<span class="cn">${c.c}</span><span class="tr"><i>${C.TRAITS[c.r].e}</i><i>${C.TRAITS[c.k].e}</i></span><span class="nm">${c.n}</span></button>`; }).join('');
     const onB = me.board.filter(Boolean).length;
-    return `${synHtml(v)}<div class="sm" style="text-align:center">На поле: ${onB} из ${me.lvl} · Ур. ${me.lvl}${me.xpn ? ` · опыт ${me.xp}/${me.xpn}` : ' (максимум)'}</div>${me.xpn ? `<div class="chxp"><i style="width:${Math.min(100, me.xp / me.xpn * 100)}%"></i></div>` : ''}${me.items.length ? '<div class="chit">' : '<div class="chit" hidden>'}${me.items.map((q, i) => `<b class="${st.item === i ? 'sel' : ''}" data-c="item" data-i="${i}">${C.ITEMS[q].e}</b>`).join('')}</div>${infoHtml(v)}${sheetHtml(v, shop)}${me.income ? `<p class="sm muted" style="text-align:center">Доход за раунд: ${me.income.total}🪙 (база 5${me.income.inter ? ' + проценты ' + me.income.inter : ''}${me.income.streak ? ' + серия ' + me.income.streak : ''})</p>` : ''}`;
+    return `${synHtml(v)}<div class="sm" style="text-align:center">На поле: ${onB} из ${me.lvl} · Ур. ${me.lvl}${me.xpn ? ` · опыт ${me.xp}/${me.xpn}` : ' (максимум)'}</div>${me.xpn ? `<div class="chxp"><i style="width:${Math.min(100, me.xp / me.xpn * 100)}%"></i></div>` : ''}${me.items.length ? '<div class="chit">' : '<div class="chit" hidden>'}${me.items.map((q, i) => `<b class="${st.item === i ? 'sel' : ''}" data-c="item" data-i="${i}">${C.ITEMS[q].e}</b>`).join('')}</div>${infoHtml(v)}${me.income ? `<p class="sm muted" style="text-align:center">Доход за раунд: ${me.income.total}🪙 (база 5${me.income.inter ? ' + проценты ' + me.income.inter : ''}${me.income.streak ? ' + серия ' + me.income.streak : ''})</p>` : ''}`;
   }
   function vsBar(v) {
     const f = v.fight; if (!f) return '';
@@ -230,14 +288,14 @@
     stopRep();
     const lg = v.fight.log, side = v.fight.side;
     const R = { round: v.round, i: 0, els: {}, tm: 0 };
-    const fx = (x, y, txt, col) => { const b = $c('chbd'); if (!b) return; const d = document.createElement('div'); d.className = 'cfx'; d.style.cssText = `left:calc(var(--cw)*${x} + var(--cw)*.1);top:calc(var(--chh)*${y});color:${col}`; d.textContent = txt; b.appendChild(d); setTimeout(() => d.remove(), 1000); };
+    const fx = (x, y, txt, col) => { const b = $c('chbd'); if (!b) return; const q = cellBox(x, Math.max(0, Math.min(5, Math.round(y)))), d = document.createElement('div'); d.className = 'cfx'; d.style.cssText = `left:${q.cx * 100}%;top:${q.t * 100}%;color:${col}`; d.textContent = txt; b.appendChild(d); setTimeout(() => d.remove(), 1000); };
     const pos = (x, y) => side === 1 ? [C.COLS - 1 - x, 2 * C.HALF - 1 - y] : [x, y];
     R.build = () => {
       const b = $c('chbd'); if (!b) return; R.els = {};
       lg.init.forEach(a => {
         const [id, team, card, emo, img, star, x, y, mhp, hp, mm, mana, items] = a;
         const [px, py] = pos(x, y), d = document.createElement('div'); d.className = 'cu t' + (team === side ? 0 : 1);
-        d.style.cssText = `left:calc(var(--cw)*${px});top:calc(var(--chh)*${py})`;
+        d.style.cssText = unitStyle(px, py);
         const cc = card ? C.CARDS[card] : null, col = cc ? CCOL[cc.c] : '#b0463a';
         d.innerHTML = `<div class="chcd" style="--cc:${col}">${cc ? cc.e : (emo || '💀')}${cc ? art(card) : (img ? `<img src="/img/${img}.webp?v=1" alt="" onerror="this.remove()">` : '')}${cc ? `<span class="cn">${cc.c}</span>` : ''}<span class="st">${stars(star)}</span></div><div class="hp"><i style="width:100%"></i></div><div class="mn"><i style="width:0"></i></div>`;
         b.appendChild(d); R.els[id] = { d, mhp, mm, x: px, y: py };
@@ -250,7 +308,7 @@
       f.s.forEach(a => {
         const [id, x, y, hp, mana, sh, stun] = a, e = R.els[id]; if (!e) return; live.add(id);
         const [px, py] = pos(x, y); e.x = px; e.y = py;
-        e.d.style.left = `calc(var(--cw)*${px})`; e.d.style.top = `calc(var(--chh)*${py})`;
+        e.d.style.cssText = unitStyle(px, py);
         e.d.classList.toggle('dead', hp <= 0); e.d.classList.toggle('stun', !!stun);
         e.d.querySelector('.hp i').style.width = Math.max(0, hp / e.mhp * 100) + '%';
         e.d.querySelector('.mn i').style.width = (e.mm ? Math.min(100, mana / e.mm * 100) : 0) + '%';
@@ -260,7 +318,7 @@
       f.e.forEach(ev => {
         const t = ev[0], e = R.els[ev[1]];
         if (t === 'a') { const tg = R.els[ev[2]]; if (e) { e.d.classList.remove('go'); void e.d.offsetWidth; e.d.classList.add('go'); } if (tg) { tg.d.classList.remove('hit'); void tg.d.offsetWidth; tg.d.classList.add('hit'); fx(tg.x, tg.y, (ev[4] ? '💥' : '') + '-' + ev[3], ev[4] ? '#ffcf4a' : '#fff'); } }
-        else if (t === 's' && e) { const sp = C.SP[ev[2]]; fx(e.x, e.y - .2, sp ? sp.n : '', '#8fd0ff'); const r = document.createElement('div'); r.className = 'cspell'; r.style.cssText = `left:calc(var(--cw)*${e.x} - var(--cw)*.4);top:calc(var(--chh)*${e.y} - var(--cw)*.2);width:calc(var(--cw)*1.8);height:calc(var(--cw)*1.8)`; const b = $c('chbd'); if (b) { b.appendChild(r); setTimeout(() => r.remove(), 700); } }
+        else if (t === 's' && e) { const sp = C.SP[ev[2]]; fx(e.x, e.y - .2, sp ? sp.n : '', '#8fd0ff'); const r = document.createElement('div'); r.className = 'cspell'; const q = cellBox(e.x, Math.max(0, Math.min(5, Math.round(e.y)))); r.style.cssText = `left:${(q.cx - q.w * .9) * 100}%;top:${(q.t + q.h / 2 - q.w * .9) * 100}%;width:${q.w * 180}%;height:${q.w * 180}%`; const b = $c('chbd'); if (b) { b.appendChild(r); setTimeout(() => r.remove(), 700); } }
         else if (t === 'h' && e) fx(e.x, e.y, '+' + ev[2], '#6fe08a');
         else if (t === 'sh' && e) fx(e.x, e.y, '🛡', '#fff');
         else if (t === 'd' && e) fx(e.x, e.y, 'мимо', '#ccc');
@@ -287,8 +345,7 @@
     if (a === 'reroll') { await act({ a: 'reroll' }); return; }
     if (a === 'xp') { await act({ a: 'xp' }); return; }
     if (a === 'lock') { await act({ a: 'lock' }); return; }
-    if (a === 'shopt') { st.shop = !st.shop; draw(); return; }
-    if (a === 'desel') { st.sel = null; st.item = -1; draw(); return; }
+        if (a === 'desel') { st.sel = null; st.item = -1; draw(); return; }
     if (a === 'sell') { if (st.sel) { const f = st.sel; st.sel = null; await act({ a: 'sell', f }); } return; }
     if (a === 'item') { const i = +t.dataset.i; st.item = st.item === i ? -1 : i; st.sel = null; draw(); return; }
     if (a === 'cell' || a === 'bench') {
