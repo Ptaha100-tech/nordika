@@ -46,7 +46,7 @@ function power(c, ctx) { let s = 0; for (const p in c.members) s += ctx.scoreOf(
 function topList(st, ctx) {
   const t = ctx.now();
   if (t - cache.at < 15000 && cache.n === Object.keys(st.clans).length) return cache.list;
-  const list = Object.values(st.clans).map(c => ({ id: c.id, name: c.name, tag: c.tag, count: Object.keys(c.members).length, power: power(c, ctx), open: Object.keys(c.members).length < MAXM }));
+  const list = Object.values(st.clans).map(c => ({ id: c.id, name: c.name, tag: c.tag, count: Object.keys(c.members).length, power: power(c, ctx), open: Object.keys(c.members).length < MAXM, leader: (c.members[c.leader] || {}).name || '', created: c.created || 0, w: (c.wc && c.wc.w) || 0, l: (c.wc && c.wc.l) || 0, news: ((c.news || []).slice(-1)[0] || {}).text || '', top: Object.keys(c.members).map(p => ({ name: c.members[p].name, score: ctx.scoreOf(p) || 0 })).sort((a, b) => b.score - a.score).slice(0, 5) }));
   list.sort((a, b) => b.power - a.power);
   cache = { at: t, list: list.slice(0, 20), n: Object.keys(st.clans).length };
   return cache.list;
@@ -61,7 +61,7 @@ function view(st, ctx, pid) {
   const members = Object.keys(c.members).map(p => ({ pid: p, name: c.members[p].name, hall: ctx.hallOf(p), score: ctx.scoreOf(p) || 0, helps: c.members[p].helps || 0, leader: p === c.leader, role: p === c.leader ? 'L' : ((c.role && c.role[p]) || ''), seen: ctx.seen ? ctx.seen(p) : 0, online: ctx.seen ? Date.now() - ctx.seen(p) < 180000 : false }));
   const RK = { L: 3, v: 2, o: 1, '': 0 }; members.sort((a, b) => (RK[b.role] - RK[a.role]) || (b.score - a.score));
   out.clan = {
-    id: c.id, name: c.name, tag: c.tag, leader: c.leader, power: members.reduce((a, m) => a + m.score, 0), members,
+    id: c.id, name: c.name, tag: c.tag, leader: c.leader, created: c.created || 0, w: (c.wc && c.wc.w) || 0, l: (c.wc && c.wc.l) || 0, power: members.reduce((a, m) => a + m.score, 0), members,
     chat: c.chat.slice(-40),
     news: (c.news || []).slice(-10),
     log: (c.log || c.chat.filter(m => m.sys).map(m => ({ t: m.t, text: m.text }))).slice(-30),

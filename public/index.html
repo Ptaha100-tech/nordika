@@ -1204,7 +1204,7 @@ function viewClan(){
   if(!d)return '<p class="muted sm">Загрузка…</p>';
   const c=d.clan;
   if(!c){
-    const list=d.list.length?d.list.map(x=>`<div class="hrow"><div><span class="tag4">${esc(x.tag)}</span><b>${esc(x.name)}</b><p class="sm muted">${x.count} из ${d.max} · сила ${fmt(x.power)}</p></div><button class="btn small" data-act="cjoin" data-arg="${x.id}" ${x.open?'':'disabled'}>Вступить</button></div>`).join(''):'<p class="muted sm">Кланов пока нет. Станьте первым.</p>';
+    const list=d.list.length?d.list.map(x=>`<div class="hrow"><div><span class="tag4">${esc(x.tag)}</span><b>${esc(x.name)}</b><p class="sm muted">${x.count} из ${d.max} · сила ${fmt(x.power)}</p></div><span style="display:flex;gap:6px"><button class="btn small ghost" data-act="cinfo" data-arg="${x.id}" type="button">Инфо</button><button class="btn small" data-act="cjoin" data-arg="${x.id}" ${x.open?'':'disabled'}>Вступить</button></span></div>`).join(''):'<p class="muted sm">Кланов пока нет. Станьте первым.</p>';
     return `<section class="card"><h2>Основать клан</h2>
       <p class="sm muted" style="margin-bottom:10px">В клане есть общий чат и взаимная помощь: соклановцы сокращают время ваших строек и обучения. Основать клан можно с Палатой ярла ${Core.CLAN_HALL} уровня за 500 <i class="rn">ᛒ</i> дерева и 500 <i class="rn">ᚲ</i> камня.</p>
       <div class="field" style="margin-bottom:8px"><label for="cn">Название клана</label><input id="cn" data-keep maxlength="16" autocomplete="off"></div>
@@ -1224,7 +1224,7 @@ function viewClan(){
   const cw=c.cw||{role:''};
   const members=c.members.map(m=>`<div class="cm"><span class="nm" data-act="profp" data-arg="${m.pid}" style="cursor:pointer">${m.role==='L'?'👑 ':m.role==='v'?'⚔ ':m.role==='o'?'🎖 ':''}<b>${esc(m.name)}</b>${m.role&&m.role!=='L'?` <span class="muted sm">${CWar.ROLEN[m.role]}</span>`:''}${m.pid===d.me?' <span class="muted sm">(вы)</span>':''}</span><span class="lv">${seenTxt(m.seen,m.online)} · Палата ${m.hall} · сила ${fmt(m.score)} · помог ${m.helps}</span>${iAmLeader&&m.pid!==d.me?`<button class="btn small ghost" data-act="crole" data-arg="${m.pid}:${m.role==='v'?'':m.role==='o'?'v':'o'}">${m.role==='v'?'Снять роль':m.role==='o'?'Сделать воеводой':'Сделать офицером'}</button><button class="btn small ghost" data-act="ctrans" data-arg="${m.pid}">Передать власть</button>`:''}${(iAmLeader||['v','o'].includes(cw.role))&&m.pid!==d.me&&m.role!=='L'&&!(cw.role==='o'&&m.role)&&!(cw.role==='v'&&m.role==='v')?`<button class="btn small danger" data-act="ckick" data-arg="${m.pid}">Исключить</button>`:''}</div>`).join('');
   return `<section class="card"><div class="trow2"><h2><span class="tag4">${esc(c.tag)}</span>${esc(c.name)}</h2><span class="lv">${c.members.length} из ${d.max}</span></div>
-      <p class="sm muted">Сила клана ${fmt(c.power)}</p></section>
+      <p class="sm muted">Сила клана ${fmt(c.power)} · предводитель ${esc((c.members.find(m=>m.pid===c.leader)||{}).name||'')}${c.created?' · основан '+new Date(c.created).toLocaleDateString('ru-RU'):''} · войны: ${c.w||0} побед, ${c.l||0} поражений</p><p class="note">Соклановцев атаковать нельзя: они не попадают в список целей.</p></section>
     ${cwWarHTML(c,d)}${cwTreasuryHTML(c,d)}${goalH}
     <section class="card"><h2>Помощь соклановцев</h2>${help}${canAll?'<button class="btn" style="margin-top:10px" data-act="chelpall">Помочь всем</button>':''}
       <p class="note">Каждая помощь сокращает дело на 2% (не меньше 30 секунд), всего до ${d.helpMax} раз. Помогать можно один раз с каждым делом.</p></section>
@@ -2171,10 +2171,33 @@ function tavernSheet(anim){
 async function loadRank(){
   try{ui.rank=await call('GET','/api/rank');ui.rankAt=Date.now();if(ui.topOpen&&!$('modal').hidden)topSheet(true);}catch(e){}
 }
-function onAct(act,arg){
+function buyAsk(act,arg){
+  let t='',c='';
+  if(act==='buy'){const i=Core.SHOP.find(x=>x.id===arg);if(!i)return null;t=i.t;c=i.gems+' рунных камней';}
+  else if(act==='mbuy'){const q=String(arg).split(':');if(q[0]==='rec'){const sl=Core.SLOTS[q[1]];t='Рецепт: '+(sl?sl.n:q[1])+' ('+['серебряный','золотой','эпический'][(+q[2]||1)-1]+')';c=fmt(Core.REC_PRICE[(+q[2]||1)-1])+' серебра';}else{const d=Core.SCROLLS[q[1]];if(!d)return null;t=d.n;c=d.gems?d.gems+' рунных камней':fmt(d.silver)+' серебра';}}
+  else if(act==='abuy'){t='+1 бой на арене';c=((ui.arena&&ui.arena.buy)||'')+' рунных камней';}
+  else return null;
+  return {t,c};
+}
+function buyConfirm(act,arg){
+  const q=buyAsk(act,arg);if(!q)return false;
+  const o=document.createElement('div');o.id='cfm';o.style.cssText='position:fixed;inset:0;background:rgba(4,7,9,.8);display:flex;align-items:center;justify-content:center;z-index:60;padding:16px';
+  o.innerHTML=`<div style="background:var(--surface);border:2px solid var(--accent);border-radius:14px;padding:16px;max-width:340px;width:100%;text-align:center"><h3 style="margin:0 0 8px">Подтвердите покупку</h3><p style="margin:0 0 6px"><b>${esc(q.t)}</b></p><p class="sm muted" style="margin:0 0 14px">Цена: ${esc(q.c)}</p><div style="display:flex;gap:8px"><button class="btn ghost" data-no="1" type="button" style="flex:1">Отмена</button><button class="btn" data-yes="1" type="button" style="flex:1">Купить</button></div></div>`;
+  o.addEventListener('click',e=>{const b=e.target.closest('button');if(e.target===o||(b&&b.dataset.no)){o.remove();return;}if(b&&b.dataset.yes){o.remove();onAct(act,arg,1);}});
+  document.body.appendChild(o);return true;
+}
+function onAct(act,arg,ok){
+  if(!ok&&buyConfirm(act,arg))return;
   switch(act){
     case 'tutskip':try{localStorage.setItem(tutKey(),'1');}catch(e){}render();return;
     case 'tab':ui.tab=arg;if(arg==='shop')loadShop();if(arg==='top'){loadSeason();if(Date.now()-ui.rankAt>20000)loadRank();}if(arg==='clan')loadClan();if(arg==='arena')loadArena();if(arg==='quests'){loadEvents();loadInvite();}if(arg==='chat')loadSoc();render();return;
+    case 'cinfo':{const x=((ui.clan&&ui.clan.list)||[]).find(y=>y.id===arg);if(!x)return;
+      $('modal').innerHTML=`<div class="sheet"><div class="trow2"><h3><span class="tag4">${esc(x.tag)}</span>${esc(x.name)}</h3><button class="btn small ghost" data-act="sheetx" type="button">Закрыть</button></div>
+      <p class="sm">Предводитель: <b>${esc(x.leader)}</b></p><p class="sm">Игроков: ${x.count} из ${ui.clan.max} · сила клана ${fmt(x.power)}</p>
+      <p class="sm">${x.created?'Основан: '+new Date(x.created).toLocaleDateString('ru-RU')+' · ':''}Войны: ${x.w} побед, ${x.l} поражений</p>
+      <p class="sm" style="margin-top:8px"><b>Сильнейшие:</b></p>${x.top.map((m,i)=>`<p class="sm muted">${i+1}. ${esc(m.name)} · ${fmt(m.score)}</p>`).join('')}
+      ${x.news?`<p class="sm" style="margin-top:8px"><b>Последняя новость:</b> ${esc(x.news)}</p>`:''}
+      <p class="note">${x.open?'Набор открыт.':'Клан заполнен.'}</p></div>`;$('modal').hidden=false;return;}
     case 'pay':toast('Оплата пока не подключена');return;
     case 'hstyle':act2('hstyle',arg);return;
     case 'hsub':ui.hsub=arg;render();return;
