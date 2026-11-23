@@ -3,7 +3,7 @@
   if (typeof module === 'object' && module.exports) module.exports = factory(); else root.Chess = factory();
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
-  const COLS = 5, HALF = 3, BENCH = 5, MAXLV = 9, TICK = 500;
+  const COLS = 5, HALF = 3, ROWS = 2 * HALF + 1, BENCH = 5, MAXLV = 9, TICK = 500;
 
   // ---- Родства и классы (синергии) ----
   const TRAITS = {
@@ -147,7 +147,7 @@
     const R = rng(seed || 1), units = [];
     const add = (arr, team, syn) => arr.forEach((u, i) => {
       const st = u.st || stats(u.card, u.star, u.items, syn);
-      const x = team === 0 ? u.x : COLS - 1 - u.x, y = team === 0 ? HALF + u.y : HALF - 1 - u.y;
+      const x = team === 0 ? u.x : COLS - 1 - u.x, y = team === 0 ? HALF + 1 + u.y : HALF - 1 - u.y;
       units.push({ id: units.length, team, card: u.card || '', e: u.e || '', img: u.img || '', star: st.star || 1, x, y, mhp: st.hp, hp: st.hp, atk: st.atk, ar: st.ar, as: st.as, crit: st.crit, cm: st.cm, dodge: st.dodge, ls: st.ls, regen: st.regen, mr: st.mr, sp: st.sp, rg: st.rg, ai: st.ai,
         mm: st.mana, mana: st.mana0 || 0, spell: u.card ? CARDS[u.card].sp : (u.sp || ''), cd: 0, stun: 0, buff: [], shield: 0, tgt: -1, items: (u.items || []).length, pri: syn && syn.priest ? syn.priest.lv : 0 });
     });
@@ -183,7 +183,7 @@
       let best = null, bd = 1e9;
       for (let ax = -1; ax <= 1; ax++) for (let ay = -1; ay <= 1; ay++) {
         if (!ax && !ay) continue; const nx = u.x + ax, ny = u.y + ay;
-        if (nx < 0 || nx > COLS - 1 || ny < 0 || ny > 2 * HALF - 1 || occ.has(nx + ',' + ny)) continue;
+        if (nx < 0 || nx > COLS - 1 || ny < 0 || ny > ROWS - 1 || occ.has(nx + ',' + ny)) continue;
         const d = Math.max(Math.abs(t.x - nx), Math.abs(t.y - ny)) * 10 + Math.hypot(t.x - nx, t.y - ny);
         if (d < bd) { bd = d; best = [nx, ny]; }
       }
@@ -251,5 +251,5 @@
 
   function rollCost(lv, r) { const o = ODDS[Math.max(1, Math.min(MAXLV, lv))]; let x = r * 100, c = 1; for (let i = 0; i < 5; i++) { x -= o[i]; if (x < 0) { c = i + 1; break; } } return c; }
 
-  return { COLS, HALF, BENCH, MAXLV, TICK, TRAITS, SP, CARDS, ORDER, ROLES, POOL, ODDS, XP_NEED, STAR_MUL, ITEMS, ITEM_IDS, synergies, stats, simulate, rng, rollCost };
+  return { COLS, HALF, ROWS, BENCH, MAXLV, TICK, TRAITS, SP, CARDS, ORDER, ROLES, POOL, ODDS, XP_NEED, STAR_MUL, ITEMS, ITEM_IDS, synergies, stats, simulate, rng, rollCost };
 });

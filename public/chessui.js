@@ -76,7 +76,7 @@
 
 #chs{background:#0a1120}
 .chw{max-width:none;padding:0 0 14px}
-.stg{position:relative;margin:0 auto;width:var(--S);height:var(--S);background:#0a1120 url(/img/ch-stage.webp?v=1) 0 0/100% 100%;overflow:hidden;--cw:calc(var(--S)*.1);--chh:calc(var(--cw)*1.2);--u:calc(var(--S)/1932);user-select:none;-webkit-user-select:none;touch-action:manipulation}
+.stg{position:relative;margin:0 auto;width:var(--S);height:var(--S);background:#0a1120 url(/img/ch-stage.webp?v=2) 0 0/100% 100%;overflow:hidden;--cw:calc(var(--S)*.1);--chh:calc(var(--cw)*1.2);--u:calc(var(--S)/1116);user-select:none;-webkit-user-select:none;touch-action:manipulation}
 .stg>*{position:absolute;box-sizing:border-box}
 .stg .hb{background:linear-gradient(#4a3320,#2a1c10);border:1px solid #c9a24a;border-radius:calc(var(--u)*18);color:#ffe9b0;font-family:inherit;font-weight:700;font-size:max(8px,calc(var(--u)*34));padding:0}
 .stg .hpl{background:linear-gradient(#2c3442,#1a202b);border:1px solid #8a93a8;border-radius:calc(var(--u)*16);text-align:center;display:flex;flex-direction:column;justify-content:center;line-height:1.1;color:#f4e6bd;font-weight:800;font-size:max(8px,calc(var(--u)*36))}
@@ -86,17 +86,17 @@
 .stg .p8 b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:700;padding:0 2px}.stg .p8.me{border-color:#e8b230;background:rgba(232,178,48,.28)}.stg .p8.foe{border-color:#e0483c}.stg .p8.dead{opacity:.4}
 .stg .qc{background:none}#chs.dk .stg .qc.my{background:rgba(255,236,160,.3)}
 .stg .ln{height:.5%;background:linear-gradient(90deg,transparent,#ffd35a,transparent);opacity:.8;pointer-events:none;z-index:3}
-.stg .sk,.stg .cu{--cw:calc(var(--S)*.1);transition:left .45s linear,top .45s linear,width .45s linear,height .45s linear,opacity .5s}
+.stg .sk,.stg .cu{--cw:calc(var(--S)*.125);transition:left .45s linear,top .45s linear,width .45s linear,height .45s linear,opacity .5s}
 .stg .sk{transition:none}.stg .sk:has(.sel){z-index:80!important}
 .stg .sk .chcd,.stg .cu .chcd{border-width:max(1.5px,calc(var(--u)*5));border-radius:calc(var(--u)*14)}
 .stg .chcd .cn{font-size:max(7px,calc(var(--cw)*.24));width:32%}
 .stg .chcd .st{font-size:max(6px,calc(var(--cw)*.2))}
 .stg .chcd .nm{display:none}
 .stg .chcd.sel{transform:scale(1.22);transform-origin:50% 100%}
-.stg .bs{background:rgba(10,14,22,.55);border:1px solid #c9a24a;border-radius:calc(var(--u)*16);--cw:calc(var(--S)*.1)}
+.stg .bs{background:rgba(10,14,22,.55);border:1px solid #c9a24a;border-radius:calc(var(--u)*16);--cw:calc(var(--S)*.15)}
 .stg .bs .chcd{border-radius:calc(var(--u)*14)}
 .stg .tray{background:rgba(10,14,22,.62);border:2px solid #8a7240;border-radius:calc(var(--u)*30);pointer-events:none}
-.stg .chsc{--cw:calc(var(--S)*.144);width:auto;height:auto}
+.stg .chsc{--cw:calc(var(--S)*.19);width:auto;height:auto}
 .stg .sb{background:linear-gradient(#5a3a1c,#2e1d0e);border:1px solid #e8b230;border-radius:calc(var(--u)*22);color:#ffe9b0;font-family:inherit;font-weight:800;font-size:max(8px,calc(var(--u)*38));padding:0;white-space:nowrap}
 .stg .sb.lk{font-size:max(10px,calc(var(--u)*52))}
 .stg .vs{display:flex;align-items:center;justify-content:center;gap:calc(var(--u)*30);font-weight:800;font-size:max(9px,calc(var(--u)*44));text-shadow:0 1px 3px #000;pointer-events:none}
@@ -111,8 +111,8 @@
 
 
   // ---------- сцена: картинка и наклонная сетка 5×6 ----------
-  const PT = [[[0.30131,0.26073],[0.38154,0.26073],[0.46176,0.26073],[0.54199,0.26073],[0.62222,0.26073],[0.70244,0.26073]],[[0.29539,0.30826],[0.37787,0.30826],[0.46035,0.30826],[0.54284,0.30826],[0.62532,0.30826],[0.7078,0.30826]],[[0.28788,0.36845],[0.37322,0.36845],[0.45856,0.36845],[0.54391,0.36845],[0.62925,0.36845],[0.71459,0.36845]],[[0.27825,0.44575],[0.36726,0.44575],[0.45627,0.44575],[0.54528,0.44575],[0.63429,0.44575],[0.7233,0.44575]],[[0.26532,0.54941],[0.35926,0.54941],[0.45319,0.54941],[0.54712,0.54941],[0.64105,0.54941],[0.73499,0.54941]],[[0.25015,0.67115],[0.34986,0.67115],[0.44957,0.67115],[0.54928,0.67115],[0.649,0.67115],[0.74871,0.67115]],[[0.23719,0.7751],[0.34183,0.7751],[0.44648,0.7751],[0.55113,0.7751],[0.65578,0.7751],[0.76043,0.7751]]];
-  const KS = 1 / 1932, pc = (x0, y0, x1, y1) => `left:${x0 * KS * 100}%;top:${y0 * KS * 100}%;width:${(x1 - x0) * KS * 100}%;height:${(y1 - y0) * KS * 100}%`;
+  const PT = [[[0.16398,0.20008],[0.2991,0.20008],[0.43423,0.20008],[0.56935,0.20008],[0.70448,0.20008],[0.83961,0.20008]],[[0.1557,0.26911],[0.29409,0.26911],[0.43248,0.26911],[0.57088,0.26911],[0.70927,0.26911],[0.84767,0.26911]],[[0.1473,0.33914],[0.28901,0.33914],[0.43072,0.33914],[0.57242,0.33914],[0.71413,0.33914],[0.85584,0.33914]],[[0.13806,0.41617],[0.28341,0.41617],[0.42877,0.41617],[0.57412,0.41617],[0.71948,0.41617],[0.86484,0.41617]],[[0.12846,0.4962],[0.2776,0.4962],[0.42675,0.4962],[0.57589,0.4962],[0.72504,0.4962],[0.87418,0.4962]],[[0.11826,0.58124],[0.27143,0.58124],[0.4246,0.58124],[0.57777,0.58124],[0.73094,0.58124],[0.88411,0.58124]],[[0.10757,0.67028],[0.26496,0.67028],[0.42235,0.67028],[0.57973,0.67028],[0.73712,0.67028],[0.89451,0.67028]],[[0.09665,0.76131],[0.25835,0.76131],[0.42005,0.76131],[0.58174,0.76131],[0.74344,0.76131],[0.90513,0.76131]]];
+  const AW = 1116, AH = 1999, pc = (x0, y0, x1, y1) => `left:${x0 / AW * 100}%;top:${y0 / AH * 100}%;width:${(x1 - x0) / AW * 100}%;height:${(y1 - y0) / AH * 100}%`;
   let ASP = 1;
   function cellBox(c, r) {
     const a = PT[r][c], b = PT[r][c + 1], d = PT[r + 1][c], e = PT[r + 1][c + 1];
@@ -120,7 +120,7 @@
     return { l: cx - w / 2, t: by - h, w, h, z: 10 + r, cx, rh };
   }
   const unitStyle = (c, r) => { const q = cellBox(c, r); return `left:${q.l * 100}%;top:${q.t * 100}%;width:${q.w * 100}%;height:${q.h * 100}%;z-index:${q.z}`; };
-  function stageS() { const w = innerWidth, h = innerHeight; if (w >= h) { const s = Math.floor(Math.min(h - 4, w, 760)); return { W: s, H: s }; } const W = Math.floor(Math.min(w, 760)); return { W, H: Math.floor(Math.max(W, Math.min(h * 0.7, W * 1.6))) }; }
+  function stageS() { const w = innerWidth, h = innerHeight; let W = Math.floor(Math.min(w, 560)), H = Math.floor(W * AH / AW); if (H > h - 4 && w >= h) { H = h - 4; W = Math.floor(H * AW / AH); } return { W, H }; }
 
   function art(id) { return `<img src="/img/ch-${id}.webp?v=2" alt="" onerror="this.remove()">`; }
   function cardHtml(u, sel) {
@@ -199,7 +199,7 @@
     const me = v.me; if (!me) return;
     if (v.phase === 'end' || !me.alive) { endScreen(el, v); return; }
     const keepScroll = el.scrollTop;
-    const inPrep = v.phase === 'prep'; el.classList.toggle('dk', inPrep && !!(st.sel || st.item >= 0));
+    const inPrep = v.phase === 'prep'; el.classList.toggle('dk', inPrep && !!(st.sel || st.item >= 0)); el.classList.toggle('sh', inPrep && !(st.sel || st.item >= 0) && st.shop);
     el.innerHTML = `<div class="chw">${stageHtml(v)}${v.phase === 'prep' ? prepHtml(v) : combatInfo(v)}</div>`;
     el.scrollTop = keepScroll; tickClock();
     if (v.phase === 'combat' && st.rep) st.rep.build();
@@ -209,38 +209,29 @@
     el.innerHTML = `<div class="chw"><div class="chend"><div class="big">${me.place === 1 ? '🏆' : me.place <= 3 ? '🥈' : '⚔'}</div><h2>${me.place === 1 ? 'Победа!' : 'Ваше место: ' + me.place}</h2><p>Раундов: ${v.round}</p>${rw ? `<p>Награда: 🪙 ${rw.sil}${rw.mats ? ' · материалы ×' + rw.mats : ''}${rw.bp ? ' · очки пропуска +' + rw.bp : ''}</p>${rw.sil === 0 ? '<p class="sm muted">Дневной предел наград достигнут.</p>' : ''}` : '<p class="muted">Подсчитываем награду…</p>'}<button class="btn" data-c="exit" type="button">Закрыть</button> <button class="btn ghost" data-c="again" type="button">Играть ещё</button></div></div>`;
   }
   function stageHtml(v) {
-    const me = v.me, combat = v.phase === 'combat', prep = v.phase === 'prep', CO = C.COLS, HA = C.HALF, SS = stageS(), S = SS.W; ASP = SS.W / SS.H;
+    const me = v.me, combat = v.phase === 'combat', prep = v.phase === 'prep', CO = C.COLS, MY = C.ROWS - C.HALF, SS = stageS(), S = SS.W; ASP = SS.W / SS.H;
     const title = `Раунд ${v.round}${v.pve ? ' · нечисть' : ''}`;
     let h = `<div class="stg" id="stg" style="--S:${S}px;width:${S}px;height:${SS.H}px">`;
-    h += `<button class="hb" data-c="exit" type="button" style="${pc(487, 72, 677, 155)}">‹ Выйти</button>`;
-    h += `<div class="hpl" style="${pc(690, 60, 1140, 165)}"><span>${title}</span><small id="chclk"></small></div>`;
-    h += `<div class="hch" style="${pc(1145, 80, 1315, 148)}">❤ ${me.hp}</div><div class="hch" style="${pc(1325, 80, 1445, 148)}">🪙 ${me.gold}</div>`;
+    h += `<button class="hb" data-c="exit" type="button" style="${pc(30, 30, 250, 115)}">‹ Выйти</button>`;
+    h += `<div class="hpl" style="${pc(265, 25, 800, 125)}"><span>${title}</span><small id="chclk"></small></div>`;
+    h += `<div class="hch" style="${pc(815, 35, 955, 115)}">❤ ${me.hp}</div><div class="hch" style="${pc(965, 35, 1085, 115)}">🪙 ${me.gold}</div>`;
     const opp = v.fight ? v.fight.opp : '';
-    h += v.players.map((p, i) => `<div class="p8${p.me ? ' me' : ''}${p.a ? '' : ' dead'}${opp && p.n === opp && !p.me ? ' foe' : ''}" style="${pc(487 + i * 120, 178, 487 + i * 120 + 112, 270)}"><b>${esc(p.n)}</b>${p.a ? p.hp : '☠'}</div>`).join('');
+    h += v.players.map((p, i) => `<div class="p8${p.me ? ' me' : ''}${p.a ? '' : ' dead'}${opp && p.n === opp && !p.me ? ' foe' : ''}" style="${pc(40 + i * 130, 140, 40 + i * 130 + 122, 225)}"><b>${esc(p.n)}</b>${p.a ? p.hp : '☠'}</div>`).join('');
     if (prep) {
-      for (let r = 0; r < 2 * HA; r++) for (let c = 0; c < CO; c++) {
+      for (let r = MY; r < C.ROWS; r++) for (let c = 0; c < CO; c++) {
         const a = PT[r][c], b = PT[r][c + 1], d = PT[r + 1][c], e = PT[r + 1][c + 1];
         const xs = [a[0], b[0], d[0], e[0]], ys = [a[1], b[1], d[1], e[1]], x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys), W = x1 - x0, Hh = y1 - y0;
         const pt = p => `${((p[0] - x0) / W * 100).toFixed(1)}% ${((p[1] - y0) / Hh * 100).toFixed(1)}%`;
-        const mine = r >= HA, i = (r - HA) * CO + c;
-        h += `<div class="qc${mine ? ' my' : ''}" data-c="cell" data-i="${mine ? i : -1}" style="left:${x0 * 100}%;top:${y0 * 100}%;width:${W * 100}%;height:${Hh * 100}%;z-index:1;clip-path:polygon(${pt(a)},${pt(b)},${pt(e)},${pt(d)})"></div>`;
+        h += `<div class="qc my" data-c="cell" data-i="${(r - MY) * CO + c}" style="left:${x0 * 100}%;top:${y0 * 100}%;width:${W * 100}%;height:${Hh * 100}%;z-index:1;clip-path:polygon(${pt(a)},${pt(b)},${pt(e)},${pt(d)})"></div>`;
       }
-      for (let i = 0; i < me.board.length; i++) { const u = me.board[i]; if (u) h += `<div class="sk" data-c="cell" data-i="${i}" style="${unitStyle(i % CO, HA + Math.floor(i / CO))}">${cardHtml(u, st.sel === 'f' + i)}</div>`; }
-      me.bench.forEach((u, i) => { h += `<div class="bs" data-c="bench" data-i="${i}" style="${pc(70, 540 + i * 180, 280, 540 + i * 180 + 168)}">${u ? cardHtml(u, st.sel === 'b' + i) : ''}</div>`; });
+      for (let i = 0; i < me.board.length; i++) { const u = me.board[i]; if (u) h += `<div class="sk" data-c="cell" data-i="${i}" style="${unitStyle(i % CO, MY + Math.floor(i / CO))}">${cardHtml(u, st.sel === 'f' + i)}</div>`; }
+      me.bench.forEach((u, i) => { h += `<div class="bs" data-c="bench" data-i="${i}" style="${pc(112 + i * 180, 1655, 112 + i * 180 + 168, 1805)}">${u ? cardHtml(u, st.sel === 'b' + i) : ''}</div>`; });
     }
-    h += `<div class="ln" style="left:${PT[3][0][0] * 100}%;top:${PT[3][0][1] * 100 - .25}%;width:${(PT[3][5][0] - PT[3][0][0]) * 100}%"></div>`;
     h += `<div class="ul" id="chbd"></div>`;
-    h += `<div class="tray" style="${pc(160, 1500, 1772, 1905)}"></div>`;
-    if (prep) {
-      me.shop.forEach((id, i) => {
-        if (!id) return; const c = C.CARDS[id], no = me.gold < c.c;
-        h += `<button class="chsc${no ? ' no' : ''}" style="--cc:${CCOL[c.c]};${pc(212 + i * 307, 1525, 212 + i * 307 + 278, 1745)}" data-c="buy" data-i="${i}" type="button"><span class="em">${c.e}</span>${art(id)}<span class="cn">${c.c}</span><span class="tr"><i>${C.TRAITS[c.r].e}</i><i>${C.TRAITS[c.k].e}</i></span><span class="nm">${c.n}</span></button>`;
-      });
-      h += `<button class="sb" data-c="reroll" type="button" style="${pc(478, 1765, 918, 1855)}">🔄 Обновить · 2🪙</button><button class="sb" data-c="xp" type="button" style="${pc(945, 1765, 1345, 1855)}">⬆ Опыт · 5🪙</button><button class="sb lk" data-c="lock" type="button" style="${pc(1368, 1765, 1455, 1855)}">${me.lock ? '🔒' : '🔓'}</button>`;
-    } else if (v.fight) {
+    if (combat && v.fight) {
       const foe = v.players.find(p => p.n === v.fight.opp);
-      h += `<div class="vs" style="${pc(180, 1560, 1750, 1700)}"><span>🟢 Вы · ❤ ${me.hp}</span><b>⚔</b><span class="foe">${esc(v.fight.opp)}${foe ? ' · ❤ ' + foe.hp : ''}${v.fight.ghost ? ' (тень)' : ''} 🔴</span></div>`;
-    } else h += `<div class="vs" style="${pc(180, 1560, 1750, 1700)}"><span>Ваш бой окончен, ждём остальных…</span></div>`;
+      h += `<div class="vs" style="${pc(100, 1660, 1020, 1800)}"><span>🟢 Вы · ❤ ${me.hp}</span><b>⚔</b><span class="foe">${esc(v.fight.opp)}${foe ? ' · ❤ ' + foe.hp : ''}${v.fight.ghost ? ' (тень)' : ''} 🔴</span></div>`;
+    } else if (combat) h += `<div class="vs" style="${pc(100, 1660, 1020, 1800)}"><span>Ваш бой окончен, ждём остальных…</span></div>`;
     return h + '</div>';
   }
   function synHtml(v) {
@@ -269,9 +260,9 @@
   }
   function prepHtml(v) {
     const me = v.me;
-    const shop = '', _unused = me.shop.map((id, i) => { if (!id) return ''; const c = C.CARDS[id], no = me.gold < c.c; return `<button class="chsc${no ? ' no' : ''}" style="--cc:${CCOL[c.c]}" data-c="buy" data-i="${i}" type="button"><span class="em">${c.e}</span>${art(id)}<span class="cn">${c.c}</span><span class="tr"><i>${C.TRAITS[c.r].e}</i><i>${C.TRAITS[c.k].e}</i></span><span class="nm">${c.n}</span></button>`; }).join('');
+    const shop = me.shop.map((id, i) => { if (!id) return ''; const c = C.CARDS[id], no = me.gold < c.c; return `<button class="chsc${no ? ' no' : ''}" style="--cc:${CCOL[c.c]}" data-c="buy" data-i="${i}" type="button"><span class="em">${c.e}</span>${art(id)}<span class="cn">${c.c}</span><span class="tr"><i>${C.TRAITS[c.r].e}</i><i>${C.TRAITS[c.k].e}</i></span><span class="nm">${c.n}</span></button>`; }).join('');
     const onB = me.board.filter(Boolean).length;
-    return `${synHtml(v)}<div class="sm" style="text-align:center">На поле: ${onB} из ${me.lvl} · Ур. ${me.lvl}${me.xpn ? ` · опыт ${me.xp}/${me.xpn}` : ' (максимум)'}</div>${me.xpn ? `<div class="chxp"><i style="width:${Math.min(100, me.xp / me.xpn * 100)}%"></i></div>` : ''}${me.items.length ? '<div class="chit">' : '<div class="chit" hidden>'}${me.items.map((q, i) => `<b class="${st.item === i ? 'sel' : ''}" data-c="item" data-i="${i}">${C.ITEMS[q].e}</b>`).join('')}</div>${infoHtml(v)}${me.income ? `<p class="sm muted" style="text-align:center">Доход за раунд: ${me.income.total}🪙 (база 5${me.income.inter ? ' + проценты ' + me.income.inter : ''}${me.income.streak ? ' + серия ' + me.income.streak : ''})</p>` : ''}`;
+    return `${synHtml(v)}<div class="sm" style="text-align:center">На поле: ${onB} из ${me.lvl} · Ур. ${me.lvl}${me.xpn ? ` · опыт ${me.xp}/${me.xpn}` : ' (максимум)'}</div>${me.xpn ? `<div class="chxp"><i style="width:${Math.min(100, me.xp / me.xpn * 100)}%"></i></div>` : ''}${me.items.length ? '<div class="chit">' : '<div class="chit" hidden>'}${me.items.map((q, i) => `<b class="${st.item === i ? 'sel' : ''}" data-c="item" data-i="${i}">${C.ITEMS[q].e}</b>`).join('')}</div>${infoHtml(v)}${sheetHtml(v, shop)}${me.income ? `<p class="sm muted" style="text-align:center">Доход за раунд: ${me.income.total}🪙 (база 5${me.income.inter ? ' + проценты ' + me.income.inter : ''}${me.income.streak ? ' + серия ' + me.income.streak : ''})</p>` : ''}`;
   }
   function vsBar(v) {
     const f = v.fight; if (!f) return '';
@@ -290,7 +281,7 @@
     const lg = v.fight.log, side = v.fight.side;
     const R = { round: v.round, i: 0, els: {}, tm: 0 };
     const fx = (x, y, txt, col) => { const b = $c('chbd'); if (!b) return; const q = cellBox(x, Math.max(0, Math.min(5, Math.round(y)))), d = document.createElement('div'); d.className = 'cfx'; d.style.cssText = `left:${q.cx * 100}%;top:${q.t * 100}%;color:${col}`; d.textContent = txt; b.appendChild(d); setTimeout(() => d.remove(), 1000); };
-    const pos = (x, y) => side === 1 ? [C.COLS - 1 - x, 2 * C.HALF - 1 - y] : [x, y];
+    const pos = (x, y) => side === 1 ? [C.COLS - 1 - x, C.ROWS - 1 - y] : [x, y];
     R.build = () => {
       const b = $c('chbd'); if (!b) return; R.els = {};
       lg.init.forEach(a => {
@@ -346,7 +337,8 @@
     if (a === 'reroll') { await act({ a: 'reroll' }); return; }
     if (a === 'xp') { await act({ a: 'xp' }); return; }
     if (a === 'lock') { await act({ a: 'lock' }); return; }
-        if (a === 'desel') { st.sel = null; st.item = -1; draw(); return; }
+        if (a === 'shopt') { st.shop = !st.shop; draw(); return; }
+    if (a === 'desel') { st.sel = null; st.item = -1; draw(); return; }
     if (a === 'sell') { if (st.sel) { const f = st.sel; st.sel = null; await act({ a: 'sell', f }); } return; }
     if (a === 'item') { const i = +t.dataset.i; st.item = st.item === i ? -1 : i; st.sel = null; draw(); return; }
     if (a === 'cell' || a === 'bench') {
