@@ -129,6 +129,12 @@ module.exports = function makeAdmin(env) {
           if (n(g.vipDays, 3650)) { st.vip = Math.max(st.vip || 0, Date.now()) + n(g.vipDays, 3650) * 86400000; parts.push('VIP на ' + n(g.vipDays, 3650) + ' дн.'); }
           for (const k of ['a', 'b']) { const d = n(g['hero' + k.toUpperCase()], 3650); if (d) { st.hst = { s: k, until: Math.max((st.hst && st.hst.until) || 0, Date.now()) + d * 86400000 }; parts.push('Hero (' + (k === 'a' ? 'Золото и руны' : 'Огонь') + ') на ' + d + ' дн.'); } }
           if (n(g.shieldH, 720)) { st.shield = Math.max(st.shield, Date.now()) + n(g.shieldH, 720) * 3600000; parts.push('щит на ' + n(g.shieldH, 720) + ' ч'); }
+          if (g.item && Core.SLOTS[g.item.slot]) {
+            const r = Math.max(0, Math.min(3, Math.floor(Number(g.item.r)) || 0)), pl = Math.max(0, Math.min(15, Math.floor(Number(g.item.plus)) || 0)), cnt = Math.max(1, Math.min(10, Math.floor(Number(g.item.n)) || 1));
+            const AFK = ['str', 'vit', 'arm', 'crt', 'atk', 'def', 'loot', 'eco'];
+            for (let i = 0; i < cnt; i++) st.eq.inv.push({ id: 'i' + (st.mid++), slot: g.item.slot, r, plus: pl, af: [AFK[Math.floor(Math.random() * AFK.length)], Math.round((0.7 + Math.random() * 0.6) * 100) / 100] });
+            parts.push(cnt + ' × ' + Core.SLOTS[g.item.slot].n.toLowerCase() + ' (' + ['обычное', 'серебряное', 'золотое', 'эпическое'][r] + (pl ? ' +' + pl : '') + ')');
+          }
           if (!parts.length) return json(res, 400, { error: 'Ничего не выбрано.' });
           Core.addLogTo(st, 'Дар от администрации: ' + parts.join(', ') + '.', 'good'); markDirty(u);
           audit(`Выдано ${u.name}: ${parts.join(', ')}`); return ok('Выдано: ' + parts.join(', '));

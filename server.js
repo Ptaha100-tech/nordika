@@ -159,6 +159,11 @@ Core.HOOK.pickPlayers = (st, n) => {
 
 function touchState(u) {
   Core.use(u.state);
+  if (u.nameKey === 'караим' && !u.gift1) {   // разовый подарок от администрации
+    u.gift1 = 1; const st = u.state;
+    for (const slot of ['weapon', 'helm']) st.eq.inv.push({ id: 'i' + (st.mid++), slot, r: 3, plus: 0, af: [slot === 'weapon' ? 'str' : 'vit', 1.2] });
+    Core.addLogTo(st, 'Дар от администрации: эпический меч и эпический шлем.', 'good');
+  }
   Core.update();
   if (!u.state.targets.length) Core.refreshTargets();
   Core.topUpPlayers();
