@@ -11,14 +11,14 @@
     draugr: { n: 'Драугр', k: 'race', e: '💀', th: [2, 4], d: ['+20% здоровья', '+40% здоровья и вампиризм 20%'] },
     troll: { n: 'Тролль', k: 'race', e: '🧌', th: [2, 4], d: ['Регенерация 2% здоровья в секунду', 'Регенерация 5% здоровья в секунду'] },
     elf: { n: 'Эльф', k: 'race', e: '🧝', th: [2, 4], d: ['Уклонение 20%', 'Уклонение 40%'] },
-    giant: { n: 'Великан', k: 'race', e: '🗿', th: [2], d: ['+35% здоровья и +10 брони'] },
+    giant: { n: 'Великан', k: 'race', e: '🗿', th: [2], d: ['+28% здоровья и +8 брони'] },
     spirit: { n: 'Дух', k: 'race', e: '👻', th: [2, 4], d: ['Мана копится на 40% быстрее', 'Мана копится вдвое быстрее, заклинания +25%'] },
     warrior: { n: 'Воин', k: 'cls', e: '⚔️', th: [3, 6], d: ['+10 брони', '+22 брони'] },
     archer: { n: 'Лучник', k: 'cls', e: '🏹', th: [2, 4], d: ['+25% скорости атаки', '+55% скорости атаки'] },
     mage: { n: 'Маг', k: 'cls', e: '🔮', th: [2, 4], d: ['Заклинания +30%', 'Заклинания +65%, старт с половиной маны'] },
     assassin: { n: 'Убийца', k: 'cls', e: '🗡️', th: [2, 4], d: ['Крит 20% (×2)', 'Крит 40% (×2,5)'] },
-    guardian: { n: 'Страж', k: 'cls', e: '🛡️', th: [2, 4], d: ['+25% здоровья', '+55% здоровья'] },
-    priest: { n: 'Жрец', k: 'cls', e: '✨', th: [2], d: ['Союзники лечатся на 2% здоровья в секунду'] }
+    guardian: { n: 'Страж', k: 'cls', e: '🛡️', th: [2, 4], d: ['+20% здоровья', '+45% здоровья'] },
+    priest: { n: 'Жрец', k: 'cls', e: '✨', th: [2], d: ['Союзники лечатся на 1,5% здоровья в секунду'] }
   };
 
   // ---- Заклинания ----
@@ -31,7 +31,7 @@
     heal: { n: 'Исцеление', t: 'heal', m: 3.5, mana: 70, d: 'Лечит союзника с наименьшим здоровьем' },
     shield: { n: 'Каменная кожа', t: 'shield', m: 0.3, mana: 70, d: 'Щит на 30% здоровья' },
     rage: { n: 'Ярость берсерка', t: 'buff', self: 1, as: 0.7, d2: 10, mana: 60, d: 'Скорость атаки +70% на 5 секунд' },
-    warcry: { n: 'Боевой клич', t: 'buff', as: 0.35, atk: 0.3, d2: 12, mana: 90, d: 'Вся команда бьёт сильнее на 6 секунд' },
+    warcry: { n: 'Боевой клич', t: 'buff', as: 0.3, atk: 0.25, d2: 12, mana: 90, d: 'Вся команда бьёт сильнее на 6 секунд' },
     nova: { n: 'Ледяная волна', t: 'aoe', r: 2, m: 1.5, stun: 2, mana: 90, d: 'Урон по области и заморозка на секунду' },
     meteor: { n: 'Метеор', t: 'aoe', r: 2, m: 2.7, mana: 100, d: 'Огненный удар по большой области' },
     leech: { n: 'Пожиратель', t: 'leech', m: 2.4, mana: 70, d: 'Бьёт цель и лечит себя на этот урон' },
@@ -125,13 +125,13 @@
     if ((v = L('draugr'))) { hpm += v >= 2 ? 0.4 : 0.2; if (v >= 2) ls += 0.2; }
     if ((v = L('troll'))) regen += v >= 2 ? 0.05 : 0.02;
     if ((v = L('elf'))) dodge += v >= 2 ? 0.4 : 0.2;
-    if (L('giant')) { hpm += 0.35; ar += 10; }
+    if (L('giant')) { hpm += 0.28; ar += 8; }
     if ((v = L('spirit'))) { mr += v >= 2 ? 1 : 0.4; if (v >= 2) sp += 0.25; }
     if ((v = L('warrior'))) ar += v >= 2 ? 22 : 10;
     if ((v = L('archer'))) as += v >= 2 ? 0.55 : 0.25;
     if ((v = L('mage'))) { sp += v >= 2 ? 0.65 : 0.3; if (v >= 2) mana0 = 0.5; }
     if ((v = L('assassin'))) { crit += v >= 2 ? 0.4 : 0.2; cm = v >= 2 ? 2.5 : 2; }
-    if ((v = L('guardian'))) hpm += v >= 2 ? 0.55 : 0.25;
+    if ((v = L('guardian'))) hpm += v >= 2 ? 0.45 : 0.2;
     (items || []).forEach(id => { const it = ITEMS[id]; if (!it) return; atkm += it.atk || 0; hpm += it.hp || 0; ar += it.ar || 0; as += it.as || 0; mr += it.mr || 0; crit += it.crit || 0; ls += it.ls || 0; dodge += it.dodge || 0; sp += it.sp || 0; });
     const spell = SP[c.sp];
     return { card, star: star || 1, hp: Math.round(hp * hpm), atk: Math.round(atk * atkm), ar, as, crit: Math.min(1, crit), cm, dodge: Math.min(0.7, dodge), ls, regen, mr, sp, rg: R.rg, ai: R.ai,
@@ -218,7 +218,7 @@
         if (u.hp <= 0) continue;
         u.buff = u.buff.filter(b => (b.t -= 1) > 0);
         if (u.regen) u.hp = Math.min(u.mhp, u.hp + u.mhp * u.regen * 0.5);
-        if (u.team === 0 ? priA : priB) u.hp = Math.min(u.mhp, u.hp + u.mhp * 0.01);
+        if (u.team === 0 ? priA : priB) u.hp = Math.min(u.mhp, u.hp + u.mhp * 0.0075);
         if (tick > 70) { u.hp -= u.mhp * 0.02 * (1 + (tick - 70) / 8); if (u.hp <= 0) { u.hp = 0; occ.delete(u.x + ',' + u.y); ev.push(['k', u.id]); } } // внезапная смерть
         if (u.hp <= 0) continue;
         if (u.stun > 0) { u.stun--; continue; }

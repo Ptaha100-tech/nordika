@@ -191,7 +191,7 @@ function botTurn(m, p) {
 
 // ---------- ход игры ----------
 function creepBoard(r) {
-  const pve = r <= 3 ? r : r / 5 + 3; // сила растёт
+  const pve = r <= 3 ? r : 3 + (r - 5) * 0.5; // сила растёт
   const n = Math.min(8, 2 + Math.floor(pve * 0.9));
   const hp = 220 + pve * 170 + (r >= 10 ? 500 : 0), atk = 9 + pve * 5.5, boss = r >= 10;
   const out = [], pos = []; for (let y = 0; y < 2; y++) XS.forEach(x => { if (!(boss && x === 2 && y === 0)) pos.push([x, y]); });
@@ -250,7 +250,7 @@ function startCombat(m) {
 }
 
 function endCombat(m) {
-  const dmgOf = (r, surv) => 4 + Math.round(surv * 1.4) + Math.floor(r * 0.8);
+  const dmgOf = (r, surv) => 4 + Math.round(surv * 1.4) + Math.floor(r * 0.8) + Math.max(0, r - 30);
   for (const f of m.fights) {
     const w = f.log.winner;
     const res = (side) => w === -1 ? 'draw' : (w === side ? 'win' : 'lose');
