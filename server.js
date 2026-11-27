@@ -177,7 +177,21 @@ const BOT_DEF = [
   { name: 'Ингвар Седой', hall: 6, cap: 12, mix: { spear: 3, archer: 3, cav: 2 } },
   { name: 'Рагнхильд',    hall: 5, cap: 10, mix: { spear: 2, archer: 4, cav: 2 } },
   { name: 'Свейн Лютый',  hall: 7, cap: 13, mix: { spear: 2, archer: 2, cav: 4 } },
-  { name: 'Эйрик Рыжий',  hall: 3, cap: 8,  mix: { spear: 4, archer: 3, cav: 1 } }
+  { name: 'Эйрик Рыжий',  hall: 3, cap: 8,  mix: { spear: 4, archer: 3, cav: 1 } },
+  { name: 'Vanguard',  hall: 8, cap: 12, mix: { spear: 2, archer: 2, cav: 4 } },
+  { name: 'Onyx',      hall: 6, cap: 10, mix: { spear: 3, archer: 3, cav: 2 } },
+  { name: 'Eclipse',   hall: 5, cap: 9,  mix: { spear: 3, archer: 4, cav: 1 } },
+  { name: 'Vermilion', hall: 4, cap: 8,  mix: { spear: 2, archer: 5, cav: 1 } },
+  { name: 'Paragon',   hall: 9, cap: 13, mix: { spear: 3, archer: 3, cav: 2 } },
+  { name: 'Spectre',   hall: 6, cap: 10, mix: { spear: 2, archer: 3, cav: 3 } },
+  { name: 'Corvus',    hall: 3, cap: 7,  mix: { spear: 4, archer: 2, cav: 2 } },
+  { name: 'Orion',     hall: 7, cap: 11, mix: { spear: 3, archer: 3, cav: 2 } },
+  { name: 'Sentinel',  hall: 10, cap: 14, mix: { spear: 5, archer: 3, cav: 1 } },
+  { name: 'Aetos',     hall: 5, cap: 9,  mix: { spear: 2, archer: 2, cav: 4 } },
+  { name: 'Valor',     hall: 8, cap: 12, mix: { spear: 4, archer: 2, cav: 2 } },
+  { name: 'Cipher',    hall: 6, cap: 10, mix: { spear: 2, archer: 4, cav: 2 } },
+  { name: 'Silent',    hall: 3, cap: 7,  mix: { spear: 3, archer: 3, cav: 2 } },
+  { name: 'Rook',      hall: 7, cap: 11, mix: { spear: 3, archer: 2, cav: 3 } }
 ];
 const lastBotHit = new Map();
 function makeBot(d) {
@@ -232,6 +246,19 @@ function botTick(u) {
   markDirty(u);
 }
 function botsTick() { for (const u of users.values()) if (u.bot) { try { botTick(u); } catch (e) { console.error('botTick', u.name, e.message); } } }
+/* ---------- боты-собеседники в чате ---------- */
+const ChatBot = require('./public/chatbot.js');
+const cbot = ChatBot.create({
+  now: () => Date.now(),
+  bots: () => [...users.values()].filter(u => u.bot && ChatBot.PERSONAS[u.name]).map(u => ({ pid: u.id, name: u.name })),
+  isBot: pid => { const u = users.get(pid); return !!(u && u.bot); },
+  world: () => sstore.world,
+  hallOf: pid => sctx.hallOf(pid),
+  activeReal: () => { const t = Date.now() - 20 * 60000; for (const u of users.values()) if (!u.bot && (u.seen || 0) > t) return 1; return 0; },
+  post: (pid, text, rp) => { Social.act(sstore, sctx, pid, 'wsay', { text, rp }); sdirty = true; },
+  dm: (pid, to, text) => { Social.act(sstore, sctx, pid, 'dsay', { to, text }); sdirty = true; }
+});
+setInterval(() => { try { cbot.tick(); } catch (e) { console.error('chatbot', e.message); } }, 1500).unref();
 /* ---------- защита от перебора и спама ---------- */
 const buckets = new Map();
 function limited(key, max, windowMs) {
@@ -277,8 +304,8 @@ function weekBoard(w) {
   return rows;
 }
 /* ---------- клановый поход недели: общий счёт клана ---------- */
-const CLAN_TIERS = [{ per: 5, gems: 5, haste: 0, n: 'Бронза' }, { per: 15, gems: 12, haste: 2, n: 'Серебро' }, { per: 30, gems: 25, haste: 4, n: 'Золото' }];   // нужно очков на каждого игрока клана (минимум 3)
-const CLAN_TOP = [40, 25, 15];          // дополнительные камни клану из тройки лучших
+const CLAN_TIERS = [{ per: 5, gems: 2, haste: 0, n: 'Бронза' }, { per: 15, gems: 5, haste: 2, n: 'Серебро' }, { per: 30, gems: 10, haste: 4, n: 'Золото' }];   // нужно очков на каждого игрока клана (минимум 3)
+const CLAN_TOP = [30, 20, 10];          // дополнительные камни клану из тройки лучших
 const CLAN_MIN = 3;                     // личный вклад, с которого игрок получает награду
 function clanBoard(w) {
   const out = [];
@@ -330,9 +357,9 @@ function worldSettle(b) {
   rows.forEach((r, i) => {
     const u = users.get(r.pid); if (!u) return;
     const res = killed ? { wood: 500, iron: 400, silver: 250 } : { wood: 150, iron: 100, silver: 60 };
-    if (i === 0) bossPay(u, `Мировой босс «${b.name}»: 1-е место по урону`, { res, gems: killed ? 25 : 10, haste: 4, w: [0, 35, 65] });
-    else if (i < 3) bossPay(u, `Мировой босс «${b.name}»: ${i + 1}-е место по урону`, { res, gems: killed ? 15 : 6, haste: 3, w: [20, 60, 20] });
-    else bossPay(u, `Мировой босс «${b.name}»${killed ? ' повержен' : ' ушёл'}: награда за участие`, { res, gems: killed ? 5 : 0, haste: killed ? 2 : 1, w: killed ? [65, 31, 4] : null });
+    if (i === 0) bossPay(u, `Мировой босс «${b.name}»: 1-е место по урону`, { res, gems: killed ? 12 : 5, haste: 4, w: [0, 35, 65] });
+    else if (i < 3) bossPay(u, `Мировой босс «${b.name}»: ${i + 1}-е место по урону`, { res, gems: killed ? 7 : 3, haste: 3, w: [20, 60, 20] });
+    else bossPay(u, `Мировой босс «${b.name}»${killed ? ' повержен' : ' ушёл'}: награда за участие`, { res, gems: killed ? 2 : 0, haste: killed ? 2 : 1, w: killed ? [65, 31, 4] : null });
   });
   b.settled = true; b.killed = killed; b.top = rows.slice(0, 3).map(r => ({ name: r.name, v: r.v }));
   b.nextAt = Math.max(Date.now(), b.end) + 24 * 3600000;
@@ -366,7 +393,7 @@ function clanSettle(c) {
   if (b.hp > 0) return;
   topRows(b.dmg).forEach((r, i) => {
     const u = users.get(r.pid); if (!u || !c.members[r.pid]) return;
-    bossPay(u, `Клановый босс «${b.name}» повержен`, { res: { wood: 400, iron: 300, silver: 200 }, gems: 10 + (i === 0 ? 10 : 0), haste: 3, w: i === 0 ? [20, 60, 20] : [55, 38, 7] });
+    bossPay(u, `Клановый босс «${b.name}» повержен`, { res: { wood: 400, iron: 300, silver: 200 }, gems: 4 + (i === 0 ? 4 : 0), haste: 3, w: i === 0 ? [20, 60, 20] : [55, 38, 7] });
   });
 }
 const DBOSS = ['Ледяной страж', 'Огненный мореход', 'Вещая Вороница', 'Гром-Берсерк'];
@@ -377,7 +404,7 @@ function dailySettle(b) {
   rows.forEach((r, i) => {
     const u = users.get(r.pid); if (!u) return;
     const res = b.killed ? { wood: 120, iron: 90, silver: 60 } : { wood: 40, iron: 30, silver: 20 };
-    bossPay(u, `Дневной босс «${b.name}»${b.killed ? ' повержен' : ' ушёл'}${i === 0 ? ': 1-е место' : ''}`, { res, gems: b.killed ? (i === 0 ? 6 : 2) : 0, haste: b.killed ? 1 : 0, w: b.killed && i === 0 ? [40, 50, 10] : null });
+    bossPay(u, `Дневной босс «${b.name}»${b.killed ? ' повержен' : ' ушёл'}${i === 0 ? ': 1-е место' : ''}`, { res, gems: b.killed ? (i === 0 ? 3 : 1) : 0, haste: b.killed ? 1 : 0, w: b.killed && i === 0 ? [40, 50, 10] : null });
   });
   saveEvs();
 }
@@ -540,9 +567,9 @@ function bossHit(u, type) {
   return { ok: true, dmg, lost: Core.fmtComp(lost) || 'нет', killed: b.hp <= 0 };
 }
 /* ---------- приглашения друзей ---------- */
-const REF_WELCOME = 5;                                                     // новичку сразу
-const REF_STEPS = [{ hall: 4, gems: 25, haste: 3 }, { hall: 8, gems: 40, haste: 5 }];   // пригласившему, когда друг дорос до уровня Палаты
-const REF_MAX = 20;                                                        // сколько приглашённых приносят награду
+const REF_WELCOME = 3;                                                     // новичку сразу
+const REF_STEPS = [{ hall: 4, gems: 12, haste: 3 }, { hall: 8, gems: 20, haste: 5 }];   // пригласившему, когда друг дорос до уровня Палаты
+const REF_MAX = 5;                                                        // сколько приглашённых приносят награду
 function refTick() {
   const paidBy = {};
   for (const u of users.values()) if (u.ref && (u.refPaid || []).length) paidBy[u.ref] = (paidBy[u.ref] || 0) + 1;
@@ -566,7 +593,7 @@ const MONTHS = ['Январь', 'Февраль', 'Март', 'Апрель', '�
 const seasonId = t => { const d = new Date(t + 3 * 3600000); return d.getUTCFullYear() * 12 + d.getUTCMonth(); };
 const seasonEnd = id => Date.UTC(Math.floor((id + 1) / 12), (id + 1) % 12, 1) - 3 * 3600000;       // конец месяца по Москве
 const seasonLabel = id => MONTHS[id % 12] + ' ' + Math.floor(id / 12);
-const SEASON_PL = [{ gems: 200, haste: 10 }, { gems: 120, haste: 6 }, { gems: 80, haste: 4 }], SEASON_REST = { gems: 30, haste: 0 }, SEASON_CL = [60, 40, 25], SEASON_MIN_HALL = 3;
+const SEASON_PL = [{ gems: 200, haste: 10 }, { gems: 120, haste: 6 }, { gems: 80, haste: 4 }], SEASON_REST = { gems: 10, haste: 0 }, SEASON_CL = [40, 25, 15], SEASON_MIN_HALL = 3;
 function seasonTick() {
   const cur = seasonId(Date.now()), prev = cur - 1;
   if (evs.lastSeason === prev) return;
@@ -904,6 +931,10 @@ async function api(req, res, url) {
     const r = Social.act(sstore, sctx, u.id, b.a, b);
     if (r.error !== undefined) return json(res, 400, { error: r.error });
     sdirty = true;
+    try {
+      if (b.a === 'wsay' && b.text) cbot.onWorld(sstore.world[sstore.world.length - 1]);
+      else if (b.a === 'dsay' && b.text) cbot.onDm(u.id, u.name, String(b.to || ''), String(b.text));
+    } catch (e) { console.error('chatbot', e.message); }
     return json(res, 200, Object.assign(Social.view(sstore, sctx, u.id, String(b.peer || b.to || b.pid || '').slice(0, 16)), { result: r }));
   }
   if (req.method === 'GET' && url === '/api/avatar') return json(res, 200, { img: u.avatar || '', fr: u.frame || 0 });

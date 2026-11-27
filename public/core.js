@@ -110,21 +110,21 @@ const toast = txt => { if (!quiet) toastFn(txt); };
 
 const QUESTS = [
   { id: 'q1',  t: 'Подними Лесопилку до 3 уровня',      cur: () => lvl('sawmill'), max: 3,  rw: { wood: 300, stone: 150 } },
-  { id: 'q2',  t: 'Подними Палату ярла до 3 уровня',    cur: () => lvl('hall'),    max: 3,  rw: { food: 400, wood: 400, haste: 1, gems: 3 } },
+  { id: 'q2',  t: 'Подними Палату ярла до 3 уровня',    cur: () => lvl('hall'),    max: 3,  rw: { food: 400, wood: 400, haste: 1, gems: 1 } },
   { id: 'q3',  t: 'Обучи 20 воинов',                    cur: () => S.stat.trained, max: 20, rw: { food: 300, iron: 100 } },
   { id: 'q4',  t: 'Разгроми лагерь разбойников',        cur: () => S.stat.campWins, max: 1, rw: { silver: 200, haste: 1 } },
   { id: 'q5',  t: 'Построй Хранилище',                  cur: () => lvl('vault'),   max: 1,  rw: { stone: 400, iron: 150 } },
   { id: 'q6',  t: 'Изучи первое знание в Оракуле',      cur: () => S.stat.researched, max: 1, rw: { silver: 300, haste: 1 } },
-  { id: 'q7',  t: 'Одержи 5 побед в походах',           cur: () => S.stat.wins,    max: 5,  rw: { food: 600, wood: 600, iron: 300, haste: 2, gems: 5 } },
+  { id: 'q7',  t: 'Одержи 5 побед в походах',           cur: () => S.stat.wins,    max: 5,  rw: { food: 600, wood: 600, iron: 300, haste: 2, gems: 2 } },
   { id: 'q8',  t: 'Отбей набег врага',                  cur: () => S.stat.defWins, max: 1,  rw: { silver: 300, iron: 200, haste: 1 } },
   { id: 'q9',  t: 'Подними Казарму до 3 уровня',        cur: () => lvl('barracks'), max: 3, rw: { iron: 300, silver: 150 } },
   { id: 'q10', t: 'Собери ресурсы на точке карты',      cur: () => S.stat.gathered, max: 1, rw: { food: 300, wood: 300, haste: 1 } },
   { id: 'q12', t: 'Подними ярла до 3 уровня',            cur: () => heroOf(S).lv, max: 3, rw: { silver: 200, food: 300, haste: 1 } },
   { id: 'q13', t: 'Обучи или улучши воинов до 2 ступени',         cur: () => Object.keys(U).filter(k => tierOf(S, k) >= 2).length, max: 1, rw: { iron: 300, silver: 200, haste: 1 } },
-  { id: 'q14', t: 'Подними Палату ярла до 10 уровня',   cur: () => lvl('hall'),    max: 10, rw: { food: 3000, wood: 3000, stone: 2000, haste: 3, gems: 10 } },
-  { id: 'q15', t: 'Подними ярла до 10 уровня',          cur: () => heroOf(S).lv,   max: 10, rw: { silver: 1500, iron: 1500, haste: 3, gems: 8 } },
-  { id: 'q16', t: 'Подними Палату ярла до 20 уровня',   cur: () => lvl('hall'),    max: 20, rw: { food: 12000, wood: 12000, stone: 8000, iron: 5000, haste: 6, gems: 20 } },
-  { id: 'q17', t: 'Одержи 25 побед в походах',          cur: () => S.stat.wins,    max: 25, rw: { silver: 2000, iron: 2000, haste: 4, gems: 12 } },
+  { id: 'q14', t: 'Подними Палату ярла до 10 уровня',   cur: () => lvl('hall'),    max: 10, rw: { food: 3000, wood: 3000, stone: 2000, haste: 3, gems: 4 } },
+  { id: 'q15', t: 'Подними ярла до 10 уровня',          cur: () => heroOf(S).lv,   max: 10, rw: { silver: 1500, iron: 1500, haste: 3, gems: 3 } },
+  { id: 'q16', t: 'Подними Палату ярла до 20 уровня',   cur: () => lvl('hall'),    max: 20, rw: { food: 12000, wood: 12000, stone: 8000, iron: 5000, haste: 6, gems: 8 } },
+  { id: 'q17', t: 'Одержи 25 побед в походах',          cur: () => S.stat.wins,    max: 25, rw: { silver: 2000, iron: 2000, haste: 4, gems: 5 } },
   { id: 'q11', t: 'Разграбь город другого игрока',      cur: () => S.stat.pvpWins, max: 1,  rw: { silver: 400, iron: 300, haste: 2 } }
 ];
 
@@ -132,7 +132,7 @@ const QUESTS = [
 (function () {
   const rw = (lv, kinds) => {
     const o = {}; kinds.forEach((k, i) => { o[k] = Math.round(lv * (i ? 90 : 140)); });
-    if (lv >= 10) o.haste = Math.floor(lv / 5); if (lv >= 15) o.gems = Math.floor(lv / 5);
+    if (lv >= 10) o.haste = Math.floor(lv / 5); if (lv >= 20) o.gems = Math.floor(lv / 10);
     return o;
   };
   const bl = { farm: ['Ферма', ['food', 'wood']], sawmill: ['Лесопилка', ['wood', 'stone']], quarry: ['Каменоломня', ['stone', 'iron']], ironmine: ['Рудник', ['iron', 'silver']], storehouse: ['Склад', ['wood', 'stone']], barracks: ['Казарма', ['iron', 'food']], oracle: ['Оракул', ['silver', 'stone']], vault: ['Хранилище', ['stone', 'iron']] };
@@ -152,7 +152,7 @@ const QUESTS = [
    [5, 'Разграбь города игроков 5 раз', 'pvpWins'], [20, 'Разграбь города игроков 20 раз', 'pvpWins'],
    [10, 'Отбей 10 набегов', 'defWins'], [50, 'Отбей 50 набегов', 'defWins'],
    [5, 'Изучи 5 знаний', 'researched'], [20, 'Изучи 20 знаний', 'researched']].forEach(([n, t, f]) => {
-    QUESTS.push({ id: `s_${f}_${n}`, t, cur: () => (S.stat[f] || 0), max: n, rw: { silver: n * 20 + 200, iron: n * 20 + 200, haste: n >= 20 ? 3 : n >= 10 ? 1 : 0, gems: n >= 50 ? 5 : 0 } });
+    QUESTS.push({ id: `s_${f}_${n}`, t, cur: () => (S.stat[f] || 0), max: n, rw: { silver: n * 20 + 200, iron: n * 20 + 200, haste: n >= 20 ? 3 : n >= 10 ? 1 : 0, gems: n >= 50 ? 2 : 0 } });
   });
   [5, 15, 20].forEach(L => QUESTS.push({ id: `h_${L}`, t: `Подними ярла до ${L} уровня`, cur: () => heroOf(S).lv, max: L, rw: { silver: L * 100, food: L * 150, haste: L >= 15 ? 4 : 1 } }));
   QUESTS.forEach(q => { Object.keys(q.rw).forEach(k => { if (!q.rw[k]) delete q.rw[k]; }); });
@@ -966,34 +966,34 @@ const sg = k => () => (S.stat[k] || 0);
 const CAMP = [
   { n: 'Пепел и ветер', intro: 'Ваш род изгнан из родных земель. Ветер носит пепел над пустым берегом, а старый воин говорит: «Хочешь стать ярлом, начни с крыши над головой и топора в руке».',
     goals: [{ t: 'Подними Палату ярла до 3 уровня', cur: () => lvl('hall'), max: 3 }, { t: 'Обучи 20 воинов', cur: sg('trained'), max: 20 }],
-    out: 'К вечеру над берегом поднялся дым очагов. Люди смотрят на вас иначе: так смотрят на вождя.', rw: { wood: 500, food: 500, gems: 5, haste: 2 } },
+    out: 'К вечеру над берегом поднялся дым очагов. Люди смотрят на вас иначе: так смотрят на вождя.', rw: { wood: 500, food: 500, gems: 2, haste: 2 } },
   { n: 'Первая кровь', intro: 'Разбойники грабят рыбацкие лодки. Они не прощают слабости, но и вам нельзя показать её первым.',
     goals: [{ t: 'Разгроми лагерь разбойников', cur: sg('campWins'), max: 1 }, { t: 'Одержи 5 побед в походах', cur: sg('wins'), max: 5 }],
     out: 'Лагерь пуст, дым над ним стелется низко. Дружина возвращается с трофеями и песней.', rw: { silver: 500, scr: { n: 2 } } },
   { n: 'Голос Оракула', intro: 'В горах живёт Оракул. Он видит узоры судьбы в трещинах льда и продаёт знание тем, кто умеет слушать. Но сначала нужен надёжный погреб.',
     goals: [{ t: 'Изучи первое знание в Оракуле', cur: sg('researched'), max: 1 }, { t: 'Построй Хранилище', cur: () => lvl('vault'), max: 1 }],
-    out: '«Сильный сражается, мудрый выбирает бой», шепчет Оракул. Руны на камне гаснут, но слова остаются.', rw: { silver: 600, gems: 5, haste: 2 } },
+    out: '«Сильный сражается, мудрый выбирает бой», шепчет Оракул. Руны на камне гаснут, но слова остаются.', rw: { silver: 600, gems: 2, haste: 2 } },
   { n: 'Охота на зверя', intro: 'С гор спустились волки и вепри, лес за деревней стал опасен. Кто очистит его, тот получит и шкуры, и славу.',
     goals: [{ t: 'Победи монстров или лагеря 8 раз', cur: sg('campWins'), max: 8 }, { t: 'Подними ярла до 5 уровня', cur: () => heroOf(S).lv, max: 5 }],
     out: 'Лес снова шумит спокойно. У костра ярл слышит, что о нём уже поют в соседних селениях.', rw: { silver: 1000, haste: 3, rec: ['weapon:1'] } },
   { n: 'Хозяин рудника', intro: 'Серебро течёт из недр, как кровь из раны. Кто держит рудник, тот держит и казну. Но шахты не отдают себя даром.',
     goals: [{ t: 'Удержи рудник до конца', cur: sg('mines'), max: 1 }, { t: 'Подними Палату ярла до 8 уровня', cur: () => lvl('hall'), max: 8 }],
-    out: 'Первая тачка серебра выкатилась на свет. Казначей пересчитывает её дважды и улыбается.', rw: { silver: 2000, gems: 8, scr: { s: 1 } } },
+    out: 'Первая тачка серебра выкатилась на свет. Казначей пересчитывает её дважды и улыбается.', rw: { silver: 2000, gems: 3, scr: { s: 1 } } },
   { n: 'Арена ярлов', intro: 'В долине построили арену, и каждый ярл хочет доказать там своё имя. Слава бывает громкой, но недолгой.',
     goals: [{ t: 'Выиграй 3 боя на арене', cur: sg('arenaWins'), max: 3 }, { t: 'Подними ярла до 10 уровня', cur: () => heroOf(S).lv, max: 10 }],
-    out: 'Песок арены помнит ваши шаги. Зрители скандируют имя ярла, пока он поднимает щит.', rw: { silver: 3000, gems: 10, rec: ['armor:1'] } },
+    out: 'Песок арены помнит ваши шаги. Зрители скандируют имя ярла, пока он поднимает щит.', rw: { silver: 3000, gems: 4, rec: ['armor:1'] } },
   { n: 'Кузница богов', intro: 'Старый кузнец говорит, что в огне можно закалить не только железо, но и судьбу. Принеси ему всё нужное, и он покажет.',
     goals: [{ t: 'Выкуй вещь по рецепту купца', cur: sg('epic'), max: 1 }, { t: 'Одержи 15 побед в походах', cur: sg('wins'), max: 15 }],
-    out: 'Молот звенит в такт сердцу. Новая вещь тяжела и тепла, будто живая.', rw: { gems: 15, scr: { s: 2 }, haste: 5 } },
+    out: 'Молот звенит в такт сердцу. Новая вещь тяжела и тепла, будто живая.', rw: { gems: 6, scr: { s: 2 }, haste: 5 } },
   { n: 'Зов Рагнарёка', intro: 'Небо на западе багровеет. Старики шепчутся о конце времён, но воины ждут приказа. Пора показать, что фьорд готов.',
     goals: [{ t: 'Подними Палату ярла до 15 уровня', cur: () => lvl('hall'), max: 15 }, { t: 'Подними ярла до 15 уровня', cur: () => heroOf(S).lv, max: 15 }, { t: 'Одержи 25 побед в походах', cur: sg('wins'), max: 25 }],
-    out: 'Дружина стоит строем на ветру. Никто не отводит глаз от красного неба.', rw: { silver: 8000, gems: 20, haste: 8 } },
+    out: 'Дружина стоит строем на ветру. Никто не отводит глаз от красного неба.', rw: { silver: 8000, gems: 8, haste: 8 } },
   { n: 'Змей Нидхёгг', intro: 'Под корнями мирового древа ворочается Нидхёгг. Его дыхание плавит камень, но его сердце хранит ключ к твоей судьбе.',
     goals: [{ t: 'Победи дракона Нидхёгг', cur: sg('boss'), max: 1 }],
-    out: 'Змей пал. Над долиной тишина, пока не прозвучал первый рог, возвещающий победу.', rw: { gems: 30, scr: { g: 1 }, rec: ['helm:2'] } },
+    out: 'Змей пал. Над долиной тишина, пока не прозвучал первый рог, возвещающий победу.', rw: { gems: 12, scr: { g: 1 }, rec: ['helm:2'] } },
   { n: 'Сердце фьорда', intro: 'Вы прошли путь от изгнанника до вождя. Остался последний шаг: стать тем, чьё имя произносят шёпотом даже за морем.',
     goals: [{ t: 'Подними Палату ярла до 20 уровня', cur: () => lvl('hall'), max: 20 }, { t: 'Подними ярла до 20 уровня', cur: () => heroOf(S).lv, max: 20 }, { t: 'Выиграй 10 боёв на арене', cur: sg('arenaWins'), max: 10 }],
-    out: 'Фьорд выдохнул. Теперь это ваш дом, ваша сила и ваше сердце. Сага Нордики записана в камне.', rw: { silver: 20000, gems: 50, haste: 10, heroD: 3 } }
+    out: 'Фьорд выдохнул. Теперь это ваш дом, ваша сила и ваше сердце. Сага Нордики записана в камне.', rw: { silver: 20000, gems: 20, haste: 10, heroD: 3 } }
 ];
 const campDone = st => (st.camp ? st.camp.ch : 0) >= CAMP.length;
 function campReady() { const c = CAMP[S.camp.ch]; return !!c && c.goals.every(g => g.cur() >= g.max); }
@@ -1028,15 +1028,15 @@ const bpAdd = n => bpAddTo(S, n);
 const BP_REC = ['weapon:2', 'armor:2', 'helm:2', 'amulet:2', 'ring:2', 'cloak:2', 'gloves:2', 'pants:2'];
 function bpRw(L, pro) {
   if (!pro) {
-    if (L % 10 === 0) return { gems: 15, scr: { s: 1 } };
-    if (L % 5 === 0) return { gems: 8, haste: 2 };
+    if (L % 10 === 0) return { gems: 5, scr: { s: 1 } };
+    if (L % 5 === 0) return { gems: 3, haste: 2 };
     return L % 2 ? { silver: 150 + L * 40 } : { wood: L * 100, food: L * 100 };
   }
-  if (L === 30) return { heroD: 7, gems: 50, scr: { g: 1 }, rec: ['weapon:3'] };
-  if (L === 20) return { gems: 30, scr: { s: 3 }, rec: ['amulet:3'] };
-  if (L === 10) return { heroD: 2, gems: 25, scr: { s: 2 } };
-  if (L % 5 === 0) return { gems: 10, rec: [BP_REC[(L / 5) % BP_REC.length]] };
-  return L % 2 ? { gems: 4, haste: 2 } : { silver: 300 + L * 80, scr: { n: 2 } };
+  if (L === 30) return { heroD: 7, gems: 30, scr: { g: 1 }, rec: ['weapon:3'] };
+  if (L === 20) return { gems: 20, scr: { s: 3 }, rec: ['amulet:3'] };
+  if (L === 10) return { heroD: 2, gems: 15, scr: { s: 2 } };
+  if (L % 5 === 0) return { gems: 6, rec: [BP_REC[(L / 5) % BP_REC.length]] };
+  return L % 2 ? { gems: 2, haste: 2 } : { silver: 300 + L * 80, scr: { n: 2 } };
 }
 function bpClaim(arg) {
   const q = String(arg || '').split(':'), L = Math.floor(Number(q[0])), pro = q[1] === 'p', b = bpInit(S);
@@ -1078,7 +1078,7 @@ function dailyLeft() { return Math.max(0, (S.daily || 0) + DAILY_MS - nowMs()); 
 function claimDaily() {
   if (dailyLeft() > 0) return false;
   const v = isVip();
-  bpAdd(20); S.daily = nowMs(); S.haste += v ? 3 : 1; S.gems += v ? 8 : 3;
+  bpAdd(20); S.daily = nowMs(); S.haste += v ? 3 : 1; S.gems += v ? 3 : 1;
   addLog(`Ежедневный дар: ${v ? 3 : 1} ускор., ${v ? 8 : 3} рунных камн.`, 'good'); toast('Ежедневный дар получен');
   return true;
 }
@@ -1160,7 +1160,7 @@ const CONTESTS = [
   { k: 'pvp',    f: 'pvpWins',  t: 'Гроза ярлов',             d: 'Выиграйте больше всех боёв с живыми игроками.' }
 ];
 const PRIZES = [{ gems: 50, haste: 5 }, { gems: 30, haste: 3 }, { gems: 15, haste: 2 }];
-const PRIZE_PART = { gems: 5 };           // остальные из первой десятки
+const PRIZE_PART = { gems: 2 };           // остальные из первой десятки
 const contestOf = w => CONTESTS[((w % 3) + 3) % 3];
 function wkScoreOf(st, w) {
   if (st.wk && st.wk.id === w) return Math.max(0, (st.stat[contestOf(w).f] || 0) - st.wk.base);
@@ -1173,7 +1173,7 @@ function wkSync(st) {
   if (st.wk) st.wkPrev = { id: st.wk.id, v: wkScoreOf(st, st.wk.id) };
   st.wk = { id: w, base: st.stat[contestOf(w).f] || 0 };
 }
-const STREAK = [{ gems: 2 }, { gems: 3, haste: 1 }, { res: 2 }, { gems: 4, haste: 2 }, { gems: 5 }, { gems: 6, haste: 3 }, { gems: 15, haste: 5, res: 4 }];
+const STREAK = [{ gems: 1 }, { haste: 1 }, { res: 2 }, { gems: 1, haste: 2 }, { gems: 2 }, { haste: 3 }, { gems: 4, haste: 5, res: 4 }];
 function streakInfo() {
   const d = dayId(nowMs()), st = S.streak || { n: 0, day: -9 };
   const claimed = st.day === d;
@@ -1238,7 +1238,7 @@ function spinWheel() {
   if (['food', 'wood', 'stone', 'iron'].includes(sec.k)) { const v = Math.max(800, Math.round(rate(sec.k) * 3)); addCapped(sec.k, v); text = `${sec.t} +${fmt(v)}`; }
   else if (sec.k === 'silver') { const v = 1500 * (1 + Math.floor(lvl('hall') / 5)); addCapped('silver', v); text = `Серебро +${fmt(v)}`; }
   else if (sec.k === 'haste') { S.haste += 3; text = 'Ускорения +3'; }
-  else if (sec.k === 'gems') { S.gems = (S.gems || 0) + 5; text = 'Рунные камни +5'; }
+  else if (sec.k === 'gems') { S.gems = (S.gems || 0) + 2; text = 'Рунные камни +2'; }
   else { const it = newItem(Math.ceil(lvl('hall') / 5), [80, 18, 2]); const ok = giveItem(it, 'Колесо фортуны'); text = ok ? `Предмет: ${itemName(it)}` : 'Сумка полна, предмет пропал'; }
   m.seq = (m.seq || 0) + 1; m.last = { k: 'wheel', i, text, paid, n: m.seq };
   return true;
@@ -1391,7 +1391,7 @@ function ckStep(c, b, now, loc) {
   if (use.s) hit(Math.round(base * (8 + 2 * c.sk.s) * use.s));
   return res;
 }
-const CK_MS = { 10: 3, 20: 5, 30: 8, 50: 12, 75: 15, 100: 20, 150: 30, 200: 40 };
+const CK_MS = { 10: 1, 20: 2, 30: 3, 50: 5, 75: 6, 100: 8, 150: 12, 200: 16 };
 function ckBatch(arg) {
   const c = S.clk, b = arg && typeof arg === 'object' ? arg : {}, now = nowMs();
   const day = new Date(now).toISOString().slice(0, 10);
